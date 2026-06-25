@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verificar Transações</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 40px 20px;
+      color: #1a1a2e;
+    }
+    .container { max-width: 1000px; margin: 0 auto; }
+    .back { color: #888; text-decoration: none; font-size: 0.875rem; display: inline-block; margin-bottom: 20px; }
+    .back:hover { color: #444; }
+    h1 { font-size: 1.5rem; margin: 0 0 6px; }
+    h2 { font-size: 1.1rem; margin: 28px 0 8px; color: #444; }
+    .subtitle { color: #666; margin: 0 0 24px; font-size: 0.9rem; }
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 0;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    thead { background: #f8f9fb; }
+    th {
+      text-align: left;
+      padding: 11px 14px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: #888;
+      border-bottom: 1px solid #eee;
+    }
+    td { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafbfc; }
+    .date { color: #888; font-size: 0.82rem; white-space: nowrap; }
+    .desc { font-weight: 500; }
+    .amount { font-weight: 600; white-space: nowrap; }
+    .amount-neg { color: #c0392b; }
+    .amount-pos { color: #1e8449; }
+    select {
+      padding: 5px 9px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      background: white;
+      min-width: 160px;
+      color: #222;
+      cursor: pointer;
+    }
+    select:focus { outline: none; border-color: #2d6df6; box-shadow: 0 0 0 3px rgba(45,109,246,.1); }
+    select.needs-review { border-color: #e74c3c; background: #fff8f8; }
+    input[type="text"] {
+      padding: 5px 9px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      color: #222;
+      width: 100%;
+    }
+    input[type="text"]:focus { outline: none; border-color: #2d6df6; box-shadow: 0 0 0 3px rgba(45,109,246,.1); }
+    input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+    .reason-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      background: #fff0f0;
+      color: #c0392b;
+      border: 1px solid #f5c6c6;
+      white-space: nowrap;
+    }
+    .raw-data { font-size: 0.8rem; color: #888; font-family: monospace; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .actions { display: flex; align-items: center; gap: 16px; padding: 20px 0 0; }
+    .btn {
+      background: #27ae60;
+      color: white;
+      border: none;
+      padding: 11px 32px;
+      border-radius: 7px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn:hover { background: #1e8449; }
+    .count-info { color: #888; font-size: 0.875rem; }
+    .section-header {
+      padding: 14px 18px;
+      background: #f8f9fb;
+      border-bottom: 1px solid #eee;
+      font-weight: 600;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-count {
+      background: #e8edf8;
+      color: #2d6df6;
+      border-radius: 10px;
+      padding: 1px 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .section-count.warn { background: #fff0f0; color: #c0392b; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="back">← Voltar</a>
+    <h1>Verificar Transações</h1>
+    <p class="subtitle">Confirma as categorias e preenche os dados em falta antes de gerar o relatório.</p>
+
+    <form action="/verify" method="post">
+
+      {% if transactions %}
+      <div class="card">
+        <div class="section-header">
+          Transações por verificar
+          <span class="section-count">{{ transactions|length }}</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Descrição</th>
+              <th>Valor</th>
+              <th>Categoria</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for txn in transactions %}
+            <tr>
+              <td class="date">{{ txn.date }}</td>
+              <td class="desc">{{ txn.description }}</td>
+              <td class="amount {{ 'amount-neg' if txn.amount < 0 else 'amount-pos' }}">
+                {% if txn.amount < 0 %}−{% endif %}{{ "%.2f"|format(txn.amount|abs) }} €
+              </td>
+              <td>
+                <select name="cat_{{ txn.id }}"
+                        class="{{ 'needs-review' if txn.category == 'Outros' else '' }}"
+                        required>
+                  {% for cat in categories %}
+                  <option value="{{ cat }}" {{ 'selected' if cat == txn.category }}>{{ cat }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+      {% if skipped_rows %}
+      <input type="hidden" name="skipped_ids"
+             value="{{ skipped_rows | map(attribute='id') | join(',') }}">
+      <div class="card">
+        <div class="section-header">
+          Linhas não importadas
+          <span class="section-count warn">{{ skipped_rows|length }}</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Motivo</th>
+              <th>Dados originais</th>
+              <th>Data</th>
+              <th>Descrição</th>
+              <th>Valor (€)</th>
+              <th>Categoria</th>
+              <th>Incluir</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in skipped_rows %}
+            <tr>
+              <td><span class="reason-badge">{{ row.reason }}</span></td>
+              <td class="raw-data" title="{{ row.description_raw }}">
+                {{ row.description_raw or row.date_raw or row.amount_raw or '—' }}
+              </td>
+              <td style="min-width:120px">
+                <input type="text" name="skip_date_{{ row.id }}"
+                       value="{{ row.date_raw }}" placeholder="YYYY-MM-DD">
+              </td>
+              <td style="min-width:200px">
+                <input type="text" name="skip_desc_{{ row.id }}"
+                       value="{{ row.description_raw }}" placeholder="Descrição">
+              </td>
+              <td style="min-width:110px">
+                <input type="text" name="skip_amount_{{ row.id }}"
+                       value="{{ row.amount_raw }}" placeholder="Ex: -45.30">
+              </td>
+              <td>
+                <select name="skip_cat_{{ row.id }}">
+                  {% for cat in categories %}
+                  <option value="{{ cat }}">{{ cat }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td style="text-align:center">
+                <input type="checkbox" name="skip_include_{{ row.id }}">
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+      <div class="actions">
+        <button type="submit" class="btn">Guardar e gerar relatório</button>
+        <span class="count-info">
+          {% if transactions %}{{ transactions|length }} transaç{{ 'ão' if transactions|length == 1 else 'ões' }}{% endif %}
+          {% if transactions and skipped_rows %} · {% endif %}
+          {% if skipped_rows %}{{ skipped_rows|length }} ignorada{{ 's' if skipped_rows|length != 1 else '' }}{% endif %}
+        </span>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    document.querySelectorAll('select[name^="cat_"]').forEach(function(sel) {
+      sel.addEventListener('change', function() {
+        this.className = this.value === 'Outros' ? 'needs-review' : '';
+      });
+    });
+  </script>
+</body>
+</html>

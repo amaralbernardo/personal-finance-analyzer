@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gerir Categorias</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 40px 20px;
+      color: #1a1a2e;
+    }
+    .container { max-width: 760px; margin: 0 auto; }
+    .back { color: #888; text-decoration: none; font-size: 0.875rem; display: inline-block; margin-bottom: 20px; }
+    .back:hover { color: #444; }
+    .top-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+    h1 { font-size: 1.5rem; margin: 0; }
+    .hint { color: #888; font-size: 0.85rem; margin: 0; }
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 18px 22px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      gap: 10px;
+    }
+    .cat-name {
+      font-weight: 600;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .priority {
+      background: #e8edf8;
+      color: #2d6df6;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .keywords { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; min-height: 28px; }
+    .kw-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #f0f4ff;
+      border: 1px solid #c8d8f8;
+      border-radius: 14px;
+      padding: 3px 10px 3px 10px;
+      font-size: 0.82rem;
+      color: #2d4a8a;
+    }
+    .kw-remove {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #8aa0cc;
+      font-size: 0.9rem;
+      padding: 0 0 0 4px;
+      line-height: 1;
+    }
+    .kw-remove:hover { color: #c0392b; }
+    .add-kw-row { display: flex; gap: 6px; align-items: center; }
+    .add-kw-row input[type="text"] {
+      padding: 5px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      color: #222;
+      flex: 1;
+      min-width: 0;
+    }
+    .add-kw-row input[type="text"]:focus { outline: none; border-color: #2d6df6; box-shadow: 0 0 0 3px rgba(45,109,246,.1); }
+    .btn-sm {
+      padding: 5px 14px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      white-space: nowrap;
+    }
+    .btn-primary { background: #2d6df6; color: white; }
+    .btn-primary:hover { background: #1a56d6; }
+    .btn-danger { background: #fff0f0; color: #c0392b; border: 1px solid #f5c6c6; }
+    .btn-danger:hover { background: #fde8e8; }
+    .btn-success { background: #27ae60; color: white; }
+    .btn-success:hover { background: #1e8449; }
+    .btn-secondary { background: #f0f2f5; color: #444; border: 1px solid #ddd; }
+    .btn-secondary:hover { background: #e4e7eb; }
+    .divider { border: none; border-top: 1px solid #f0f0f0; margin: 14px 0; }
+    .new-cat-card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px 22px;
+      margin-top: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      border: 2px dashed #dce2f0;
+    }
+    .new-cat-card h2 { font-size: 1rem; margin: 0 0 14px; color: #555; }
+    .new-cat-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .new-cat-row input[type="text"] {
+      padding: 7px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      color: #222;
+      flex: 1;
+      min-width: 140px;
+    }
+    .new-cat-row input[type="text"]:focus { outline: none; border-color: #2d6df6; box-shadow: 0 0 0 3px rgba(45,109,246,.1); }
+    .recategorize-bar {
+      background: #fffbea;
+      border: 1px solid #f0d080;
+      border-radius: 10px;
+      padding: 14px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .recategorize-bar p { margin: 0; font-size: 0.875rem; color: #7a5f00; }
+    .empty-kw { font-size: 0.82rem; color: #bbb; font-style: italic; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="back">← Voltar</a>
+
+    <div class="top-row">
+      <div>
+        <h1>Gerir Categorias</h1>
+        <p class="hint">A ordem determina a prioridade — a primeira keyword a coincidir vence.</p>
+      </div>
+    </div>
+
+    <div class="recategorize-bar">
+      <p>Após alterar categorias ou keywords, recategoriza as transações para aplicar as novas regras.</p>
+      <form action="/categories/recategorize" method="post">
+        <button type="submit" class="btn-sm btn-success">Recategorizar transações</button>
+      </form>
+    </div>
+
+    {% for name, keywords in rules.items() %}
+    {% set loop_idx = loop.index %}
+    <div class="card" id="cat-{{ loop_idx }}">
+      <div class="card-header">
+        <span class="cat-name">
+          <span class="priority">{{ loop_idx }}</span>
+          {{ name }}
+        </span>
+        <form action="/categories/delete" method="post"
+              onsubmit="return confirm('Eliminar a categoria "{{ name }}"?')">
+          <input type="hidden" name="name" value="{{ name }}">
+          <button type="submit" class="btn-sm btn-danger">Eliminar</button>
+        </form>
+      </div>
+
+      <div class="keywords">
+        {% if keywords %}
+          {% for kw in keywords %}
+          <span class="kw-chip">
+            {{ kw }}
+            <form action="/categories/remove-keyword" method="post" style="display:inline">
+              <input type="hidden" name="name" value="{{ name }}">
+              <input type="hidden" name="keyword" value="{{ kw }}">
+              <button type="submit" class="kw-remove" title="Remover keyword">×</button>
+            </form>
+          </span>
+          {% endfor %}
+        {% else %}
+          <span class="empty-kw">Sem keywords — esta categoria não será aplicada automaticamente.</span>
+        {% endif %}
+      </div>
+
+      <hr class="divider">
+
+      <form action="/categories/add-keyword" method="post" class="add-kw-row">
+        <input type="hidden" name="name" value="{{ name }}">
+        <input type="text" name="keyword" placeholder="Nova keyword…" autocomplete="off">
+        <button type="submit" class="btn-sm btn-primary">Adicionar</button>
+      </form>
+    </div>
+    {% endfor %}
+
+    <div class="new-cat-card">
+      <h2>Nova categoria</h2>
+      <form action="/categories/add" method="post" class="new-cat-row">
+        <input type="text" name="name" placeholder="Nome da categoria" required>
+        <input type="text" name="keyword" placeholder="Primeira keyword" required>
+        <button type="submit" class="btn-sm btn-primary">Criar categoria</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

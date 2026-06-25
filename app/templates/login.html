@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% if is_setup %}Configurar administrador{% else %}Entrar{% endif %} — Finanças Pessoais</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      color: #1a1a2e;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 36px 40px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.10);
+    }
+    .logo { font-size: 1.5rem; font-weight: 700; margin: 0 0 6px; }
+    .subtitle { color: #888; font-size: 0.9rem; margin: 0 0 28px; }
+    .setup-notice {
+      background: #fffbea;
+      border: 1px solid #f0d080;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 0.85rem;
+      color: #7a5f00;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 5px;
+    }
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 7px;
+      font-size: 0.95rem;
+      color: #222;
+      margin-bottom: 16px;
+      transition: border-color .15s;
+    }
+    input:focus {
+      outline: none;
+      border-color: #2d6df6;
+      box-shadow: 0 0 0 3px rgba(45,109,246,.1);
+    }
+    .btn {
+      width: 100%;
+      background: #2d6df6;
+      color: white;
+      border: none;
+      padding: 11px;
+      border-radius: 7px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn:hover { background: #1a56d6; }
+    .error {
+      background: #fff0f0;
+      border: 1px solid #f5c6c6;
+      border-radius: 7px;
+      padding: 10px 14px;
+      font-size: 0.875rem;
+      color: #c0392b;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <p class="logo">Finanças Pessoais</p>
+    {% if is_setup %}
+    <p class="subtitle">Primeiro acesso — cria a conta de administrador.</p>
+    <div class="setup-notice">
+      Este é o primeiro acesso à aplicação. O email e password que introduzires
+      serão usados para a conta de administrador.
+    </div>
+    {% else %}
+    <p class="subtitle">Introduz as tuas credenciais para continuar.</p>
+    {% endif %}
+
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <form method="post">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required
+             placeholder="exemplo@email.com" autocomplete="email">
+
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required
+             placeholder="••••••••" autocomplete="current-password">
+
+      <button type="submit" class="btn">
+        {% if is_setup %}Criar conta e entrar{% else %}Entrar{% endif %}
+      </button>
+    </form>
+  </div>
+</body>
+</html>

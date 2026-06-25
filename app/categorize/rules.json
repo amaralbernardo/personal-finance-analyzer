@@ -1,0 +1,52 @@
+{
+  "Alimentação": [
+    "continente", "pingo doce", "lidl", "aldi", "mercadona", "minipreco",
+    "miniprego", "intermarché", "intermarche", "el corte ingles", "jumbo",
+    "supermercado", "mercearia", "padaria", "talho", "peixaria", "frutaria"
+  ],
+  "Restaurantes": [
+    "restaurante", "cafe", "café", "pastelaria", "snack", "pizzaria",
+    "mcdonald", "kfc", "burger king", "subway", "nando", "pizza hut",
+    "telepizza", "sushi", "tasca", "taberna", "cervejaria", "marisqueira"
+  ],
+  "Transportes": [
+    "uber", "bolt", "cabify", "cp ", "comboio", "metro ", "carris",
+    "rodoviária", "rodoviaria", "galp", "bp ", "repsol", "cepsa",
+    "portagem", "via verde", "rent a car", "hertz", "europcar", "sixt"
+  ],
+  "Saúde": [
+    "farmacia", "farmácia", "wells", "clinica", "clínica", "hospital",
+    "médico", "medico", "dentista", "laboratorio", "laboratório",
+    "health", "saude", "saúde", "seguro saude", "seguro saúde"
+  ],
+  "Habitação": [
+    "renda", "condominio", "condomínio", "agua ", "água ", "edp ", "ren ",
+    "galp gás", "galp gas", "nos ", "meo ", "nowo ", "vodafone",
+    "seguro habitacao", "seguro habitação", "imobiliaria", "imobiliária"
+  ],
+  "Lazer": [
+    "netflix", "spotify", "amazon", "apple.com", "google play",
+    "cinema", "teatro", "museu", "bilhete", "fnac", "worten",
+    "gym", "ginásio", "ginasio", "health club", "fitbox"
+  ],
+  "Vestuário": [
+    "zara", "h&m", "mango", "primark", "pull&bear", "bershka",
+    "sport zone", "decathlon", "footlocker", "foot locker"
+  ],
+  "Educação": [
+    "escola", "universidade", "faculdade", "colegio", "colégio",
+    "udemy", "coursera", "livro", "livraria", "bertrand", "fnac livro"
+  ],
+  "Viagens": [
+    "tap ", "ryanair", "easyjet", "wizz", "booking", "airbnb",
+    "hotel", "hostel", "expedia", "trivago", "aeroporto"
+  ],
+  "Transferências": [
+    "mbway", "mb way", "transferencia", "transferência", "pagamento ref",
+    "pagamento mbway", "sepa"
+  ],
+  "Impostos & Estado": [
+    "irs ", "iva ", "at ", "finanças", "financas", "segurança social",
+    "seguranca social", "cga ", "imtt ", "câmara", "camara"
+  ]
+}

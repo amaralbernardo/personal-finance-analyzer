@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relatório Financeiro — 21/06/2026 01:14</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      padding: 2rem;
+    }
+
+    h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
+    .subtitle { color: #666; font-size: 0.9rem; margin-bottom: 2rem; }
+
+    /* Summary cards */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+    .card .label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: .05em; color: #888; }
+    .card .value { font-size: 1.7rem; font-weight: 700; margin-top: .25rem; }
+    .card.income  .value { color: #16a34a; }
+    .card.expense .value { color: #dc2626; }
+    .card.balance .value { color: #dc2626; }
+
+    /* Charts row */
+    .charts {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    @media (max-width: 768px) { .charts { grid-template-columns: 1fr; } }
+
+    .chart-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+    .chart-card h2 { font-size: 0.95rem; color: #444; margin-bottom: 1rem; }
+    .chart-wrap { position: relative; height: 280px; }
+
+    /* Tables */
+    .tables {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 900px) { .tables { grid-template-columns: 1fr; } }
+
+    .table-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      overflow-x: auto;
+    }
+    .table-card h2 { font-size: 0.95rem; color: #444; margin-bottom: 1rem; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th { text-align: left; padding: .5rem .75rem; border-bottom: 2px solid #e5e7eb; color: #555; font-weight: 600; }
+    td { padding: .45rem .75rem; border-bottom: 1px solid #f0f0f0; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+
+    .amount-neg { color: #dc2626; font-weight: 600; }
+    .amount-pos { color: #16a34a; font-weight: 600; }
+    .badge {
+      display: inline-block;
+      padding: .15rem .55rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      background: #e0e7ff;
+      color: #3730a3;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Relatório Financeiro</h1>
+<p class="subtitle">Gerado em 21/06/2026 01:14</p>
+
+<!-- Summary cards -->
+<div class="cards">
+  <div class="card income">
+    <div class="label">Receitas</div>
+    <div class="value">785.18 €</div>
+  </div>
+  <div class="card expense">
+    <div class="label">Despesas</div>
+    <div class="value">7505.46 €</div>
+  </div>
+  <div class="card balance">
+    <div class="label">Saldo</div>
+    <div class="value">-6720.28 €</div>
+  </div>
+</div>
+
+<!-- Charts -->
+<div class="charts">
+  <div class="chart-card">
+    <h2>Despesas por categoria</h2>
+    <div class="chart-wrap"><canvas id="catChart"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <h2>Evolução mensal</h2>
+    <div class="chart-wrap"><canvas id="monthChart"></canvas></div>
+  </div>
+</div>
+
+<!-- Tables -->
+<div class="tables">
+  <div class="table-card">
+    <h2>Top despesas</h2>
+    <table>
+      <thead>
+        <tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th></tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>2026-06-04</td>
+          <td>TRF.IPS P/ DANIELA SILVA COIT</td>
+          <td><span class="badge">Outros</span></td>
+          <td class="amount-neg">5000.00 €</td>
+        </tr>
+        
+        <tr>
+          <td>2026-06-10</td>
+          <td>TRF.P/ BERNARDO FARIA XAVIER A</td>
+          <td><span class="badge">Outros</span></td>
+          <td class="amount-neg">564.49 €</td>
+        </tr>
+        
+        <tr>
+          <td>2026-06-03</td>
+          <td>TRF.IPS P/ BERNARDO FARIA XAV</td>
+          <td><span class="badge">Outros</span></td>
+          <td class="amount-neg">546.64 €</td>
+        </tr>
+        
+        <tr>
+          <td>2026-06-01</td>
+          <td>DD-BKCF bankintercard</td>
+          <td><span class="badge">Outros</span></td>
+          <td class="amount-neg">164.43 €</td>
+        </tr>
+        
+        <tr>
+          <td>2026-06-09</td>
+          <td>COMPRA   BOUTIQUE NESPRESSO</td>
+          <td><span class="badge">Outros</span></td>
+          <td class="amount-neg">153.80 €</td>
+        </tr>
+        
+        <tr>
+          <td>2026-06-03</td>
+          <td>TRF.IPS P/ DANIELA DA SILVA C</td>
+          <td><span class="badge">Outros</span></td>
+          <td class="amount-neg">150.00 €</td>
+        </tr>
+        
+        <tr>
+          <td>2026-06-01</td>
+          <td>COMPRA   CLIVIDA</td>
+          <td><span class="badge">Outros</span></td>
+          <td class="amount-neg">140.00 €</td>
+        </tr>
+        
+        <tr>
+          <td>2026-06-02</td>
+          <td>TRF.P/ DANIELA COITO</td>
+          <td><span class="badge">Outros</span></td>
+          <td class="amount-neg">125.00 €</td>
+        </tr>
+        
+        <tr>
+          <td>2026-06-02</td>
+          <td>TRF.P/ BERNARDO AMARAL</td>
+          <td><span class="badge">Outros</span></td>
+          <td class="amount-neg">125.00 €</td>
+        </tr>
+        
+        <tr>
+          <td>2026-06-07</td>
+          <td>COMPRA   POSICO 11722 COMBUS</td>
+          <td><span class="badge">Outros</span></td>
+          <td class="amount-neg">63.16 €</td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-card">
+    <h2>Por mês</h2>
+    <table>
+      <thead>
+        <tr><th>Mês</th><th>Receitas</th><th>Despesas</th><th>Saldo</th></tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>2026-06</td>
+          <td class="amount-pos">785.18 €</td>
+          <td class="amount-neg">7505.46 €</td>
+          <td class="amount-neg">-6720.28 €</td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const COLORS = [
+  "#6366f1","#f59e0b","#10b981","#ef4444","#3b82f6",
+  "#ec4899","#8b5cf6","#14b8a6","#f97316","#84cc16","#06b6d4"
+];
+
+// Category doughnut
+const catData = [{"category": "Outros", "count": 33, "total": 7474.04}, {"category": "Transportes", "count": 3, "total": 31.42}];
+new Chart(document.getElementById("catChart"), {
+  type: "doughnut",
+  data: {
+    labels: catData.map(d => d.category),
+    datasets: [{
+      data: catData.map(d => d.total),
+      backgroundColor: COLORS,
+      borderWidth: 2,
+      borderColor: "#fff"
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: "bottom", labels: { font: { size: 11 } } },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toFixed(2)} €` } }
+    }
+  }
+});
+
+// Monthly bar chart
+const monthData = [{"expenses": 7505.46, "income": 785.18, "month": "2026-06", "net": -6720.28}];
+new Chart(document.getElementById("monthChart"), {
+  type: "bar",
+  data: {
+    labels: monthData.map(d => d.month),
+    datasets: [
+      { label: "Receitas", data: monthData.map(d => d.income),   backgroundColor: "#bbf7d0", borderColor: "#16a34a", borderWidth: 1 },
+      { label: "Despesas", data: monthData.map(d => d.expenses), backgroundColor: "#fecaca", borderColor: "#dc2626", borderWidth: 1 }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: "bottom" } },
+    scales: {
+      y: { ticks: { callback: v => v + " €" } }
+    }
+  }
+});
+</script>
+</body>
+</html>
