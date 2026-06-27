@@ -19,6 +19,7 @@ from app.ingest.loader import load_directory
 from app.ingest.normalizer import _parse_date, _parse_amount
 from app.categorize.engine import categorize_all, recategorize_all, load_categories, RULES_PATH
 from app.reports.generator import generate
+from app.email import send_welcome_email
 
 INPUT_DIR     = Path(__file__).parents[1] / "data" / "input"
 MAPPINGS_PATH = Path(__file__).parents[1] / "data" / "user_mappings.json"
@@ -412,6 +413,8 @@ def users_add():
                 (email, generate_password_hash(password), role),
             )
             conn.commit()
+            app_url = os.environ.get("APP_URL", request.host_url.rstrip("/"))
+            send_welcome_email(email, password, role, app_url)
         except Exception:
             pass  # email already exists
         conn.close()
