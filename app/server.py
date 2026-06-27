@@ -161,7 +161,7 @@ def _get_patrimony(conn, space: str) -> list:
                    CASE WHEN t.date >= p.reference_date THEN t.amount ELSE 0 END
                ), 0) AS current_value
         FROM patrimony p
-        LEFT JOIN transactions t ON t.patrimony_id = p.id AND t.space = p.space
+        LEFT JOIN transactions t ON t.patrimony_label = p.label AND t.space = p.space
         WHERE p.space = ?
         GROUP BY p.id
         ORDER BY p.category, p.label
@@ -194,7 +194,7 @@ def _process_verify_form(conn, req, space: str):
         if key.startswith("patrimony_"):
             try:
                 txn_id = int(key[10:])
-                patrimony_map[txn_id] = int(val) if val else None
+                patrimony_map[txn_id] = val if val else None
             except ValueError:
                 pass
 
@@ -206,10 +206,10 @@ def _process_verify_form(conn, req, space: str):
             "SELECT description FROM transactions WHERE id = ? AND space = ?", (txn_id, space)
         ).fetchone()
         if row:
-            pat_id = patrimony_map.get(txn_id)
+            pat_label = patrimony_map.get(txn_id)
             conn.execute(
-                "UPDATE transactions SET category = ?, verified = 1, patrimony_id = ? WHERE id = ? AND space = ?",
-                (category, pat_id, txn_id, space),
+                "UPDATE transactions SET category = ?, verified = 1, patrimony_label = ? WHERE id = ? AND space = ?",
+                (category, pat_label, txn_id, space),
             )
             if category != "Outros":
                 mappings[row["description"]] = category
@@ -428,7 +428,7 @@ def joint_verify():
 
     conn = get_connection()
     transactions = conn.execute(
-        "SELECT id, date, description, amount, category, patrimony_id "
+        "SELECT id, date, description, amount, category, patrimony_label "
         "FROM transactions WHERE space = ? ORDER BY date", (space,)
     ).fetchall()
     skipped_rows = conn.execute(
@@ -511,7 +511,7 @@ def individual_verify():
 
     conn = get_connection()
     transactions = conn.execute(
-        "SELECT id, date, description, amount, category, patrimony_id "
+        "SELECT id, date, description, amount, category, patrimony_label "
         "FROM transactions WHERE space = ? ORDER BY date", (space,)
     ).fetchall()
     skipped_rows = conn.execute(

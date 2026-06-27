@@ -161,7 +161,7 @@
                 <select name="patrimony_{{ txn.id }}" style="min-width:130px">
                   <option value="">—</option>
                   {% for p in patrimony %}
-                  <option value="{{ p.id }}" {{ 'selected' if txn.patrimony_id == p.id else '' }}>{{ p.label }}</option>
+                  <option value="{{ p.label }}" {{ 'selected' if txn.patrimony_label == p.label else '' }}>{{ p.label }}</option>
                   {% endfor %}
                 </select>
               </td>
