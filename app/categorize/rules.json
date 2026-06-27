@@ -1,4 +1,13 @@
 {
+  "Salário": [
+    "salário bruto", "salario bruto", "salário líquido", "salario liquido"
+  ],
+  "Cartão Refeição": [
+    "cartão refeição", "cartao refeicao", "euroticket", "ticket restaurant"
+  ],
+  "Ações": [
+    "ações", "acoes", "share plan", "espp", "rsu"
+  ],
   "Alimentação": [
     "continente", "pingo doce", "lidl", "aldi", "mercadona", "minipreco",
     "miniprego", "intermarché", "intermarche", "el corte ingles", "jumbo",

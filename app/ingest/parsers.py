@@ -106,6 +106,11 @@ def parse_ofx(path: Path) -> list[dict]:
 def parse_pdf(path: Path) -> list[dict]:
     import io
     import pdfplumber
+    from app.ingest.payslip_parser import parse_payslip
+
+    result = parse_payslip(path)
+    if result is not None:
+        return result
 
     all_rows = []
     header = None
