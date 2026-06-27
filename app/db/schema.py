@@ -86,7 +86,7 @@ def create_tables(conn):
     except Exception:
         pass
     try:
-        conn.execute("ALTER TABLE patrimony ADD COLUMN reference_date TEXT NOT NULL DEFAULT (date('now'))")
+        conn.execute("ALTER TABLE patrimony ADD COLUMN reference_date TEXT NOT NULL DEFAULT '2024-01-01'")
     except Exception:
         pass
     for idx in CREATE_INDEXES:
