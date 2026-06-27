@@ -93,10 +93,10 @@
       <table class="patrimony-table">
         {% set total = namespace(val=0) %}
         {% for p in patrimony %}
-        {% set total.val = total.val + p.amount %}
+        {% set total.val = total.val + p.current_value %}
         <tr>
-          <td>{{ p.label }}<br><span class="patrimony-cat">{{ p.category }}</span></td>
-          <td class="patrimony-amount">{{ "%.2f"|format(p.amount) }} €</td>
+          <td>{{ p.label }}<br><span class="patrimony-cat">{{ p.category }} · ref. {{ p.reference_date }}</span></td>
+          <td class="patrimony-amount" style="color:{% if p.current_value >= p.initial_amount %}#1e8449{% else %}#c0392b{% endif %}">{{ "%.2f"|format(p.current_value) }} €</td>
         </tr>
         {% endfor %}
         <tr>

@@ -137,6 +137,7 @@
               <th>Descrição</th>
               <th>Valor</th>
               <th>Categoria</th>
+              <th>Conta</th>
             </tr>
           </thead>
           <tbody>
@@ -153,6 +154,14 @@
                         required>
                   {% for cat in categories %}
                   <option value="{{ cat }}" {{ 'selected' if cat == txn.category }}>{{ cat }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td>
+                <select name="patrimony_{{ txn.id }}" style="min-width:130px">
+                  <option value="">—</option>
+                  {% for p in patrimony %}
+                  <option value="{{ p.id }}" {{ 'selected' if txn.patrimony_id == p.id else '' }}>{{ p.label }}</option>
                   {% endfor %}
                 </select>
               </td>

@@ -68,7 +68,9 @@
           <tr>
             <th>Descrição</th>
             <th>Categoria</th>
-            <th style="text-align:right">Valor</th>
+            <th>Data ref.</th>
+            <th style="text-align:right">Saldo inicial</th>
+            <th style="text-align:right">Valor atual</th>
             <th></th>
           </tr>
         </thead>
@@ -77,7 +79,9 @@
           <tr>
             <td>{{ p.label }}</td>
             <td class="cat-cell">{{ p.category }}</td>
-            <td class="amount-cell">{{ "%.2f"|format(p.amount) }} €</td>
+            <td class="cat-cell">{{ p.reference_date }}</td>
+            <td class="amount-cell">{{ "%.2f"|format(p.initial_amount) }} €</td>
+            <td class="amount-cell" style="color:{% if p.current_value >= p.initial_amount %}#1e8449{% else %}#c0392b{% endif %}">{{ "%.2f"|format(p.current_value) }} €</td>
             <td>
               <form action="/patrimony/delete/{{ p.id }}" method="post" style="display:inline">
                 <input type="hidden" name="back_url" value="{{ request.url }}">
@@ -113,8 +117,12 @@
             </select>
           </div>
           <div class="field" style="max-width:140px">
-            <label>Valor (€)</label>
-            <input type="number" name="amount" step="0.01" min="0" placeholder="0.00" required>
+            <label>Saldo inicial (€)</label>
+            <input type="number" name="amount" step="0.01" placeholder="0.00" required>
+          </div>
+          <div class="field" style="max-width:150px">
+            <label>Data de referência</label>
+            <input type="date" name="reference_date" required>
           </div>
           <button type="submit" class="btn-add">Adicionar</button>
         </div>

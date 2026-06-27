@@ -32,6 +32,7 @@ CREATE_INDEXES = [
     "CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category)",
     "CREATE INDEX IF NOT EXISTS idx_transactions_verified ON transactions(verified)",
     "CREATE INDEX IF NOT EXISTS idx_transactions_space ON transactions(space)",
+    "CREATE INDEX IF NOT EXISTS idx_transactions_patrimony ON transactions(patrimony_id)",
 ]
 
 CREATE_USERS = """
@@ -48,12 +49,13 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE_PATRIMONY = """
 CREATE TABLE IF NOT EXISTS patrimony (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    space      TEXT    NOT NULL,
-    label      TEXT    NOT NULL,
-    amount     REAL    NOT NULL,
-    category   TEXT    NOT NULL DEFAULT 'Outros',
-    updated_at TEXT    NOT NULL DEFAULT (datetime('now'))
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    space          TEXT    NOT NULL,
+    label          TEXT    NOT NULL,
+    amount         REAL    NOT NULL,
+    category       TEXT    NOT NULL DEFAULT 'Outros',
+    reference_date TEXT    NOT NULL DEFAULT (date('now')),
+    updated_at     TEXT    NOT NULL DEFAULT (datetime('now'))
 )
 """
 
@@ -77,6 +79,14 @@ def create_tables(conn):
         pass
     try:
         conn.execute("ALTER TABLE skipped_rows ADD COLUMN space TEXT NOT NULL DEFAULT 'joint'")
+    except Exception:
+        pass
+    try:
+        conn.execute("ALTER TABLE transactions ADD COLUMN patrimony_id INTEGER REFERENCES patrimony(id) ON DELETE SET NULL")
+    except Exception:
+        pass
+    try:
+        conn.execute("ALTER TABLE patrimony ADD COLUMN reference_date TEXT NOT NULL DEFAULT (date('now'))")
     except Exception:
         pass
     for idx in CREATE_INDEXES:

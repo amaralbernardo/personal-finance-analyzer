@@ -155,8 +155,17 @@ def _has_patrimony(conn, space: str) -> bool:
 
 def _get_patrimony(conn, space: str) -> list:
     return conn.execute(
-        "SELECT id, label, amount, category FROM patrimony WHERE space = ? ORDER BY category, label",
-        (space,)
+        """
+        SELECT p.id, p.label, p.amount AS initial_amount, p.category, p.reference_date,
+               p.amount + COALESCE(SUM(
+                   CASE WHEN t.date >= p.reference_date THEN t.amount ELSE 0 END
+               ), 0) AS current_value
+        FROM patrimony p
+        LEFT JOIN transactions t ON t.patrimony_id = p.id AND t.space = p.space
+        WHERE p.space = ?
+        GROUP BY p.id
+        ORDER BY p.category, p.label
+        """, (space,)
     ).fetchall()
 
 
@@ -180,6 +189,15 @@ def _process_verify_form(conn, req, space: str):
         with open(MAPPINGS_PATH, encoding="utf-8") as f:
             mappings = json.load(f)
 
+    patrimony_map = {}
+    for key, val in req.form.items():
+        if key.startswith("patrimony_"):
+            try:
+                txn_id = int(key[10:])
+                patrimony_map[txn_id] = int(val) if val else None
+            except ValueError:
+                pass
+
     for key, category in req.form.items():
         if not key.startswith("cat_"):
             continue
@@ -188,9 +206,10 @@ def _process_verify_form(conn, req, space: str):
             "SELECT description FROM transactions WHERE id = ? AND space = ?", (txn_id, space)
         ).fetchone()
         if row:
+            pat_id = patrimony_map.get(txn_id)
             conn.execute(
-                "UPDATE transactions SET category = ?, verified = 1 WHERE id = ? AND space = ?",
-                (category, txn_id, space),
+                "UPDATE transactions SET category = ?, verified = 1, patrimony_id = ? WHERE id = ? AND space = ?",
+                (category, pat_id, txn_id, space),
             )
             mappings[row["description"]] = category
 
@@ -415,7 +434,7 @@ def joint_verify():
 
     conn = get_connection()
     transactions = conn.execute(
-        "SELECT id, date, description, amount, category "
+        "SELECT id, date, description, amount, category, patrimony_id "
         "FROM transactions WHERE verified = 0 AND space = ? ORDER BY date", (space,)
     ).fetchall()
     skipped_rows = conn.execute(
@@ -427,11 +446,13 @@ def joint_verify():
     if not transactions and not skipped_rows:
         return redirect(url_for("joint"))
 
+    patrimony = _get_patrimony(conn, space)
     return render_template(
         "verify.html",
         transactions=transactions,
         skipped_rows=skipped_rows,
         categories=load_categories(),
+        patrimony=patrimony,
         space=space,
         back_url=url_for("joint"),
     )
@@ -502,7 +523,7 @@ def individual_verify():
 
     conn = get_connection()
     transactions = conn.execute(
-        "SELECT id, date, description, amount, category "
+        "SELECT id, date, description, amount, category, patrimony_id "
         "FROM transactions WHERE verified = 0 AND space = ? ORDER BY date", (space,)
     ).fetchall()
     skipped_rows = conn.execute(
@@ -514,11 +535,13 @@ def individual_verify():
     if not transactions and not skipped_rows:
         return redirect(url_for("individual"))
 
+    patrimony = _get_patrimony(conn, space)
     return render_template(
         "verify.html",
         transactions=transactions,
         skipped_rows=skipped_rows,
         categories=load_categories(),
+        patrimony=patrimony,
         space=space,
         back_url=url_for("individual"),
     )
@@ -548,14 +571,15 @@ def patrimony_individual():
 def _patrimony_handler(space: str, back_url: str):
     conn = get_connection()
     if request.method == "POST":
-        label    = request.form.get("label", "").strip()
-        amount   = request.form.get("amount", "").strip()
-        category = request.form.get("category", "Outros").strip()
-        if label and amount:
+        label          = request.form.get("label", "").strip()
+        amount         = request.form.get("amount", "").strip()
+        category       = request.form.get("category", "Outros").strip()
+        reference_date = request.form.get("reference_date", "").strip()
+        if label and amount and reference_date:
             try:
                 conn.execute(
-                    "INSERT INTO patrimony (space, label, amount, category) VALUES (?, ?, ?, ?)",
-                    (space, label, float(amount.replace(",", ".")), category),
+                    "INSERT INTO patrimony (space, label, amount, category, reference_date) VALUES (?, ?, ?, ?, ?)",
+                    (space, label, float(amount.replace(",", ".")), category, reference_date),
                 )
                 conn.commit()
             except ValueError:
