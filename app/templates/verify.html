@@ -119,15 +119,15 @@
 <body>
   <div class="container">
     <a href="{{ back_url }}" class="back">← Voltar</a>
-    <h1>Verificar Transações</h1>
-    <p class="subtitle">Confirma as categorias e preenche os dados em falta antes de gerar o relatório.</p>
+    <h1>Rever Transações</h1>
+    <p class="subtitle">Confirma as categorias, associa contas de patrimônio e preenche os dados em falta antes de gerar o relatório.</p>
 
     <form action="{{ '/joint/verify' if space == 'joint' else '/individual/verify' }}" method="post">
 
       {% if transactions %}
       <div class="card">
         <div class="section-header">
-          Transações por verificar
+          Transações
           <span class="section-count">{{ transactions|length }}</span>
         </div>
         <table>

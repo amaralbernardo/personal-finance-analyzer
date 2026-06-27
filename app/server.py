@@ -211,7 +211,8 @@ def _process_verify_form(conn, req, space: str):
                 "UPDATE transactions SET category = ?, verified = 1, patrimony_id = ? WHERE id = ? AND space = ?",
                 (category, pat_id, txn_id, space),
             )
-            mappings[row["description"]] = category
+            if category != "Outros":
+                mappings[row["description"]] = category
 
     skipped_ids_raw = req.form.get("skipped_ids", "")
     if skipped_ids_raw:
@@ -409,15 +410,8 @@ def joint_upload():
     conn = get_connection()
     load_directory(input_dir, conn, space=space, processed_dir=proc_dir)
     categorize_all(conn, space=space)
-    unverified, skipped = _pending_counts(conn, space)
     conn.close()
-
-    if unverified > 0 or skipped > 0:
-        return redirect(url_for("joint_verify"))
-    conn2 = get_connection()
-    report_path = generate(conn2, space=space)
-    conn2.close()
-    return redirect(url_for("joint_report", filename=report_path.name))
+    return redirect(url_for("joint_verify"))
 
 
 @app.route("/joint/verify", methods=["GET", "POST"])
@@ -435,7 +429,7 @@ def joint_verify():
     conn = get_connection()
     transactions = conn.execute(
         "SELECT id, date, description, amount, category, patrimony_id "
-        "FROM transactions WHERE verified = 0 AND space = ? ORDER BY date", (space,)
+        "FROM transactions WHERE space = ? ORDER BY date", (space,)
     ).fetchall()
     skipped_rows = conn.execute(
         "SELECT id, source_file, date_raw, description_raw, amount_raw, reason "
@@ -499,15 +493,8 @@ def individual_upload():
     conn = get_connection()
     load_directory(input_dir, conn, space=space, processed_dir=proc_dir)
     categorize_all(conn, space=space)
-    unverified, skipped = _pending_counts(conn, space)
     conn.close()
-
-    if unverified > 0 or skipped > 0:
-        return redirect(url_for("individual_verify"))
-    conn2 = get_connection()
-    report_path = generate(conn2, space=space)
-    conn2.close()
-    return redirect(url_for("individual_report", filename=report_path.name))
+    return redirect(url_for("individual_verify"))
 
 
 @app.route("/individual/verify", methods=["GET", "POST"])
@@ -525,7 +512,7 @@ def individual_verify():
     conn = get_connection()
     transactions = conn.execute(
         "SELECT id, date, description, amount, category, patrimony_id "
-        "FROM transactions WHERE verified = 0 AND space = ? ORDER BY date", (space,)
+        "FROM transactions WHERE space = ? ORDER BY date", (space,)
     ).fetchall()
     skipped_rows = conn.execute(
         "SELECT id, source_file, date_raw, description_raw, amount_raw, reason "
