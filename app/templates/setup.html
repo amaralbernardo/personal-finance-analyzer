@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Configurar Patrimônio</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f2f5; margin: 0; padding: 0; color: #1a1a2e; }
+    nav.topbar { background: white; border-bottom: 1px solid #eee; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .topbar-brand { font-weight: 700; font-size: 0.95rem; color: #1a1a2e; text-decoration: none; }
+    .topbar-right { display: flex; align-items: center; gap: 20px; }
+    .topbar-email { font-size: 0.85rem; color: #888; text-decoration: none; }
+    .topbar-link { font-size: 0.85rem; color: #2d6df6; text-decoration: none; }
+    .topbar-link:hover { text-decoration: underline; }
+    .topbar-logout { font-size: 0.85rem; color: #888; text-decoration: none; }
+    .topbar-logout:hover { color: #c0392b; }
+    .page { max-width: 640px; margin: 0 auto; padding: 40px 20px; }
+    .back { color: #888; text-decoration: none; font-size: 0.875rem; display: inline-block; margin-bottom: 20px; }
+    .back:hover { color: #444; }
+    h1 { font-size: 1.5rem; margin: 0 0 8px; }
+    .page-desc { color: #666; font-size: 0.9rem; margin: 0 0 28px; }
+    .card { background: white; border-radius: 10px; padding: 22px 26px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .card-title { font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: .05em; color: #888; margin: 0 0 16px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    th { text-align: left; padding: 8px 10px; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: #888; border-bottom: 1px solid #eee; }
+    td { padding: 10px 10px; border-bottom: 1px solid #f4f4f4; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    .amount-cell { text-align: right; font-weight: 600; }
+    .cat-cell { color: #888; font-size: 0.82rem; }
+    .btn-delete { background: #fff0f0; color: #c0392b; border: 1px solid #f5c6c6; padding: 4px 10px; border-radius: 5px; font-size: 0.8rem; cursor: pointer; }
+    .btn-delete:hover { background: #fde8e8; }
+    .add-card { background: white; border-radius: 10px; padding: 22px 26px; box-shadow: 0 1px 4px rgba(0,0,0,.08); border: 2px dashed #dce2f0; }
+    .add-title { font-size: 1rem; font-weight: 600; margin: 0 0 16px; color: #333; }
+    .add-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+    .field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 130px; }
+    .field label { font-size: 0.78rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .04em; }
+    .field input, .field select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.875rem; color: #222; }
+    .field input:focus, .field select:focus { outline: none; border-color: #2d6df6; box-shadow: 0 0 0 3px rgba(45,109,246,.1); }
+    .btn-add { padding: 9px 20px; border-radius: 6px; background: #2d6df6; color: white; border: none; font-size: 0.875rem; font-weight: 500; cursor: pointer; align-self: flex-end; }
+    .btn-add:hover { background: #1a56d6; }
+    .empty { color: #aaa; font-size: 0.875rem; padding: 8px 0; }
+  </style>
+</head>
+<body>
+  <nav class="topbar">
+    <a href="/" class="topbar-brand">Finanças Pessoais</a>
+    <div class="topbar-right">
+      <a href="/change-password" class="topbar-email">{{ current_user.email }}</a>
+      {% if current_user.role == 'admin' %}
+      <a href="/users" class="topbar-link">Utilizadores</a>
+      <a href="/categories" class="topbar-link">Categorias</a>
+      {% endif %}
+      <a href="/logout" class="topbar-logout">Sair</a>
+    </div>
+  </nav>
+
+  <div class="page">
+    <a href="{{ back_url }}" class="back">← Voltar</a>
+    <h1>Configurar Patrimônio</h1>
+    <p class="page-desc">Define os valores base das tuas contas e investimentos. Estes valores são usados como ponto de partida na análise.</p>
+
+    <div class="card">
+      <p class="card-title">Valores atuais</p>
+      {% if patrimony %}
+      <table>
+        <thead>
+          <tr>
+            <th>Descrição</th>
+            <th>Categoria</th>
+            <th style="text-align:right">Valor</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in patrimony %}
+          <tr>
+            <td>{{ p.label }}</td>
+            <td class="cat-cell">{{ p.category }}</td>
+            <td class="amount-cell">{{ "%.2f"|format(p.amount) }} €</td>
+            <td>
+              <form action="/patrimony/delete/{{ p.id }}" method="post" style="display:inline">
+                <input type="hidden" name="back_url" value="{{ request.url }}">
+                <button type="submit" class="btn-delete"
+                        onclick="return confirm('Eliminar este registo?')">Eliminar</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="empty">Nenhum valor definido ainda.</p>
+      {% endif %}
+    </div>
+
+    <div class="add-card">
+      <p class="add-title">Adicionar valor</p>
+      <form method="post">
+        <div class="add-row">
+          <div class="field">
+            <label>Descrição</label>
+            <input type="text" name="label" placeholder="ex: Conta CGD" required>
+          </div>
+          <div class="field" style="max-width:210px">
+            <label>Categoria</label>
+            <select name="category">
+              <option value="Conta Corrente">Conta Corrente</option>
+              <option value="Poupanças">Poupanças</option>
+              <option value="Certificados de Aforro/Tesouro">Certificados de Aforro/Tesouro</option>
+              <option value="Ações">Ações</option>
+              <option value="Outros">Outros</option>
+            </select>
+          </div>
+          <div class="field" style="max-width:140px">
+            <label>Valor (€)</label>
+            <input type="number" name="amount" step="0.01" min="0" placeholder="0.00" required>
+          </div>
+          <button type="submit" class="btn-add">Adicionar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

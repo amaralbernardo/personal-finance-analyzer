@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Análise Conjunta</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f2f5; margin: 0; padding: 0; color: #1a1a2e; }
+    nav.topbar { background: white; border-bottom: 1px solid #eee; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .topbar-brand { font-weight: 700; font-size: 0.95rem; color: #1a1a2e; text-decoration: none; }
+    .topbar-right { display: flex; align-items: center; gap: 20px; }
+    .topbar-email { font-size: 0.85rem; color: #888; text-decoration: none; }
+    .topbar-link { font-size: 0.85rem; color: #2d6df6; text-decoration: none; }
+    .topbar-link:hover { text-decoration: underline; }
+    .topbar-logout { font-size: 0.85rem; color: #888; text-decoration: none; }
+    .topbar-logout:hover { color: #c0392b; }
+    .page { max-width: 720px; margin: 0 auto; padding: 40px 20px; }
+    .back { color: #888; text-decoration: none; font-size: 0.875rem; display: inline-block; margin-bottom: 20px; }
+    .back:hover { color: #444; }
+    .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+    h1 { font-size: 1.5rem; margin: 0; }
+    .space-pill { background: #e8edf8; color: #2d4a8a; font-size: 0.75rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+    .card { background: white; border-radius: 10px; padding: 22px 26px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .card-title { font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: .05em; color: #888; margin: 0 0 14px; }
+    .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 0.875rem; font-weight: 500; }
+    .badge-warn { background: #fff0f0; color: #c0392b; border: 1px solid #f5c6c6; }
+    .badge-ok { background: #f0fff4; color: #1e8449; border: 1px solid #b7e4c7; }
+    .badge-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .verify-link { margin-left: 12px; color: #2d6df6; font-size: 0.9rem; text-decoration: none; }
+    .verify-link:hover { text-decoration: underline; }
+    .report-link { color: #2d6df6; text-decoration: none; font-size: 0.95rem; }
+    .report-link:hover { text-decoration: underline; }
+    .report-name { font-size: 0.85rem; color: #888; margin-top: 4px; }
+    .patrimony-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    .patrimony-table td { padding: 7px 0; border-bottom: 1px solid #f0f0f0; }
+    .patrimony-table tr:last-child td { border-bottom: none; }
+    .patrimony-cat { color: #888; font-size: 0.8rem; }
+    .patrimony-amount { text-align: right; font-weight: 600; }
+    .patrimony-total { font-weight: 700; border-top: 2px solid #eee !important; padding-top: 10px !important; }
+    .setup-cta { color: #2d6df6; text-decoration: none; font-size: 0.9rem; }
+    .setup-cta:hover { text-decoration: underline; }
+    .btn { display: inline-block; background: #2d6df6; color: white; border: none; padding: 11px 28px; border-radius: 7px; font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: background .15s; }
+    .btn:hover { background: #1a56d6; }
+    .upload-area { border: 2px dashed #d0d7e8; border-radius: 8px; padding: 28px 20px; text-align: center; cursor: pointer; transition: border-color .15s, background .15s; margin-bottom: 14px; }
+    .upload-area:hover, .upload-area.drag-over { border-color: #2d6df6; background: #f4f7ff; }
+    .upload-area input[type=file] { display: none; }
+    .upload-icon { font-size: 1.8rem; margin-bottom: 8px; }
+    .upload-label { font-size: 0.9rem; color: #555; }
+    .upload-label span { color: #2d6df6; font-weight: 500; cursor: pointer; }
+    .upload-sub { font-size: 0.78rem; color: #aaa; margin-top: 4px; }
+    .file-list { list-style: none; padding: 0; margin: 0 0 14px; display: flex; flex-direction: column; gap: 6px; }
+    .file-item { display: flex; align-items: center; justify-content: space-between; background: #f8f9fb; border: 1px solid #eee; border-radius: 6px; padding: 7px 12px; font-size: 0.85rem; color: #333; }
+    .file-remove { background: none; border: none; color: #bbb; cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 0 0 8px; }
+    .file-remove:hover { color: #c0392b; }
+  </style>
+</head>
+<body>
+  <nav class="topbar">
+    <a href="/" class="topbar-brand">Finanças Pessoais</a>
+    <div class="topbar-right">
+      <a href="/change-password" class="topbar-email">{{ current_user.email }}</a>
+      {% if current_user.role == 'admin' %}
+      <a href="/users" class="topbar-link">Utilizadores</a>
+      <a href="/categories" class="topbar-link">Categorias</a>
+      {% endif %}
+      <a href="/logout" class="topbar-logout">Sair</a>
+    </div>
+  </nav>
+
+  <div class="page">
+    <a href="/" class="back">← Voltar</a>
+    <div class="page-header">
+      <h1>Análise Conjunta</h1>
+      <span class="space-pill">Partilhado</span>
+    </div>
+
+    <!-- Status -->
+    <div class="card">
+      <p class="card-title">Estado</p>
+      {% if unverified > 0 or skipped > 0 %}
+        <span class="badge badge-warn"><span class="badge-dot"></span>{{ unverified + skipped }} item(s) por verificar</span>
+        {% if current_user.role == 'admin' %}
+        <a href="/joint/verify" class="verify-link">Verificar agora →</a>
+        {% endif %}
+      {% else %}
+        <span class="badge badge-ok"><span class="badge-dot"></span>Tudo verificado</span>
+      {% endif %}
+    </div>
+
+    <!-- Patrimony -->
+    <div class="card">
+      <p class="card-title">Patrimônio Base</p>
+      {% if patrimony %}
+      <table class="patrimony-table">
+        {% set total = namespace(val=0) %}
+        {% for p in patrimony %}
+        {% set total.val = total.val + p.amount %}
+        <tr>
+          <td>{{ p.label }}<br><span class="patrimony-cat">{{ p.category }}</span></td>
+          <td class="patrimony-amount">{{ "%.2f"|format(p.amount) }} €</td>
+        </tr>
+        {% endfor %}
+        <tr>
+          <td class="patrimony-total">Total</td>
+          <td class="patrimony-amount patrimony-total">{{ "%.2f"|format(total.val) }} €</td>
+        </tr>
+      </table>
+      {% if current_user.role == 'admin' %}
+      <a href="/patrimony/joint" class="setup-cta" style="display:inline-block;margin-top:12px;">Editar →</a>
+      {% endif %}
+      {% else %}
+      <p style="color:#888;font-size:.875rem;margin:0 0 10px">Nenhum valor base definido.</p>
+      {% if current_user.role == 'admin' %}
+      <a href="/patrimony/joint" class="setup-cta">Configurar patrimônio →</a>
+      {% endif %}
+      {% endif %}
+    </div>
+
+    <!-- Last report -->
+    {% if last_report %}
+    <div class="card">
+      <p class="card-title">Último Relatório</p>
+      <a href="/joint/report/{{ last_report.name }}" class="report-link" target="_blank">Ver relatório →</a>
+      <p class="report-name">{{ last_report.name }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Upload (admin only) -->
+    {% if current_user.role == 'admin' %}
+    <div class="card">
+      <p class="card-title">Importar Extratos</p>
+      <form action="/joint/upload" method="post" enctype="multipart/form-data" id="upload-form">
+        <div class="upload-area" id="drop-zone" onclick="document.getElementById('file-input').click()">
+          <input type="file" id="file-input" name="files" multiple accept=".csv,.ofx,.qfx,.xlsx,.xls,.pdf">
+          <div class="upload-icon">📂</div>
+          <div class="upload-label">Arrasta ficheiros ou <span>clica para selecionar</span></div>
+          <div class="upload-sub">CSV, OFX, XLSX, PDF — vários ficheiros em simultâneo</div>
+        </div>
+        <ul class="file-list" id="file-list"></ul>
+        <button type="submit" class="btn" id="upload-btn" style="display:none">Carregar e processar</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+  <script>
+    const input = document.getElementById('file-input');
+    const list  = document.getElementById('file-list');
+    const btn   = document.getElementById('upload-btn');
+    const zone  = document.getElementById('drop-zone');
+    if (input) {
+      let sel = new DataTransfer();
+      function render() {
+        list.innerHTML = '';
+        [...sel.files].forEach((f, i) => {
+          const li = document.createElement('li');
+          li.className = 'file-item';
+          li.innerHTML = `<span>${f.name}</span><button type="button" class="file-remove" data-i="${i}">✕</button>`;
+          list.appendChild(li);
+        });
+        btn.style.display = sel.files.length ? 'inline-block' : 'none';
+        input.files = sel.files;
+      }
+      input.addEventListener('change', () => { [...input.files].forEach(f => sel.items.add(f)); render(); });
+      list.addEventListener('click', e => {
+        if (!e.target.classList.contains('file-remove')) return;
+        const dt = new DataTransfer();
+        [...sel.files].forEach((f, i) => { if (i !== parseInt(e.target.dataset.i)) dt.items.add(f); });
+        sel = dt; render();
+      });
+      zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+      zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag-over'); [...e.dataTransfer.files].forEach(f => sel.items.add(f)); render(); });
+    }
+  </script>
+</body>
+</html>

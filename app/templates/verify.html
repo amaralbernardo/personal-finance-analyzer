@@ -118,11 +118,11 @@
 </head>
 <body>
   <div class="container">
-    <a href="/" class="back">← Voltar</a>
+    <a href="{{ back_url }}" class="back">← Voltar</a>
     <h1>Verificar Transações</h1>
     <p class="subtitle">Confirma as categorias e preenche os dados em falta antes de gerar o relatório.</p>
 
-    <form action="/verify" method="post">
+    <form action="{{ '/joint/verify' if space == 'joint' else '/individual/verify' }}" method="post">
 
       {% if transactions %}
       <div class="card">

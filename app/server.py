@@ -22,9 +22,13 @@ from app.categorize.engine import categorize_all, recategorize_all, load_categor
 from app.reports.generator import generate
 from app.email import send_welcome_email
 
-INPUT_DIR     = Path(__file__).parents[1] / "data" / "input"
-MAPPINGS_PATH = Path(__file__).parents[1] / "data" / "user_mappings.json"
-REPORTS_DIR   = Path(__file__).parents[1] / "reports"
+BASE_DIR      = Path(__file__).parents[1]
+INPUT_DIR     = BASE_DIR / "data" / "input"
+PROCESSED_DIR = BASE_DIR / "data" / "processed"
+MAPPINGS_PATH = BASE_DIR / "data" / "user_mappings.json"
+REPORTS_DIR   = BASE_DIR / "reports"
+
+_ALLOWED_EXTENSIONS = {".csv", ".ofx", ".qfx", ".xlsx", ".xls", ".pdf"}
 
 _SECRET_KEY = os.environ.get("SECRET_KEY", "")
 if not _SECRET_KEY:
@@ -46,10 +50,11 @@ def enforce_password_change():
         if request.endpoint not in ("change_password", "logout", "static"):
             return redirect(url_for("change_password"))
 
+
 # ── rate limiting ─────────────────────────────────────────────────────────────
 _login_attempts: dict = defaultdict(list)
-_MAX_ATTEMPTS = 5
-_LOCKOUT_WINDOW = 900  # 15 minutes
+_MAX_ATTEMPTS   = 5
+_LOCKOUT_WINDOW = 900
 
 
 def _is_rate_limited(ip: str) -> bool:
@@ -66,9 +71,9 @@ def _record_failed_attempt(ip: str) -> None:
 
 class User(UserMixin):
     def __init__(self, id, email, role, active, must_change_password=0):
-        self.id = id
+        self.id    = id
         self.email = email
-        self.role = role
+        self.role  = role
         self.active = active
         self.must_change_password = bool(must_change_password)
 
@@ -110,33 +115,117 @@ def _first_time_setup():
     return n == 0
 
 
-# ── generic helpers ───────────────────────────────────────────────────────────
+# ── space helpers ─────────────────────────────────────────────────────────────
 
-def _last_report():
-    if not REPORTS_DIR.exists():
-        return None
-    reports = sorted(REPORTS_DIR.glob("report_*.html"))
-    return reports[-1] if reports else None
+def _ind_space(user_id) -> str:
+    return str(user_id)
 
 
-def _pending_counts(conn):
+def _pending_counts(conn, space: str):
     unverified = conn.execute(
-        "SELECT COUNT(*) as n FROM transactions WHERE verified = 0"
+        "SELECT COUNT(*) as n FROM transactions WHERE verified = 0 AND space = ?", (space,)
     ).fetchone()["n"]
     skipped = conn.execute(
-        "SELECT COUNT(*) as n FROM skipped_rows"
+        "SELECT COUNT(*) as n FROM skipped_rows WHERE space = ?", (space,)
     ).fetchone()["n"]
     return unverified, skipped
 
 
-def _load_rules() -> dict:
-    with open(RULES_PATH, encoding="utf-8") as f:
-        return json.load(f)
+def _last_report(space: str):
+    report_dir = REPORTS_DIR / space
+    if not report_dir.exists():
+        return None
+    reports = sorted(report_dir.glob("report_*.html"))
+    return reports[-1] if reports else None
 
 
-def _save_rules(rules: dict) -> None:
-    with open(RULES_PATH, "w", encoding="utf-8") as f:
-        json.dump(rules, f, ensure_ascii=False, indent=2)
+def _has_data(conn, space: str) -> bool:
+    n = conn.execute(
+        "SELECT COUNT(*) as n FROM transactions WHERE space = ?", (space,)
+    ).fetchone()["n"]
+    return n > 0
+
+
+def _has_patrimony(conn, space: str) -> bool:
+    n = conn.execute(
+        "SELECT COUNT(*) as n FROM patrimony WHERE space = ?", (space,)
+    ).fetchone()["n"]
+    return n > 0
+
+
+def _get_patrimony(conn, space: str) -> list:
+    return conn.execute(
+        "SELECT id, label, amount, category FROM patrimony WHERE space = ? ORDER BY category, label",
+        (space,)
+    ).fetchall()
+
+
+def _save_uploaded_files(files, dest_dir: Path) -> int:
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    saved = 0
+    for f in files:
+        if not f.filename:
+            continue
+        ext = Path(f.filename).suffix.lower()
+        if ext not in _ALLOWED_EXTENSIONS:
+            continue
+        f.save(dest_dir / secure_filename(f.filename))
+        saved += 1
+    return saved
+
+
+def _process_verify_form(conn, req, space: str):
+    mappings = {}
+    if MAPPINGS_PATH.exists():
+        with open(MAPPINGS_PATH, encoding="utf-8") as f:
+            mappings = json.load(f)
+
+    for key, category in req.form.items():
+        if not key.startswith("cat_"):
+            continue
+        txn_id = int(key[4:])
+        row = conn.execute(
+            "SELECT description FROM transactions WHERE id = ? AND space = ?", (txn_id, space)
+        ).fetchone()
+        if row:
+            conn.execute(
+                "UPDATE transactions SET category = ?, verified = 1 WHERE id = ? AND space = ?",
+                (category, txn_id, space),
+            )
+            mappings[row["description"]] = category
+
+    skipped_ids_raw = req.form.get("skipped_ids", "")
+    if skipped_ids_raw:
+        skipped_ids = [int(x) for x in skipped_ids_raw.split(",") if x.strip()]
+        for sid in skipped_ids:
+            include = req.form.get(f"skip_include_{sid}") == "on"
+            if include:
+                date_val   = req.form.get(f"skip_date_{sid}", "").strip()
+                desc_val   = req.form.get(f"skip_desc_{sid}", "").strip()
+                amount_val = req.form.get(f"skip_amount_{sid}", "").strip()
+                cat_val    = req.form.get(f"skip_cat_{sid}", "Outros")
+                src_row = conn.execute(
+                    "SELECT source_file FROM skipped_rows WHERE id = ?", (sid,)
+                ).fetchone()
+                src = src_row["source_file"] if src_row else "manual"
+                try:
+                    date_clean   = _parse_date(date_val)
+                    amount_clean = _parse_amount(amount_val)
+                    if desc_val:
+                        conn.execute(
+                            """INSERT INTO transactions
+                               (date, description, amount, category, source_file, verified, space)
+                               VALUES (?,?,?,?,?,1,?)""",
+                            (date_clean, desc_val, amount_clean, cat_val, src, space),
+                        )
+                        mappings[desc_val] = cat_val
+                except (ValueError, Exception):
+                    pass
+            conn.execute("DELETE FROM skipped_rows WHERE id = ? AND space = ?", (sid, space))
+
+    MAPPINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(MAPPINGS_PATH, "w", encoding="utf-8") as f:
+        json.dump(mappings, f, ensure_ascii=False, indent=2)
 
 
 # ── auth routes ───────────────────────────────────────────────────────────────
@@ -166,15 +255,17 @@ def login():
             )
             conn.commit()
             row = conn.execute(
-                "SELECT id, email, role, active FROM users WHERE email = ?", (email,)
+                "SELECT id, email, role, active, must_change_password FROM users WHERE email = ?",
+                (email,)
             ).fetchone()
             conn.close()
-            login_user(User(row["id"], row["email"], row["role"], row["active"]))
+            login_user(User(row["id"], row["email"], row["role"], row["active"],
+                            row["must_change_password"]))
             return redirect(url_for("index"))
 
         conn = get_connection()
         row = conn.execute(
-            "SELECT id, email, password_hash, role, active FROM users "
+            "SELECT id, email, password_hash, role, active, must_change_password FROM users "
             "WHERE email = ? AND active = 1",
             (email,)
         ).fetchone()
@@ -182,7 +273,8 @@ def login():
 
         if row and check_password_hash(row["password_hash"], password):
             _login_attempts[ip].clear()
-            login_user(User(row["id"], row["email"], row["role"], row["active"]))
+            login_user(User(row["id"], row["email"], row["role"], row["active"],
+                            row["must_change_password"]))
             return redirect(url_for("index"))
 
         _record_failed_attempt(ip)
@@ -232,183 +324,281 @@ def change_password():
     return render_template("change_password.html", error=error, success=success)
 
 
-# ── main routes ───────────────────────────────────────────────────────────────
+# ── landing ───────────────────────────────────────────────────────────────────
 
 @app.route("/")
 @login_required
 def index():
-    if current_user.role == "viewer":
-        last = _last_report()
-        if last:
-            return redirect(url_for("report", filename=last.name))
-        return ("<p style='font-family:sans-serif;padding:40px;color:#666'>"
-                "Ainda não existe relatório disponível.</p>"), 200
+    joint_space = 'joint'
+    ind_space   = _ind_space(current_user.id)
 
     conn = get_connection()
-    unverified, skipped = _pending_counts(conn)
+    joint_has_data      = _has_data(conn, joint_space)
+    joint_has_patrimony = _has_patrimony(conn, joint_space)
+    ind_has_data        = _has_data(conn, ind_space)
+    ind_has_patrimony   = _has_patrimony(conn, ind_space)
+    joint_unverified, joint_skipped = _pending_counts(conn, joint_space)
+    ind_unverified,   ind_skipped   = _pending_counts(conn, ind_space)
     conn.close()
+
     return render_template(
         "index.html",
-        unverified=unverified,
-        skipped=skipped,
-        last_report=_last_report(),
+        joint_has_data=joint_has_data,
+        joint_has_patrimony=joint_has_patrimony,
+        joint_unverified=joint_unverified,
+        joint_skipped=joint_skipped,
+        joint_last_report=_last_report(joint_space),
+        ind_has_data=ind_has_data,
+        ind_has_patrimony=ind_has_patrimony,
+        ind_unverified=ind_unverified,
+        ind_skipped=ind_skipped,
+        ind_last_report=_last_report(ind_space),
     )
 
 
-_ALLOWED_EXTENSIONS = {".csv", ".ofx", ".qfx", ".xlsx", ".xls", ".pdf"}
+# ── joint space ───────────────────────────────────────────────────────────────
 
-
-@app.route("/run", methods=["POST"])
-@admin_required
-def run():
-    INPUT_DIR.mkdir(parents=True, exist_ok=True)
-    conn = get_connection()
-    load_directory(INPUT_DIR, conn)
-    categorize_all(conn)
-    unverified, skipped = _pending_counts(conn)
+@app.route("/joint")
+@login_required
+def joint():
+    space = 'joint'
+    conn  = get_connection()
+    patrimony           = _get_patrimony(conn, space)
+    unverified, skipped = _pending_counts(conn, space)
     conn.close()
-    if unverified > 0 or skipped > 0:
-        return redirect(url_for("verify"))
-    conn2 = get_connection()
-    report_path = generate(conn2)
-    conn2.close()
-    return redirect(url_for("report", filename=report_path.name))
+    return render_template(
+        "joint.html",
+        patrimony=patrimony,
+        unverified=unverified,
+        skipped=skipped,
+        last_report=_last_report(space),
+    )
 
 
-@app.route("/upload", methods=["POST"])
+@app.route("/joint/upload", methods=["POST"])
 @admin_required
-def upload():
+def joint_upload():
+    space     = 'joint'
+    input_dir = INPUT_DIR / 'joint'
+    proc_dir  = PROCESSED_DIR / 'joint'
+
     files = request.files.getlist("files")
-    if not files or all(f.filename == "" for f in files):
-        conn = get_connection()
-        unverified, skipped = _pending_counts(conn)
-        conn.close()
-        return render_template("index.html", unverified=unverified, skipped=skipped,
-                               last_report=_last_report(),
-                               upload_error="Nenhum ficheiro selecionado.")
-
-    INPUT_DIR.mkdir(parents=True, exist_ok=True)
-    saved = 0
-    for f in files:
-        if not f.filename:
-            continue
-        ext = Path(f.filename).suffix.lower()
-        if ext not in _ALLOWED_EXTENSIONS:
-            continue
-        f.save(INPUT_DIR / secure_filename(f.filename))
-        saved += 1
-
+    saved = _save_uploaded_files(files, input_dir)
     if saved == 0:
-        conn = get_connection()
-        unverified, skipped = _pending_counts(conn)
-        conn.close()
-        return render_template("index.html", unverified=unverified, skipped=skipped,
-                               last_report=_last_report(),
-                               upload_error="Formato não suportado. Usa CSV, OFX, XLSX ou PDF.")
+        return redirect(url_for("joint"))
 
     conn = get_connection()
-    load_directory(INPUT_DIR, conn)
-    categorize_all(conn)
-    unverified, skipped = _pending_counts(conn)
+    load_directory(input_dir, conn, space=space, processed_dir=proc_dir)
+    categorize_all(conn, space=space)
+    unverified, skipped = _pending_counts(conn, space)
     conn.close()
+
     if unverified > 0 or skipped > 0:
-        return redirect(url_for("verify"))
+        return redirect(url_for("joint_verify"))
     conn2 = get_connection()
-    report_path = generate(conn2)
+    report_path = generate(conn2, space=space)
     conn2.close()
-    return redirect(url_for("report", filename=report_path.name))
+    return redirect(url_for("joint_report", filename=report_path.name))
 
 
-# ── verify routes ─────────────────────────────────────────────────────────────
-
-@app.route("/verify", methods=["GET", "POST"])
+@app.route("/joint/verify", methods=["GET", "POST"])
 @admin_required
-def verify():
+def joint_verify():
+    space = 'joint'
     if request.method == "POST":
         conn = get_connection()
-        mappings = {}
-        if MAPPINGS_PATH.exists():
-            with open(MAPPINGS_PATH, encoding="utf-8") as f:
-                mappings = json.load(f)
-
-        for key, category in request.form.items():
-            if not key.startswith("cat_"):
-                continue
-            txn_id = int(key[4:])
-            row = conn.execute(
-                "SELECT description FROM transactions WHERE id = ?", (txn_id,)
-            ).fetchone()
-            if row:
-                conn.execute(
-                    "UPDATE transactions SET category = ?, verified = 1 WHERE id = ?",
-                    (category, txn_id),
-                )
-                mappings[row["description"]] = category
-
-        MAPPINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
-        with open(MAPPINGS_PATH, "w", encoding="utf-8") as f:
-            json.dump(mappings, f, ensure_ascii=False, indent=2)
-
-        skipped_ids_raw = request.form.get("skipped_ids", "")
-        if skipped_ids_raw:
-            skipped_ids = [int(x) for x in skipped_ids_raw.split(",") if x.strip()]
-            for sid in skipped_ids:
-                include = request.form.get(f"skip_include_{sid}") == "on"
-                if include:
-                    date_val   = request.form.get(f"skip_date_{sid}", "").strip()
-                    desc_val   = request.form.get(f"skip_desc_{sid}", "").strip()
-                    amount_val = request.form.get(f"skip_amount_{sid}", "").strip()
-                    cat_val    = request.form.get(f"skip_cat_{sid}", "Outros")
-                    src_row = conn.execute(
-                        "SELECT source_file FROM skipped_rows WHERE id = ?", (sid,)
-                    ).fetchone()
-                    src = src_row["source_file"] if src_row else "manual"
-                    try:
-                        date_clean   = _parse_date(date_val)
-                        amount_clean = _parse_amount(amount_val)
-                        if desc_val:
-                            conn.execute(
-                                """INSERT INTO transactions
-                                   (date, description, amount, category, source_file, verified)
-                                   VALUES (?,?,?,?,?,1)""",
-                                (date_clean, desc_val, amount_clean, cat_val, src),
-                            )
-                            mappings[desc_val] = cat_val
-                    except (ValueError, Exception):
-                        pass
-                conn.execute("DELETE FROM skipped_rows WHERE id = ?", (sid,))
-
-            with open(MAPPINGS_PATH, "w", encoding="utf-8") as f:
-                json.dump(mappings, f, ensure_ascii=False, indent=2)
-
+        _process_verify_form(conn, request, space)
         conn.commit()
-        report_path = generate(conn)
+        report_path = generate(conn, space=space)
         conn.close()
-        return redirect(url_for("report", filename=report_path.name))
+        return redirect(url_for("joint_report", filename=report_path.name))
 
     conn = get_connection()
     transactions = conn.execute(
         "SELECT id, date, description, amount, category "
-        "FROM transactions WHERE verified = 0 ORDER BY date"
+        "FROM transactions WHERE verified = 0 AND space = ? ORDER BY date", (space,)
     ).fetchall()
     skipped_rows = conn.execute(
         "SELECT id, source_file, date_raw, description_raw, amount_raw, reason "
-        "FROM skipped_rows ORDER BY imported_at"
+        "FROM skipped_rows WHERE space = ? ORDER BY imported_at", (space,)
     ).fetchall()
     conn.close()
 
     if not transactions and not skipped_rows:
-        return redirect(url_for("index"))
+        return redirect(url_for("joint"))
 
     return render_template(
         "verify.html",
         transactions=transactions,
         skipped_rows=skipped_rows,
         categories=load_categories(),
+        space=space,
+        back_url=url_for("joint"),
     )
 
 
+@app.route("/joint/report/<filename>")
+@login_required
+def joint_report(filename):
+    return send_file(REPORTS_DIR / 'joint' / filename)
+
+
+# ── individual space ──────────────────────────────────────────────────────────
+
+@app.route("/individual")
+@login_required
+def individual():
+    space = _ind_space(current_user.id)
+    conn  = get_connection()
+    patrimony           = _get_patrimony(conn, space)
+    unverified, skipped = _pending_counts(conn, space)
+    conn.close()
+    return render_template(
+        "individual.html",
+        patrimony=patrimony,
+        unverified=unverified,
+        skipped=skipped,
+        last_report=_last_report(space),
+    )
+
+
+@app.route("/individual/upload", methods=["POST"])
+@login_required
+def individual_upload():
+    space     = _ind_space(current_user.id)
+    input_dir = INPUT_DIR / 'individual' / str(current_user.id)
+    proc_dir  = PROCESSED_DIR / 'individual' / str(current_user.id)
+
+    files = request.files.getlist("files")
+    saved = _save_uploaded_files(files, input_dir)
+    if saved == 0:
+        return redirect(url_for("individual"))
+
+    conn = get_connection()
+    load_directory(input_dir, conn, space=space, processed_dir=proc_dir)
+    categorize_all(conn, space=space)
+    unverified, skipped = _pending_counts(conn, space)
+    conn.close()
+
+    if unverified > 0 or skipped > 0:
+        return redirect(url_for("individual_verify"))
+    conn2 = get_connection()
+    report_path = generate(conn2, space=space)
+    conn2.close()
+    return redirect(url_for("individual_report", filename=report_path.name))
+
+
+@app.route("/individual/verify", methods=["GET", "POST"])
+@login_required
+def individual_verify():
+    space = _ind_space(current_user.id)
+    if request.method == "POST":
+        conn = get_connection()
+        _process_verify_form(conn, request, space)
+        conn.commit()
+        report_path = generate(conn, space=space)
+        conn.close()
+        return redirect(url_for("individual_report", filename=report_path.name))
+
+    conn = get_connection()
+    transactions = conn.execute(
+        "SELECT id, date, description, amount, category "
+        "FROM transactions WHERE verified = 0 AND space = ? ORDER BY date", (space,)
+    ).fetchall()
+    skipped_rows = conn.execute(
+        "SELECT id, source_file, date_raw, description_raw, amount_raw, reason "
+        "FROM skipped_rows WHERE space = ? ORDER BY imported_at", (space,)
+    ).fetchall()
+    conn.close()
+
+    if not transactions and not skipped_rows:
+        return redirect(url_for("individual"))
+
+    return render_template(
+        "verify.html",
+        transactions=transactions,
+        skipped_rows=skipped_rows,
+        categories=load_categories(),
+        space=space,
+        back_url=url_for("individual"),
+    )
+
+
+@app.route("/individual/report/<filename>")
+@login_required
+def individual_report(filename):
+    space = _ind_space(current_user.id)
+    return send_file(REPORTS_DIR / space / filename)
+
+
+# ── patrimony ─────────────────────────────────────────────────────────────────
+
+@app.route("/patrimony/joint", methods=["GET", "POST"])
+@admin_required
+def patrimony_joint():
+    return _patrimony_handler('joint', url_for("joint"))
+
+
+@app.route("/patrimony/individual", methods=["GET", "POST"])
+@login_required
+def patrimony_individual():
+    return _patrimony_handler(_ind_space(current_user.id), url_for("individual"))
+
+
+def _patrimony_handler(space: str, back_url: str):
+    conn = get_connection()
+    if request.method == "POST":
+        label    = request.form.get("label", "").strip()
+        amount   = request.form.get("amount", "").strip()
+        category = request.form.get("category", "Outros").strip()
+        if label and amount:
+            try:
+                conn.execute(
+                    "INSERT INTO patrimony (space, label, amount, category) VALUES (?, ?, ?, ?)",
+                    (space, label, float(amount.replace(",", ".")), category),
+                )
+                conn.commit()
+            except ValueError:
+                pass
+        conn.close()
+        return redirect(request.url)
+
+    patrimony = _get_patrimony(conn, space)
+    conn.close()
+    return render_template("setup.html", patrimony=patrimony, space=space, back_url=back_url)
+
+
+@app.route("/patrimony/delete/<int:entry_id>", methods=["POST"])
+@login_required
+def patrimony_delete(entry_id):
+    conn = get_connection()
+    row = conn.execute("SELECT space FROM patrimony WHERE id = ?", (entry_id,)).fetchone()
+    if row:
+        space = row["space"]
+        if space == 'joint' and current_user.role != 'admin':
+            conn.close()
+            abort(403)
+        if space != 'joint' and space != _ind_space(current_user.id):
+            conn.close()
+            abort(403)
+        conn.execute("DELETE FROM patrimony WHERE id = ?", (entry_id,))
+        conn.commit()
+    conn.close()
+    back = request.form.get("back_url", url_for("index"))
+    return redirect(back)
+
+
 # ── categories routes ─────────────────────────────────────────────────────────
+
+def _load_rules() -> dict:
+    with open(RULES_PATH, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _save_rules(rules: dict) -> None:
+    with open(RULES_PATH, "w", encoding="utf-8") as f:
+        json.dump(rules, f, ensure_ascii=False, indent=2)
+
 
 @app.route("/categories")
 @admin_required
@@ -505,7 +695,7 @@ def users_add():
             app_url = os.environ.get("APP_URL", request.host_url.rstrip("/"))
             send_welcome_email(email, password, role, app_url)
         except Exception:
-            pass  # email already exists
+            pass
         conn.close()
     return redirect(url_for("users"))
 
@@ -535,14 +725,6 @@ def users_delete():
         conn.commit()
         conn.close()
     return redirect(url_for("users"))
-
-
-# ── report route ──────────────────────────────────────────────────────────────
-
-@app.route("/report/<filename>")
-@login_required
-def report(filename):
-    return send_file(REPORTS_DIR / filename)
 
 
 if __name__ == "__main__":

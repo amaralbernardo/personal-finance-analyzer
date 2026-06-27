@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS skipped_rows (
     amount_raw      TEXT,
     reason          TEXT    NOT NULL,
     raw_text        TEXT,
+    space           TEXT    NOT NULL DEFAULT 'joint',
     imported_at     TEXT    NOT NULL DEFAULT (datetime('now'))
 )
 """
@@ -20,6 +21,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     category    TEXT    NOT NULL DEFAULT 'Outros',
     source_file TEXT    NOT NULL,
     raw_text    TEXT,
+    space       TEXT    NOT NULL DEFAULT 'joint',
     imported_at TEXT    NOT NULL DEFAULT (datetime('now')),
     verified    INTEGER NOT NULL DEFAULT 0
 )
@@ -29,8 +31,8 @@ CREATE_INDEXES = [
     "CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date)",
     "CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category)",
     "CREATE INDEX IF NOT EXISTS idx_transactions_verified ON transactions(verified)",
+    "CREATE INDEX IF NOT EXISTS idx_transactions_space ON transactions(space)",
 ]
-
 
 CREATE_USERS = """
 CREATE TABLE IF NOT EXISTS users (
@@ -44,18 +46,37 @@ CREATE TABLE IF NOT EXISTS users (
 )
 """
 
+CREATE_PATRIMONY = """
+CREATE TABLE IF NOT EXISTS patrimony (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    space      TEXT    NOT NULL,
+    label      TEXT    NOT NULL,
+    amount     REAL    NOT NULL,
+    category   TEXT    NOT NULL DEFAULT 'Outros',
+    updated_at TEXT    NOT NULL DEFAULT (datetime('now'))
+)
+"""
+
 
 def create_tables(conn):
     conn.execute(CREATE_TRANSACTIONS)
     conn.execute(CREATE_SKIPPED_ROWS)
     conn.execute(CREATE_USERS)
-    # Migration: add verified column to existing databases before creating indexes
+    conn.execute(CREATE_PATRIMONY)
     try:
         conn.execute("ALTER TABLE transactions ADD COLUMN verified INTEGER NOT NULL DEFAULT 0")
     except Exception:
         pass
     try:
         conn.execute("ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0")
+    except Exception:
+        pass
+    try:
+        conn.execute("ALTER TABLE transactions ADD COLUMN space TEXT NOT NULL DEFAULT 'joint'")
+    except Exception:
+        pass
+    try:
+        conn.execute("ALTER TABLE skipped_rows ADD COLUMN space TEXT NOT NULL DEFAULT 'joint'")
     except Exception:
         pass
     for idx in CREATE_INDEXES:

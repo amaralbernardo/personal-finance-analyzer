@@ -11,12 +11,12 @@ TEMPLATE_DIR = Path(__file__).parent
 REPORTS_DIR  = Path(__file__).parents[2] / "reports"
 
 
-def generate(conn: sqlite3.Connection, output_dir: Path = REPORTS_DIR) -> Path:
-    """
-    Build the HTML report and write it to output_dir.
-    Returns the path of the generated file.
-    """
-    data = summary(conn)
+def generate(conn: sqlite3.Connection, space: str = 'joint',
+             output_dir: Path = None) -> Path:
+    if output_dir is None:
+        output_dir = REPORTS_DIR / space
+
+    data = summary(conn, space=space)
     now  = datetime.now()
 
     env      = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)))
@@ -30,5 +30,4 @@ def generate(conn: sqlite3.Connection, output_dir: Path = REPORTS_DIR) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     out_path = output_dir / f"report_{now.strftime('%Y%m%d_%H%M%S')}.html"
     out_path.write_text(html, encoding="utf-8")
-
     return out_path
