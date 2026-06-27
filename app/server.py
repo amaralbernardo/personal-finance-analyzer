@@ -441,12 +441,13 @@ def joint_verify():
         "SELECT id, source_file, date_raw, description_raw, amount_raw, reason "
         "FROM skipped_rows WHERE space = ? ORDER BY imported_at", (space,)
     ).fetchall()
-    conn.close()
 
     if not transactions and not skipped_rows:
+        conn.close()
         return redirect(url_for("joint"))
 
     patrimony = _get_patrimony(conn, space)
+    conn.close()
     return render_template(
         "verify.html",
         transactions=transactions,
@@ -530,12 +531,13 @@ def individual_verify():
         "SELECT id, source_file, date_raw, description_raw, amount_raw, reason "
         "FROM skipped_rows WHERE space = ? ORDER BY imported_at", (space,)
     ).fetchall()
-    conn.close()
 
     if not transactions and not skipped_rows:
+        conn.close()
         return redirect(url_for("individual"))
 
     patrimony = _get_patrimony(conn, space)
+    conn.close()
     return render_template(
         "verify.html",
         transactions=transactions,
