@@ -34,12 +34,13 @@ CREATE_INDEXES = [
 
 CREATE_USERS = """
 CREATE TABLE IF NOT EXISTS users (
-    id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    email         TEXT    NOT NULL UNIQUE,
-    password_hash TEXT    NOT NULL,
-    role          TEXT    NOT NULL DEFAULT 'viewer',
-    active        INTEGER NOT NULL DEFAULT 1,
-    created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+    id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+    email                TEXT    NOT NULL UNIQUE,
+    password_hash        TEXT    NOT NULL,
+    role                 TEXT    NOT NULL DEFAULT 'viewer',
+    active               INTEGER NOT NULL DEFAULT 1,
+    must_change_password INTEGER NOT NULL DEFAULT 0,
+    created_at           TEXT    NOT NULL DEFAULT (datetime('now'))
 )
 """
 
@@ -51,6 +52,10 @@ def create_tables(conn):
     # Migration: add verified column to existing databases before creating indexes
     try:
         conn.execute("ALTER TABLE transactions ADD COLUMN verified INTEGER NOT NULL DEFAULT 0")
+    except Exception:
+        pass
+    try:
+        conn.execute("ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0")
     except Exception:
         pass
     for idx in CREATE_INDEXES:

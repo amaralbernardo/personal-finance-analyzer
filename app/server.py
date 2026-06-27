@@ -38,6 +38,13 @@ app.secret_key = _SECRET_KEY
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
 
+
+@app.before_request
+def enforce_password_change():
+    if current_user.is_authenticated and current_user.must_change_password:
+        if request.endpoint not in ("change_password", "logout", "static"):
+            return redirect(url_for("change_password"))
+
 # ── rate limiting ─────────────────────────────────────────────────────────────
 _login_attempts: dict = defaultdict(list)
 _MAX_ATTEMPTS = 5
@@ -57,11 +64,12 @@ def _record_failed_attempt(ip: str) -> None:
 # ── auth helpers ──────────────────────────────────────────────────────────────
 
 class User(UserMixin):
-    def __init__(self, id, email, role, active):
+    def __init__(self, id, email, role, active, must_change_password=0):
         self.id = id
         self.email = email
         self.role = role
         self.active = active
+        self.must_change_password = bool(must_change_password)
 
     @property
     def is_active(self):
@@ -75,11 +83,11 @@ class User(UserMixin):
 def load_user(user_id):
     conn = get_connection()
     row = conn.execute(
-        "SELECT id, email, role, active FROM users WHERE id = ?", (user_id,)
+        "SELECT id, email, role, active, must_change_password FROM users WHERE id = ?", (user_id,)
     ).fetchone()
     conn.close()
     if row:
-        return User(row["id"], row["email"], row["role"], row["active"])
+        return User(row["id"], row["email"], row["role"], row["active"], row["must_change_password"])
     return None
 
 
@@ -213,7 +221,7 @@ def change_password():
             error = "As passwords não coincidem."
         else:
             conn.execute(
-                "UPDATE users SET password_hash = ? WHERE id = ?",
+                "UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?",
                 (generate_password_hash(new_pw), current_user.id),
             )
             conn.commit()
@@ -442,7 +450,7 @@ def users_add():
         conn = get_connection()
         try:
             conn.execute(
-                "INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)",
+                "INSERT INTO users (email, password_hash, role, must_change_password) VALUES (?, ?, ?, 1)",
                 (email, generate_password_hash(password), role),
             )
             conn.commit()
