@@ -4,7 +4,8 @@ from pathlib import Path
 
 
 # Common column-name aliases used by Portuguese banks
-_DATE_COLS = {"data", "date", "data mov.", "data valor", "data movimento", "data de movimento"}
+_DATE_COLS = {"data", "date", "data mov.", "data valor", "data movimento", "data de movimento",
+              "data de conclusão", "data de conclusao", "data de início", "data de inicio"}
 _DESC_COLS = {"descricao", "descrição", "description", "movimento", "designação", "designacao"}
 _AMT_COLS  = {"valor", "amount", "montante", "importância", "importancia"}
 _DEB_COLS  = {"débito", "debito", "debit"}
@@ -14,7 +15,17 @@ _CRE_COLS  = {"crédito", "credito", "credit"}
 _ALL_KNOWN = _DATE_COLS | _DESC_COLS | _AMT_COLS | _DEB_COLS | _CRE_COLS
 
 
+_DATE_PRIORITY = ["data de conclusão", "data de conclusao", "data valor", "data mov.",
+                  "data movimento", "data de movimento", "data de início", "data de inicio",
+                  "data", "date"]
+
+
 def _find_col(columns: list[str], candidates: set[str]) -> str | None:
+    cols_lower = {col.strip().lower(): col for col in columns}
+    if candidates is _DATE_COLS:
+        for priority in _DATE_PRIORITY:
+            if priority in cols_lower:
+                return cols_lower[priority]
     for col in columns:
         if col.strip().lower() in candidates:
             return col

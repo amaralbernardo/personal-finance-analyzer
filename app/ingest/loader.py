@@ -64,7 +64,17 @@ def load_file(path: Path, conn: sqlite3.Connection) -> int:
         return 0
 
     print(f"  [a importar] {source_file} …")
-    raw_rows = parser(path)
+    try:
+        raw_rows = parser(path)
+    except Exception as exc:
+        print(f"  [erro] {source_file}: {exc}")
+        conn.execute(
+            """INSERT INTO skipped_rows (source_file, date_raw, description_raw, amount_raw, reason, raw_text)
+               VALUES (?, '', '', '', ?, '')""",
+            (source_file, str(exc)),
+        )
+        conn.commit()
+        return 0
     valid, skipped = normalize(raw_rows, source_file)
 
     if skipped:
