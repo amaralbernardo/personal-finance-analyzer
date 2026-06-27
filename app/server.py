@@ -190,6 +190,39 @@ def logout():
     return redirect(url_for("login"))
 
 
+@app.route("/change-password", methods=["GET", "POST"])
+@login_required
+def change_password():
+    error = None
+    success = None
+    if request.method == "POST":
+        current  = request.form.get("current_password", "")
+        new_pw   = request.form.get("new_password", "")
+        confirm  = request.form.get("confirm_password", "")
+
+        conn = get_connection()
+        row = conn.execute(
+            "SELECT password_hash FROM users WHERE id = ?", (current_user.id,)
+        ).fetchone()
+
+        if not row or not check_password_hash(row["password_hash"], current):
+            error = "A password atual está incorreta."
+        elif len(new_pw) < 8:
+            error = "A nova password deve ter pelo menos 8 caracteres."
+        elif new_pw != confirm:
+            error = "As passwords não coincidem."
+        else:
+            conn.execute(
+                "UPDATE users SET password_hash = ? WHERE id = ?",
+                (generate_password_hash(new_pw), current_user.id),
+            )
+            conn.commit()
+            success = "Password alterada com sucesso."
+        conn.close()
+
+    return render_template("change_password.html", error=error, success=success)
+
+
 # ── main routes ───────────────────────────────────────────────────────────────
 
 @app.route("/")
