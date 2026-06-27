@@ -8,6 +8,7 @@ from pathlib import Path
 from functools import wraps
 
 from flask import Flask, render_template, redirect, url_for, request, send_file, abort
+from werkzeug.utils import secure_filename
 from flask_login import (
     LoginManager, UserMixin,
     login_user, logout_user, login_required, current_user,
@@ -254,10 +255,57 @@ def index():
     )
 
 
+_ALLOWED_EXTENSIONS = {".csv", ".ofx", ".qfx", ".xlsx", ".xls", ".pdf"}
+
+
 @app.route("/run", methods=["POST"])
 @admin_required
 def run():
     INPUT_DIR.mkdir(parents=True, exist_ok=True)
+    conn = get_connection()
+    load_directory(INPUT_DIR, conn)
+    categorize_all(conn)
+    unverified, skipped = _pending_counts(conn)
+    conn.close()
+    if unverified > 0 or skipped > 0:
+        return redirect(url_for("verify"))
+    conn2 = get_connection()
+    report_path = generate(conn2)
+    conn2.close()
+    return redirect(url_for("report", filename=report_path.name))
+
+
+@app.route("/upload", methods=["POST"])
+@admin_required
+def upload():
+    files = request.files.getlist("files")
+    if not files or all(f.filename == "" for f in files):
+        conn = get_connection()
+        unverified, skipped = _pending_counts(conn)
+        conn.close()
+        return render_template("index.html", unverified=unverified, skipped=skipped,
+                               last_report=_last_report(),
+                               upload_error="Nenhum ficheiro selecionado.")
+
+    INPUT_DIR.mkdir(parents=True, exist_ok=True)
+    saved = 0
+    for f in files:
+        if not f.filename:
+            continue
+        ext = Path(f.filename).suffix.lower()
+        if ext not in _ALLOWED_EXTENSIONS:
+            continue
+        f.save(INPUT_DIR / secure_filename(f.filename))
+        saved += 1
+
+    if saved == 0:
+        conn = get_connection()
+        unverified, skipped = _pending_counts(conn)
+        conn.close()
+        return render_template("index.html", unverified=unverified, skipped=skipped,
+                               last_report=_last_report(),
+                               upload_error="Formato não suportado. Usa CSV, OFX, XLSX ou PDF.")
+
     conn = get_connection()
     load_directory(INPUT_DIR, conn)
     categorize_all(conn)

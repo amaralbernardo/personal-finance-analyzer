@@ -82,6 +82,30 @@
     }
     .btn:hover { background: #1a56d6; }
     .btn:active { background: #1244b8; }
+    .upload-area {
+      border: 2px dashed #d0d7e8;
+      border-radius: 8px;
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+      margin-bottom: 14px;
+    }
+    .upload-area:hover, .upload-area.drag-over { border-color: #2d6df6; background: #f4f7ff; }
+    .upload-area input[type=file] { display: none; }
+    .upload-icon { font-size: 1.8rem; margin-bottom: 8px; }
+    .upload-label { font-size: 0.9rem; color: #555; }
+    .upload-label span { color: #2d6df6; font-weight: 500; cursor: pointer; }
+    .upload-sub { font-size: 0.78rem; color: #aaa; margin-top: 4px; }
+    .file-list { list-style: none; padding: 0; margin: 0 0 14px; display: flex; flex-direction: column; gap: 6px; }
+    .file-item {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #f8f9fb; border: 1px solid #eee; border-radius: 6px;
+      padding: 7px 12px; font-size: 0.85rem; color: #333;
+    }
+    .file-remove { background: none; border: none; color: #bbb; cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 0 0 8px; }
+    .file-remove:hover { color: #c0392b; }
+    .alert-info { background: #f0f7ff; color: #1a56d6; border: 1px solid #c3d9f8; border-radius: 7px; padding: 10px 14px; font-size: 0.875rem; margin-bottom: 14px; }
   </style>
 </head>
 <body>
@@ -135,14 +159,72 @@
 
     <div class="card">
       <p class="card-title">Importar extratos</p>
-      <p class="hint">
-        Coloca os ficheiros (CSV, OFX, XLSX, PDF) na pasta <code>data/input/</code>
-        e clica no botão para importar, categorizar e verificar.
-      </p>
-      <form action="/run" method="post">
-        <button type="submit" class="btn">Importar e processar</button>
+
+      {% if upload_error %}
+      <div class="alert-info" style="background:#fff0f0;color:#c0392b;border-color:#f5c6c6;">{{ upload_error }}</div>
+      {% endif %}
+      {% if upload_ok %}
+      <div class="alert-info">{{ upload_ok }}</div>
+      {% endif %}
+
+      <form action="/upload" method="post" enctype="multipart/form-data" id="upload-form">
+        <div class="upload-area" id="drop-zone" onclick="document.getElementById('file-input').click()">
+          <input type="file" id="file-input" name="files" multiple
+                 accept=".csv,.ofx,.qfx,.xlsx,.xls,.pdf">
+          <div class="upload-icon">📂</div>
+          <div class="upload-label">Arrasta ficheiros ou <span>clica para selecionar</span></div>
+          <div class="upload-sub">CSV, OFX, XLSX, PDF — vários ficheiros em simultâneo</div>
+        </div>
+        <ul class="file-list" id="file-list"></ul>
+        <button type="submit" class="btn" id="upload-btn" style="display:none">
+          Carregar e processar
+        </button>
       </form>
     </div>
   </div>
+
+  <script>
+    const input   = document.getElementById('file-input');
+    const list    = document.getElementById('file-list');
+    const btn     = document.getElementById('upload-btn');
+    const dropZone = document.getElementById('drop-zone');
+    let selectedFiles = new DataTransfer();
+
+    function renderList() {
+      list.innerHTML = '';
+      [...selectedFiles.files].forEach((f, i) => {
+        const li = document.createElement('li');
+        li.className = 'file-item';
+        li.innerHTML = `<span>${f.name}</span>
+          <button type="button" class="file-remove" data-i="${i}">✕</button>`;
+        list.appendChild(li);
+      });
+      btn.style.display = selectedFiles.files.length ? 'inline-block' : 'none';
+      input.files = selectedFiles.files;
+    }
+
+    input.addEventListener('change', () => {
+      [...input.files].forEach(f => selectedFiles.items.add(f));
+      renderList();
+    });
+
+    list.addEventListener('click', e => {
+      if (!e.target.classList.contains('file-remove')) return;
+      const idx = parseInt(e.target.dataset.i);
+      const dt = new DataTransfer();
+      [...selectedFiles.files].forEach((f, i) => { if (i !== idx) dt.items.add(f); });
+      selectedFiles = dt;
+      renderList();
+    });
+
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      [...e.dataTransfer.files].forEach(f => selectedFiles.items.add(f));
+      renderList();
+    });
+  </script>
 </body>
 </html>
