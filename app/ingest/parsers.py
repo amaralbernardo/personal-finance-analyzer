@@ -98,7 +98,6 @@ def parse_ofx(path: Path) -> list[dict]:
                 "date": txn.date.strftime("%Y-%m-%d"),
                 "description": txn.memo or txn.payee or "",
                 "amount": float(txn.amount),
-                "raw_text": f"{txn.id}|{txn.type}",
             })
     return rows
 
@@ -180,8 +179,6 @@ def _extract_rows(df: pd.DataFrame, path: Path) -> list[dict]:
 
     rows = []
     for _, row in df.iterrows():
-        raw = "|".join(str(v) for v in row.values)
-
         # Amount: prefer single amount column; fall back to debit/credit pair
         if amt_col:
             amount_raw = str(row[amt_col])
@@ -200,6 +197,5 @@ def _extract_rows(df: pd.DataFrame, path: Path) -> list[dict]:
             "date": str(row[date_col]),
             "description": str(row[desc_col]),
             "amount_raw": amount_raw,
-            "raw_text": raw,
         })
     return rows

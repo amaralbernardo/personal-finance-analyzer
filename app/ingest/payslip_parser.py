@@ -50,7 +50,6 @@ def _parse_edp(text: str, source: str) -> list[dict]:
             'date': date_val,
             'description': 'Salário Bruto',
             'amount_raw': m.group(1),
-            'raw_text': 'EDP RECIBO MENSAL - Salário Bruto',
         })
 
     m = re.search(r'Total\s+L[íi]quido\s+([\d.,]+)', text, re.IGNORECASE)
@@ -59,7 +58,6 @@ def _parse_edp(text: str, source: str) -> list[dict]:
             'date': date_val,
             'description': 'Salário Líquido',
             'amount_raw': m.group(1),
-            'raw_text': 'EDP RECIBO MENSAL - Salário Líquido',
         })
 
     if not rows:
@@ -87,7 +85,6 @@ def _parse_accenture(text: str, source: str) -> list[dict]:
             'date': date_val,
             'description': 'Salário Bruto',
             'amount_raw': m.group(1),
-            'raw_text': 'Accenture REMUNERAT. STATEMENT - Salário Bruto',
         })
 
     # Net transfer (prefer Net transf. over Net value)
@@ -99,7 +96,6 @@ def _parse_accenture(text: str, source: str) -> list[dict]:
             'date': date_val,
             'description': 'Salário Líquido',
             'amount_raw': m.group(1),
-            'raw_text': 'Accenture REMUNERAT. STATEMENT - Salário Líquido',
         })
 
     # Transferred Euroticket Card
@@ -109,7 +105,6 @@ def _parse_accenture(text: str, source: str) -> list[dict]:
             'date': date_val,
             'description': 'Cartão Refeição',
             'amount_raw': m.group(1),
-            'raw_text': 'Accenture REMUNERAT. STATEMENT - Cartão Refeição',
         })
 
     # Share Plan: "Share Plan XXXX mm/yyyy  rate  deduction_amount"
@@ -119,7 +114,6 @@ def _parse_accenture(text: str, source: str) -> list[dict]:
             'date': date_val,
             'description': 'Ações',
             'amount_raw': m.group(1),
-            'raw_text': 'Accenture REMUNERAT. STATEMENT - Ações',
         })
 
     if not rows:

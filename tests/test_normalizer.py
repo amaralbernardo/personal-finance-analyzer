@@ -52,8 +52,8 @@ class TestParseAmount:
 class TestNormalize:
     def test_csv_rows(self):
         rows = [
-            {"date": "01/01/2024", "description": "Supermercado", "amount_raw": "-50,00", "raw_text": ""},
-            {"date": "02/01/2024", "description": "Salário",      "amount_raw": "1500,00", "raw_text": ""},
+            {"date": "01/01/2024", "description": "Supermercado", "amount_raw": "-50,00"},
+            {"date": "02/01/2024", "description": "Salário",      "amount_raw": "1500,00"},
         ]
         valid, skipped = normalize(rows, "test.csv")
         assert len(valid) == 2
@@ -64,21 +64,21 @@ class TestNormalize:
         assert skipped == []
 
     def test_ofx_rows(self):
-        rows = [{"date": "2024-01-10", "description": "Uber", "amount": -12.5, "raw_text": "txn1|debit"}]
+        rows = [{"date": "2024-01-10", "description": "Uber", "amount": -12.5}]
         valid, skipped = normalize(rows, "bank.ofx")
         assert len(valid) == 1
         assert valid[0]["amount"] == -12.5
         assert skipped == []
 
     def test_empty_description_skipped(self):
-        rows = [{"date": "01/01/2024", "description": "   ", "amount_raw": "-10,00", "raw_text": ""}]
+        rows = [{"date": "01/01/2024", "description": "   ", "amount_raw": "-10,00"}]
         valid, skipped = normalize(rows, "test.csv")
         assert valid == []
         assert len(skipped) == 1
         assert skipped[0]["reason"] == "descrição vazia"
 
     def test_bad_date_skipped(self):
-        rows = [{"date": "not-a-date", "description": "Test", "amount_raw": "-10,00", "raw_text": ""}]
+        rows = [{"date": "not-a-date", "description": "Test", "amount_raw": "-10,00"}]
         valid, skipped = normalize(rows, "test.csv")
         assert valid == []
         assert len(skipped) == 1

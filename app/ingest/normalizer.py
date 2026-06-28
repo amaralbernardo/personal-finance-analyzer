@@ -37,8 +37,8 @@ def normalize(rows: list[dict], source_file: str) -> tuple[list[dict], list[dict
     """
     Returns (valid_transactions, skipped_rows).
 
-    valid_transactions: ready for DB insert {date, description, amount, source_file, raw_text}
-    skipped_rows: {source_file, date_raw, description_raw, amount_raw, reason, raw_text}
+    valid_transactions: ready for DB insert {date, description, amount, source_file}
+    skipped_rows: {source_file, date_raw, description_raw, amount_raw, reason}
 
     OFX rows already have parsed date/amount; CSV/XLSX rows carry amount_raw.
     """
@@ -49,7 +49,6 @@ def normalize(rows: list[dict], source_file: str) -> tuple[list[dict], list[dict
         date_raw = str(row.get("date", ""))
         description_raw = str(row.get("description", ""))
         amount_raw = str(row.get("amount_raw", row.get("amount", "")))
-        raw_text = row.get("raw_text", "")
 
         if not description_raw.strip():
             skipped.append({
@@ -58,7 +57,6 @@ def normalize(rows: list[dict], source_file: str) -> tuple[list[dict], list[dict
                 "description_raw": description_raw,
                 "amount_raw": amount_raw,
                 "reason": "descrição vazia",
-                "raw_text": raw_text,
             })
             continue
 
@@ -72,7 +70,6 @@ def normalize(rows: list[dict], source_file: str) -> tuple[list[dict], list[dict
                 "description_raw": description_raw.strip(),
                 "amount_raw": amount_raw,
                 "reason": "data inválida",
-                "raw_text": raw_text,
             })
             continue
 
@@ -86,7 +83,6 @@ def normalize(rows: list[dict], source_file: str) -> tuple[list[dict], list[dict
                 "description_raw": description_raw.strip(),
                 "amount_raw": amount_raw,
                 "reason": "valor inválido",
-                "raw_text": raw_text,
             })
             continue
 
@@ -95,7 +91,6 @@ def normalize(rows: list[dict], source_file: str) -> tuple[list[dict], list[dict
             "description": description_raw.strip(),
             "amount": amount,
             "source_file": source_file,
-            "raw_text": raw_text,
         })
 
     return valid, skipped

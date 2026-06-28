@@ -55,13 +55,13 @@ class TestParseCsv:
         with pytest.raises(ValueError, match="data"):
             parse_csv(path)
 
-    def test_raw_text_populated(self, tmp_csv):
+    def test_fields_present(self, tmp_csv):
         path = tmp_csv("""
             data;descricao;valor
             01/01/2024;TEST;-10,00
         """)
         rows = parse_csv(path)
-        assert rows[0]["raw_text"] != ""
+        assert "date" in rows[0] and "description" in rows[0] and "amount_raw" in rows[0]
 
 
 class TestParseXlsx:

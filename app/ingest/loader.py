@@ -30,8 +30,8 @@ def _insert(conn: sqlite3.Connection, transactions: list[dict], space: str) -> i
         tx['space'] = space
     conn.executemany(
         """
-        INSERT INTO transactions (date, description, amount, source_file, raw_text, space)
-        VALUES (:date, :description, :amount, :source_file, :raw_text, :space)
+        INSERT INTO transactions (date, description, amount, source_file, space)
+        VALUES (:date, :description, :amount, :source_file, :space)
         """,
         transactions,
     )
@@ -44,8 +44,8 @@ def _insert_skipped(conn: sqlite3.Connection, skipped_rows: list[dict], space: s
         row['space'] = space
     conn.executemany(
         """
-        INSERT INTO skipped_rows (source_file, date_raw, description_raw, amount_raw, reason, raw_text, space)
-        VALUES (:source_file, :date_raw, :description_raw, :amount_raw, :reason, :raw_text, :space)
+        INSERT INTO skipped_rows (source_file, date_raw, description_raw, amount_raw, reason, space)
+        VALUES (:source_file, :date_raw, :description_raw, :amount_raw, :reason, :space)
         """,
         skipped_rows,
     )
@@ -73,8 +73,8 @@ def load_file(path: Path, conn: sqlite3.Connection,
     except Exception as exc:
         print(f"  [erro] {source_file}: {exc}")
         conn.execute(
-            """INSERT INTO skipped_rows (source_file, date_raw, description_raw, amount_raw, reason, raw_text, space)
-               VALUES (?, '', '', '', ?, '', ?)""",
+            """INSERT INTO skipped_rows (source_file, date_raw, description_raw, amount_raw, reason, space)
+               VALUES (?, '', '', '', ?, ?)""",
             (source_file, str(exc), space),
         )
         conn.commit()
