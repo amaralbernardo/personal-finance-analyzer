@@ -1,5 +1,4 @@
 """Orchestrates file detection, parsing, normalisation, and DB persistence."""
-import shutil
 import sqlite3
 from pathlib import Path
 
@@ -93,8 +92,7 @@ def load_file(path: Path, conn: sqlite3.Connection,
 
     count = _insert(conn, valid, space) if valid else 0
 
-    processed_dir.mkdir(parents=True, exist_ok=True)
-    shutil.move(str(path), processed_dir / source_file)
+    path.unlink()
     print(f"  [ok] {source_file}: {count} transações importadas.")
     return count
 
