@@ -128,6 +128,38 @@
       </form>
     </div>
     {% endif %}
+
+    <div class="card" style="margin-top:24px">
+      <p class="card-title">Categorias de patrimônio</p>
+      <table>
+        <tbody>
+          {% for cat in all_categories %}
+          <tr>
+            <td>{{ cat.name }}</td>
+            <td style="text-align:right">
+              {% if cat.name in used_categories %}
+              <span style="font-size:0.78rem;color:#aaa">em uso</span>
+              {% else %}
+              <form action="/patrimony/categories/delete/{{ cat.id }}" method="post" style="display:inline">
+                <input type="hidden" name="back_url" value="{{ request.url }}">
+                <button type="submit" class="btn-delete"
+                        onclick="return confirm('Eliminar categoria \'{{ cat.name }}\'?')">Eliminar</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <form action="/patrimony/categories/add" method="post" style="margin-top:14px">
+        <input type="hidden" name="back_url" value="{{ request.url }}">
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" name="name" placeholder="Nova categoria…"
+                 style="padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:0.875rem;flex:1">
+          <button type="submit" class="btn-add">Adicionar</button>
+        </div>
+      </form>
+    </div>
   </div>
 </body>
 </html>

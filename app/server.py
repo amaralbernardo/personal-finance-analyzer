@@ -557,20 +557,17 @@ def patrimony_individual():
     return _patrimony_handler(_ind_space(current_user.id), url_for("individual"))
 
 
-_PATRIMONY_CATEGORIES = [
-    "Conta Corrente",
-    "Poupanças",
-    "Certificados de Aforro/Tesouro",
-    "Ações",
-    "Outros",
-]
+def _all_patrimony_categories(conn) -> list:
+    return conn.execute(
+        "SELECT id, name FROM patrimony_categories ORDER BY name"
+    ).fetchall()
 
 
 def _available_categories(conn, space: str) -> list:
     used = {row["category"] for row in conn.execute(
         "SELECT category FROM patrimony WHERE space = ?", (space,)
     ).fetchall()}
-    return [c for c in _PATRIMONY_CATEGORIES if c not in used]
+    return [r["name"] for r in _all_patrimony_categories(conn) if r["name"] not in used]
 
 
 def _patrimony_handler(space: str, back_url: str):
@@ -592,11 +589,17 @@ def _patrimony_handler(space: str, back_url: str):
         conn.close()
         return redirect(request.url)
 
-    patrimony           = _get_patrimony(conn, space)
+    patrimony            = _get_patrimony(conn, space)
     available_categories = _available_categories(conn, space)
+    all_categories       = _all_patrimony_categories(conn)
+    used_categories      = {row["category"] for row in conn.execute(
+        "SELECT DISTINCT category FROM patrimony"
+    ).fetchall()}
     conn.close()
     return render_template("setup.html", patrimony=patrimony, space=space, back_url=back_url,
-                           available_categories=available_categories)
+                           available_categories=available_categories,
+                           all_categories=all_categories,
+                           used_categories=used_categories)
 
 
 @app.route("/patrimony/delete/<int:entry_id>", methods=["POST"])
@@ -619,7 +622,41 @@ def patrimony_delete(entry_id):
     return redirect(back)
 
 
-# ── categories routes ─────────────────────────────────────────────────────────
+# ── patrimony categories routes ───────────────────────────────────────────────
+
+@app.route("/patrimony/categories/add", methods=["POST"])
+@login_required
+def patrimony_category_add():
+    name = request.form.get("name", "").strip()
+    back = request.form.get("back_url", url_for("index"))
+    if name:
+        conn = get_connection()
+        try:
+            conn.execute("INSERT OR IGNORE INTO patrimony_categories (name) VALUES (?)", (name,))
+            conn.commit()
+        finally:
+            conn.close()
+    return redirect(back)
+
+
+@app.route("/patrimony/categories/delete/<int:cat_id>", methods=["POST"])
+@login_required
+def patrimony_category_delete(cat_id):
+    back = request.form.get("back_url", url_for("index"))
+    conn = get_connection()
+    row = conn.execute("SELECT name FROM patrimony_categories WHERE id = ?", (cat_id,)).fetchone()
+    if row:
+        in_use = conn.execute(
+            "SELECT 1 FROM patrimony WHERE category = ? LIMIT 1", (row["name"],)
+        ).fetchone()
+        if not in_use:
+            conn.execute("DELETE FROM patrimony_categories WHERE id = ?", (cat_id,))
+            conn.commit()
+    conn.close()
+    return redirect(back)
+
+
+# ── transaction categories routes ─────────────────────────────────────────────
 
 def _load_rules() -> dict:
     with open(RULES_PATH, encoding="utf-8") as f:

@@ -59,12 +59,30 @@ CREATE TABLE IF NOT EXISTS patrimony (
 )
 """
 
+_DEFAULT_PATRIMONY_CATEGORIES = [
+    "Conta Corrente",
+    "Poupanças",
+    "Certificados de Aforro/Tesouro",
+    "Ações",
+]
+
+CREATE_PATRIMONY_CATEGORIES = """
+CREATE TABLE IF NOT EXISTS patrimony_categories (
+    id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT    NOT NULL UNIQUE
+)
+"""
+
 
 def create_tables(conn):
     conn.execute(CREATE_TRANSACTIONS)
     conn.execute(CREATE_SKIPPED_ROWS)
     conn.execute(CREATE_USERS)
     conn.execute(CREATE_PATRIMONY)
+    conn.execute(CREATE_PATRIMONY_CATEGORIES)
+    if conn.execute("SELECT COUNT(*) FROM patrimony_categories").fetchone()[0] == 0:
+        for name in _DEFAULT_PATRIMONY_CATEGORIES:
+            conn.execute("INSERT OR IGNORE INTO patrimony_categories (name) VALUES (?)", (name,))
     try:
         conn.execute("ALTER TABLE transactions ADD COLUMN verified INTEGER NOT NULL DEFAULT 0")
     except Exception:
