@@ -161,7 +161,7 @@ def _get_patrimony(conn, space: str) -> list:
                    CASE WHEN t.date >= p.reference_date THEN t.amount ELSE 0 END
                ), 0) AS current_value
         FROM patrimony p
-        LEFT JOIN transactions t ON t.patrimony_label = p.label AND t.space = p.space
+        LEFT JOIN transactions t ON t.patrimony_label = p.category AND t.space = p.space
         WHERE p.space = ?
         GROUP BY p.id
         ORDER BY p.category, p.label
