@@ -557,14 +557,30 @@ def patrimony_individual():
     return _patrimony_handler(_ind_space(current_user.id), url_for("individual"))
 
 
+_PATRIMONY_CATEGORIES = [
+    "Conta Corrente",
+    "Poupanças",
+    "Certificados de Aforro/Tesouro",
+    "Ações",
+    "Outros",
+]
+
+
+def _available_categories(conn, space: str) -> list:
+    used = {row["category"] for row in conn.execute(
+        "SELECT category FROM patrimony WHERE space = ?", (space,)
+    ).fetchall()}
+    return [c for c in _PATRIMONY_CATEGORIES if c not in used]
+
+
 def _patrimony_handler(space: str, back_url: str):
     conn = get_connection()
     if request.method == "POST":
         label          = request.form.get("label", "").strip()
         amount         = request.form.get("amount", "").strip()
-        category       = request.form.get("category", "Outros").strip()
+        category       = request.form.get("category", "").strip()
         reference_date = request.form.get("reference_date", "").strip()
-        if label and amount and reference_date:
+        if label and amount and reference_date and category in _available_categories(conn, space):
             try:
                 conn.execute(
                     "INSERT INTO patrimony (space, label, amount, category, reference_date) VALUES (?, ?, ?, ?, ?)",
@@ -576,9 +592,11 @@ def _patrimony_handler(space: str, back_url: str):
         conn.close()
         return redirect(request.url)
 
-    patrimony = _get_patrimony(conn, space)
+    patrimony           = _get_patrimony(conn, space)
+    available_categories = _available_categories(conn, space)
     conn.close()
-    return render_template("setup.html", patrimony=patrimony, space=space, back_url=back_url)
+    return render_template("setup.html", patrimony=patrimony, space=space, back_url=back_url,
+                           available_categories=available_categories)
 
 
 @app.route("/patrimony/delete/<int:entry_id>", methods=["POST"])

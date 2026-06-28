@@ -93,6 +93,16 @@ def create_tables(conn):
         conn.execute("ALTER TABLE patrimony ADD COLUMN reference_date TEXT NOT NULL DEFAULT '2024-01-01'")
     except Exception:
         pass
+    try:
+        # deduplicate before adding unique constraint: keep only the row with the highest id per (space, category)
+        conn.execute("""
+            DELETE FROM patrimony WHERE id NOT IN (
+                SELECT MAX(id) FROM patrimony GROUP BY space, category
+            )
+        """)
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_patrimony_space_category ON patrimony(space, category)")
+    except Exception:
+        pass
     for idx in CREATE_INDEXES:
         conn.execute(idx)
     conn.commit()

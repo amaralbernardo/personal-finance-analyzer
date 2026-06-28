@@ -98,6 +98,7 @@
       {% endif %}
     </div>
 
+    {% if available_categories %}
     <div class="add-card">
       <p class="add-title">Adicionar valor</p>
       <form method="post">
@@ -109,11 +110,9 @@
           <div class="field" style="max-width:210px">
             <label>Categoria</label>
             <select name="category">
-              <option value="Conta Corrente">Conta Corrente</option>
-              <option value="Poupanças">Poupanças</option>
-              <option value="Certificados de Aforro/Tesouro">Certificados de Aforro/Tesouro</option>
-              <option value="Ações">Ações</option>
-              <option value="Outros">Outros</option>
+              {% for cat in available_categories %}
+              <option value="{{ cat }}">{{ cat }}</option>
+              {% endfor %}
             </select>
           </div>
           <div class="field" style="max-width:140px">
@@ -128,6 +127,7 @@
         </div>
       </form>
     </div>
+    {% endif %}
   </div>
 </body>
 </html>
