@@ -5,7 +5,10 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-from app.analysis.aggregator import summary
+from app.analysis.aggregator import (
+    summary, patrimony_balances, patrimony_evolution,
+    monthly_by_account, transactions_by_account, transactions_all,
+)
 
 TEMPLATE_DIR = Path(__file__).parent
 REPORTS_DIR  = Path(__file__).parents[2] / "reports"
@@ -16,9 +19,14 @@ def generate(conn: sqlite3.Connection, space: str = 'joint',
     if output_dir is None:
         output_dir = REPORTS_DIR / space
 
-    data = summary(conn, space=space)
-    now  = datetime.now()
+    data = summary(conn, space)
+    data['patrimony_balances']      = patrimony_balances(conn, space)
+    data['patrimony_evolution']     = patrimony_evolution(conn, space)
+    data['monthly_by_account']      = monthly_by_account(conn, space)
+    data['transactions_by_account'] = transactions_by_account(conn, space)
+    data['transactions_all']        = transactions_all(conn, space)
 
+    now = datetime.now()
     env      = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)))
     template = env.get_template("template.html")
 

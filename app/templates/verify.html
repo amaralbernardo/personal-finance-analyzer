@@ -116,8 +116,6 @@
       min-width: 120px;
     }
     .notes-input:focus { outline: none; border-color: #2d6df6; }
-    .excluded-row td { opacity: 0.45; }
-    .excluded-row td:last-child { opacity: 1; }
     .count-info { color: #888; font-size: 0.875rem; }
     .section-header {
       padding: 14px 18px;
@@ -163,12 +161,12 @@
               <th>Valor</th>
               <th>Categoria</th>
               <th>Conta</th>
-              <th style="text-align:center">Incluir</th>
+              <th style="text-align:center" title="Desmarcar elimina a transação permanentemente">Guardar</th>
             </tr>
           </thead>
           <tbody>
             {% for txn in transactions %}
-            <tr class="{{ 'excluded-row' if txn.excluded else '' }}" id="row-{{ txn.id }}">
+            <tr>
               <td class="date">{{ txn.date }}</td>
               <td class="desc">{{ txn.description }}</td>
               <td>
@@ -196,9 +194,7 @@
                 </select>
               </td>
               <td style="text-align:center">
-                <input type="checkbox" name="include_{{ txn.id }}"
-                       {{ 'checked' if not txn.excluded else '' }}
-                       onchange="document.getElementById('row-{{ txn.id }}').className = this.checked ? '' : 'excluded-row'">
+                <input type="checkbox" name="include_{{ txn.id }}" checked>
               </td>
             </tr>
             {% endfor %}

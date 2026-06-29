@@ -120,6 +120,10 @@ def create_tables(conn):
     except Exception:
         pass
     try:
+        conn.execute("DELETE FROM transactions WHERE excluded = 1")
+    except Exception:
+        pass
+    try:
         # deduplicate before adding unique constraint: keep only the row with the highest id per (space, category)
         conn.execute("""
             DELETE FROM patrimony WHERE id NOT IN (

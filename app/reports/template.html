@@ -7,212 +7,483 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; color: #1a1a2e; }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f0f2f5;
-      color: #1a1a2e;
-      padding: 2rem;
-    }
+    /* NAV */
+    nav { position: sticky; top: 0; z-index: 100; background: #fff; border-bottom: 1px solid #e5e7eb; padding: 0 2rem; display: flex; align-items: center; gap: 0; height: 48px; }
+    nav a { padding: 0 16px; height: 48px; display: flex; align-items: center; font-size: 0.85rem; font-weight: 500; color: #555; text-decoration: none; border-bottom: 2px solid transparent; white-space: nowrap; }
+    nav a:hover { color: #2d6df6; }
+    nav a.active { color: #2d6df6; border-bottom-color: #2d6df6; }
+    .nav-brand { font-weight: 700; font-size: 0.95rem; color: #1a1a2e; margin-right: 8px; padding-right: 16px; border-right: 1px solid #eee; }
 
-    h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
-    .subtitle { color: #666; font-size: 0.9rem; margin-bottom: 2rem; }
+    /* LAYOUT */
+    .page { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    .section { margin-bottom: 3rem; }
+    .section-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e5e7eb; display: flex; align-items: center; gap: 10px; }
+    .section-title .badge { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; background: #e8edf8; color: #2d6df6; padding: 3px 9px; border-radius: 20px; }
+    .subsection { margin-bottom: 2rem; }
+    .subsection-title { font-size: 1rem; font-weight: 600; color: #444; margin-bottom: 1rem; }
+    .generated { font-size: 0.8rem; color: #aaa; margin-bottom: 2rem; }
 
-    /* Summary cards */
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-    .card {
-      background: #fff;
-      border-radius: 12px;
-      padding: 1.25rem 1.5rem;
-      box-shadow: 0 1px 4px rgba(0,0,0,.08);
-    }
-    .card .label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: .05em; color: #888; }
-    .card .value { font-size: 1.7rem; font-weight: 700; margin-top: .25rem; }
-    .card.income  .value { color: #16a34a; }
-    .card.expense .value { color: #dc2626; }
-    .card.balance .value { color: {% if data.balance >= 0 %}#16a34a{% else %}#dc2626{% endif %}; }
+    /* CARDS */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .card { background: #fff; border-radius: 12px; padding: 1.25rem 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .card .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: .05em; color: #888; margin-bottom: 0.35rem; }
+    .card .value { font-size: 1.6rem; font-weight: 700; }
+    .card .sub { font-size: 0.8rem; color: #888; margin-top: 4px; }
+    .pos { color: #16a34a; }
+    .neg { color: #dc2626; }
+    .neu { color: #1a1a2e; }
 
-    /* Charts row */
-    .charts {
-      display: grid;
-      grid-template-columns: 1fr 2fr;
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-    @media (max-width: 768px) { .charts { grid-template-columns: 1fr; } }
+    /* CHARTS */
+    .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+    .charts-row.wide { grid-template-columns: 2fr 1fr; }
+    @media (max-width: 768px) { .charts-row, .charts-row.wide { grid-template-columns: 1fr; } }
+    .chart-card { background: #fff; border-radius: 12px; padding: 1.25rem 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .chart-card h3 { font-size: 0.88rem; font-weight: 600; color: #555; margin-bottom: 1rem; }
+    .chart-wrap { position: relative; height: 260px; }
+    .chart-wrap.tall { height: 320px; }
 
-    .chart-card {
-      background: #fff;
-      border-radius: 12px;
-      padding: 1.25rem 1.5rem;
-      box-shadow: 0 1px 4px rgba(0,0,0,.08);
-    }
-    .chart-card h2 { font-size: 0.95rem; color: #444; margin-bottom: 1rem; }
-    .chart-wrap { position: relative; height: 280px; }
-
-    /* Tables */
-    .tables {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-    }
-    @media (max-width: 900px) { .tables { grid-template-columns: 1fr; } }
-
-    .table-card {
-      background: #fff;
-      border-radius: 12px;
-      padding: 1.25rem 1.5rem;
-      box-shadow: 0 1px 4px rgba(0,0,0,.08);
-      overflow-x: auto;
-    }
-    .table-card h2 { font-size: 0.95rem; color: #444; margin-bottom: 1rem; }
-
-    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-    th { text-align: left; padding: .5rem .75rem; border-bottom: 2px solid #e5e7eb; color: #555; font-weight: 600; }
-    td { padding: .45rem .75rem; border-bottom: 1px solid #f0f0f0; }
+    /* TABLES */
+    .table-card { background: #fff; border-radius: 12px; padding: 1.25rem 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); overflow-x: auto; margin-bottom: 1rem; }
+    .table-card h3 { font-size: 0.88rem; font-weight: 600; color: #555; margin-bottom: 1rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    thead { background: #f8f9fb; }
+    th { text-align: left; padding: 9px 12px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: #888; border-bottom: 1px solid #eee; white-space: nowrap; }
+    td { padding: 9px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
     tr:last-child td { border-bottom: none; }
-    tr:hover td { background: #fafafa; }
-
+    tr:hover td { background: #fafbfc; }
     .amount-neg { color: #dc2626; font-weight: 600; }
     .amount-pos { color: #16a34a; font-weight: 600; }
-    .badge {
-      display: inline-block;
-      padding: .15rem .55rem;
-      border-radius: 9999px;
-      font-size: 0.75rem;
-      background: #e0e7ff;
-      color: #3730a3;
-    }
+    .cat-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.73rem; background: #e8edf8; color: #2d6df6; white-space: nowrap; }
+    .notes-cell { color: #888; font-size: 0.8rem; font-style: italic; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .empty-msg { color: #aaa; font-size: 0.875rem; padding: 1rem 0; text-align: center; }
+
+    /* ACCOUNT SECTION */
+    .account-section { background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); padding: 1.5rem; margin-bottom: 1.5rem; }
+    .account-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem; }
+    .account-title { font-size: 1.05rem; font-weight: 700; color: #1a1a2e; }
+    .account-cards { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .account-card { background: #f8f9fb; border-radius: 8px; padding: 0.75rem 1.25rem; }
+    .account-card .label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: .04em; color: #888; }
+    .account-card .value { font-size: 1.25rem; font-weight: 700; margin-top: 2px; }
   </style>
 </head>
 <body>
 
-<h1>Relatório Financeiro</h1>
-<p class="subtitle">Gerado em {{ generated_at }}</p>
+<nav>
+  <span class="nav-brand">Relatório Financeiro</span>
+  <a href="#patrimonio">Patrimônio</a>
+  <a href="#fluxos">Fluxos</a>
+  {% for p in data.patrimony_balances %}
+  <a href="#conta-{{ loop.index }}">{{ p.category }}</a>
+  {% endfor %}
+  <a href="#transacoes">Transações</a>
+</nav>
 
-<!-- Summary cards -->
-<div class="cards">
-  <div class="card income">
-    <div class="label">Receitas</div>
-    <div class="value">{{ "%.2f"|format(data.total_income) }} €</div>
-  </div>
-  <div class="card expense">
-    <div class="label">Despesas</div>
-    <div class="value">{{ "%.2f"|format(data.total_expenses) }} €</div>
-  </div>
-  <div class="card balance">
-    <div class="label">Saldo</div>
-    <div class="value">{{ "%.2f"|format(data.balance) }} €</div>
-  </div>
-</div>
+<div class="page">
+  <p class="generated">Gerado em {{ generated_at }}</p>
 
-<!-- Charts -->
-<div class="charts">
-  <div class="chart-card">
-    <h2>Despesas por categoria</h2>
-    <div class="chart-wrap"><canvas id="catChart"></canvas></div>
-  </div>
-  <div class="chart-card">
-    <h2>Evolução mensal</h2>
-    <div class="chart-wrap"><canvas id="monthChart"></canvas></div>
-  </div>
-</div>
+  <!-- ═══════════════════════════════════════════════════════════════
+       SECÇÃO 1 — PATRIMÔNIO GLOBAL
+  ════════════════════════════════════════════════════════════════ -->
+  <section class="section" id="patrimonio">
+    <div class="section-title">Patrimônio Global <span class="badge">Visão geral</span></div>
 
-<!-- Tables -->
-<div class="tables">
-  <div class="table-card">
-    <h2>Top despesas</h2>
-    <table>
-      <thead>
-        <tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th></tr>
-      </thead>
-      <tbody>
-        {% for t in data.top_expenses %}
-        <tr>
-          <td>{{ t.date }}</td>
-          <td>{{ t.description }}</td>
-          <td><span class="badge">{{ t.category }}</span></td>
-          <td class="amount-neg">{{ "%.2f"|format(t.amount) }} €</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+    {% set total_pat = data.patrimony_balances | sum(attribute='current_value') if data.patrimony_balances else 0 %}
+    {% set total_initial = data.patrimony_balances | sum(attribute='initial_amount') if data.patrimony_balances else 0 %}
+    {% set pat_change = total_pat - total_initial %}
 
-  <div class="table-card">
-    <h2>Por mês</h2>
-    <table>
-      <thead>
-        <tr><th>Mês</th><th>Receitas</th><th>Despesas</th><th>Saldo</th></tr>
-      </thead>
-      <tbody>
-        {% for m in data.by_month %}
-        <tr>
-          <td>{{ m.month }}</td>
-          <td class="amount-pos">{{ "%.2f"|format(m.income) }} €</td>
-          <td class="amount-neg">{{ "%.2f"|format(m.expenses) }} €</td>
-          <td class="{{ 'amount-pos' if m.net >= 0 else 'amount-neg' }}">{{ "%.2f"|format(m.net) }} €</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+    <div class="cards">
+      <div class="card">
+        <div class="label">Patrimônio Total</div>
+        <div class="value neu">{{ "%.2f"|format(total_pat) }} €</div>
+        <div class="sub {{ 'pos' if pat_change >= 0 else 'neg' }}">
+          {{ '+' if pat_change >= 0 else '' }}{{ "%.2f"|format(pat_change) }} € desde início
+        </div>
+      </div>
+      <div class="card">
+        <div class="label">Receitas (total)</div>
+        <div class="value pos">{{ "%.2f"|format(data.total_income) }} €</div>
+      </div>
+      <div class="card">
+        <div class="label">Despesas (total)</div>
+        <div class="value neg">{{ "%.2f"|format(data.total_expenses) }} €</div>
+      </div>
+      <div class="card">
+        <div class="label">Saldo Líquido</div>
+        <div class="value {{ 'pos' if data.balance >= 0 else 'neg' }}">{{ "%.2f"|format(data.balance) }} €</div>
+      </div>
+    </div>
+
+    <!-- Patrimony table -->
+    {% if data.patrimony_balances %}
+    <div class="table-card">
+      <h3>Contas Patrimoniais</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Conta</th>
+            <th>Descrição</th>
+            <th>Data Ref.</th>
+            <th style="text-align:right">Saldo Inicial</th>
+            <th style="text-align:right">Valor Atual</th>
+            <th style="text-align:right">Variação €</th>
+            <th style="text-align:right">Variação %</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in data.patrimony_balances %}
+          {% set chg = p.current_value - p.initial_amount %}
+          {% set pct = (chg / p.initial_amount * 100) if p.initial_amount != 0 else 0 %}
+          <tr>
+            <td><strong>{{ p.category }}</strong></td>
+            <td style="color:#888">{{ p.label }}</td>
+            <td style="color:#888;white-space:nowrap">{{ p.reference_date }}</td>
+            <td style="text-align:right">{{ "%.2f"|format(p.initial_amount) }} €</td>
+            <td style="text-align:right;font-weight:600">{{ "%.2f"|format(p.current_value) }} €</td>
+            <td style="text-align:right" class="{{ 'amount-pos' if chg >= 0 else 'amount-neg' }}">
+              {{ '+' if chg >= 0 else '' }}{{ "%.2f"|format(chg) }} €
+            </td>
+            <td style="text-align:right" class="{{ 'amount-pos' if pct >= 0 else 'amount-neg' }}">
+              {{ '+' if pct >= 0 else '' }}{{ "%.1f"|format(pct) }}%
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Evolution line chart + distribution doughnut -->
+    <div class="charts-row wide">
+      <div class="chart-card">
+        <h3>Evolução Acumulada do Patrimônio</h3>
+        <div class="chart-wrap tall"><canvas id="evolutionChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Distribuição Atual</h3>
+        <div class="chart-wrap"><canvas id="distribChart"></canvas></div>
+      </div>
+    </div>
+    {% else %}
+    <p class="empty-msg">Nenhuma conta patrimonial configurada.</p>
+    {% endif %}
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       SECÇÃO 2 — FLUXOS FINANCEIROS
+  ════════════════════════════════════════════════════════════════ -->
+  <section class="section" id="fluxos">
+    <div class="section-title">Fluxos Financeiros <span class="badge">Análise global</span></div>
+
+    <div class="charts-row wide">
+      <div class="chart-card">
+        <h3>Evolução Mensal (Receitas vs Despesas)</h3>
+        <div class="chart-wrap"><canvas id="monthChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Despesas por Categoria</h3>
+        <div class="chart-wrap"><canvas id="catChart"></canvas></div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div class="table-card">
+        <h3>Por Mês</h3>
+        {% if data.by_month %}
+        <table>
+          <thead>
+            <tr><th>Mês</th><th style="text-align:right">Receitas</th><th style="text-align:right">Despesas</th><th style="text-align:right">Saldo</th></tr>
+          </thead>
+          <tbody>
+            {% for m in data.by_month %}
+            <tr>
+              <td>{{ m.month }}</td>
+              <td style="text-align:right" class="amount-pos">{{ "%.2f"|format(m.income) }} €</td>
+              <td style="text-align:right" class="amount-neg">{{ "%.2f"|format(m.expenses) }} €</td>
+              <td style="text-align:right" class="{{ 'amount-pos' if m.net >= 0 else 'amount-neg' }}">{{ "%.2f"|format(m.net) }} €</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="empty-msg">Sem dados mensais.</p>
+        {% endif %}
+      </div>
+
+      <div class="table-card">
+        <h3>Top 10 Despesas</h3>
+        {% if data.top_expenses %}
+        <table>
+          <thead>
+            <tr><th>Data</th><th>Descrição</th><th>Categoria</th><th style="text-align:right">Valor</th></tr>
+          </thead>
+          <tbody>
+            {% for t in data.top_expenses %}
+            <tr>
+              <td style="white-space:nowrap;color:#888">{{ t.date }}</td>
+              <td>{{ t.description }}</td>
+              <td><span class="cat-badge">{{ t.category }}</span></td>
+              <td style="text-align:right" class="amount-neg">{{ "%.2f"|format(t.amount) }} €</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="empty-msg">Sem despesas registadas.</p>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       SECÇÃO 3 — POR CONTA
+  ════════════════════════════════════════════════════════════════ -->
+  {% if data.patrimony_balances %}
+  <section class="section" id="por-conta">
+    <div class="section-title">Por Conta <span class="badge">Detalhe individual</span></div>
+
+    {% for p in data.patrimony_balances %}
+    {% set chg = p.current_value - p.initial_amount %}
+    {% set pct = (chg / p.initial_amount * 100) if p.initial_amount != 0 else 0 %}
+    {% set acc_txns = data.transactions_by_account.get(p.category, []) %}
+    {% set acc_monthly = data.monthly_by_account.get(p.category) %}
+
+    <div class="account-section" id="conta-{{ loop.index }}">
+      <div class="account-header">
+        <div class="account-title">{{ p.category }} <span style="font-weight:400;color:#888;font-size:0.9rem">· {{ p.label }}</span></div>
+        <div class="account-cards">
+          <div class="account-card">
+            <div class="label">Valor Atual</div>
+            <div class="value neu">{{ "%.2f"|format(p.current_value) }} €</div>
+          </div>
+          <div class="account-card">
+            <div class="label">Variação</div>
+            <div class="value {{ 'pos' if chg >= 0 else 'neg' }}">
+              {{ '+' if chg >= 0 else '' }}{{ "%.2f"|format(chg) }} € ({{ '+' if pct >= 0 else '' }}{{ "%.1f"|format(pct) }}%)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {% if acc_monthly %}
+      <div class="chart-card" style="margin-bottom:1rem">
+        <h3>Movimentos Mensais</h3>
+        <div class="chart-wrap"><canvas id="accChart_{{ loop.index }}"></canvas></div>
+      </div>
+      {% endif %}
+
+      {% if acc_txns %}
+      <div class="table-card" style="box-shadow:none;padding:0;margin-bottom:0">
+        <h3 style="padding:0 0 0.75rem">Transações ({{ acc_txns|length }})</h3>
+        <table>
+          <thead>
+            <tr><th>Data</th><th>Descrição</th><th>Notas</th><th>Categoria</th><th style="text-align:right">Valor</th></tr>
+          </thead>
+          <tbody>
+            {% for t in acc_txns %}
+            <tr>
+              <td style="white-space:nowrap;color:#888">{{ t.date }}</td>
+              <td>{{ t.description }}</td>
+              <td class="notes-cell">{{ t.notes or '' }}</td>
+              <td><span class="cat-badge">{{ t.category }}</span></td>
+              <td style="text-align:right" class="{{ 'amount-neg' if t.amount < 0 else 'amount-pos' }}">
+                {{ "%.2f"|format(t.amount) }} €
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="empty-msg">Nenhuma transação associada a esta conta.</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       SECÇÃO 4 — TODAS AS TRANSAÇÕES
+  ════════════════════════════════════════════════════════════════ -->
+  <section class="section" id="transacoes">
+    <div class="section-title">Todas as Transações <span class="badge">{{ data.transactions_all|length }} registos</span></div>
+
+    {% if data.transactions_all %}
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Descrição</th>
+            <th>Notas</th>
+            <th>Categoria</th>
+            <th>Conta</th>
+            <th style="text-align:right">Valor</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in data.transactions_all %}
+          <tr>
+            <td style="white-space:nowrap;color:#888">{{ t.date }}</td>
+            <td>{{ t.description }}</td>
+            <td class="notes-cell">{{ t.notes or '' }}</td>
+            <td><span class="cat-badge">{{ t.category }}</span></td>
+            <td style="color:#888">{{ t.patrimony_label or '—' }}</td>
+            <td style="text-align:right" class="{{ 'amount-neg' if t.amount < 0 else 'amount-pos' }}">
+              {{ "%.2f"|format(t.amount) }} €
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="empty-msg">Nenhuma transação registada.</p>
+    {% endif %}
+  </section>
 </div>
 
 <script>
-const COLORS = [
-  "#6366f1","#f59e0b","#10b981","#ef4444","#3b82f6",
-  "#ec4899","#8b5cf6","#14b8a6","#f97316","#84cc16","#06b6d4"
-];
+const COLORS = ["#2d6df6","#f59e0b","#10b981","#ef4444","#8b5cf6","#ec4899","#14b8a6","#f97316","#84cc16","#06b6d4"];
 
-// Category doughnut
-const catData = {{ data.by_category | tojson }};
-new Chart(document.getElementById("catChart"), {
-  type: "doughnut",
-  data: {
-    labels: catData.map(d => d.category),
-    datasets: [{
-      data: catData.map(d => d.total),
-      backgroundColor: COLORS,
-      borderWidth: 2,
-      borderColor: "#fff"
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { position: "bottom", labels: { font: { size: 11 } } },
-      tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toFixed(2)} €` } }
+// ── Patrimony evolution line chart ────────────────────────────────
+const evolutionData = {{ data.patrimony_evolution | tojson }};
+if (document.getElementById("evolutionChart") && Object.keys(evolutionData).length > 0) {
+  // Build union of all months
+  const allMonthsSet = new Set();
+  Object.values(evolutionData).forEach(d => d.months.forEach(m => allMonthsSet.add(m)));
+  const allMonths = Array.from(allMonthsSet).sort();
+
+  const datasets = Object.entries(evolutionData).map(([cat, d], i) => {
+    // Map values to aligned month positions
+    const monthIdx = {};
+    d.months.forEach((m, j) => { monthIdx[m] = d.values[j]; });
+    const values = allMonths.map(m => monthIdx[m] !== undefined ? monthIdx[m] : null);
+    return {
+      label: cat,
+      data: values,
+      borderColor: COLORS[i % COLORS.length],
+      backgroundColor: COLORS[i % COLORS.length] + "20",
+      fill: false,
+      tension: 0.3,
+      spanGaps: true,
+      pointRadius: 3,
+    };
+  });
+
+  new Chart(document.getElementById("evolutionChart"), {
+    type: "line",
+    data: { labels: allMonths, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: "bottom", labels: { font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} €` } }
+      },
+      scales: { y: { ticks: { callback: v => v.toLocaleString("pt-PT") + " €" } } }
     }
-  }
-});
+  });
+}
 
-// Monthly bar chart
+// ── Patrimony distribution doughnut ──────────────────────────────
+const distribData = {{ data.patrimony_balances | tojson }};
+if (document.getElementById("distribChart") && distribData.length > 0) {
+  new Chart(document.getElementById("distribChart"), {
+    type: "doughnut",
+    data: {
+      labels: distribData.map(d => d.category),
+      datasets: [{ data: distribData.map(d => d.current_value), backgroundColor: COLORS, borderWidth: 2, borderColor: "#fff" }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: "bottom", labels: { font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toFixed(2)} €` } }
+      }
+    }
+  });
+}
+
+// ── Monthly global bar chart ──────────────────────────────────────
 const monthData = {{ data.by_month | tojson }};
-new Chart(document.getElementById("monthChart"), {
-  type: "bar",
-  data: {
-    labels: monthData.map(d => d.month),
-    datasets: [
-      { label: "Receitas", data: monthData.map(d => d.income),   backgroundColor: "#bbf7d0", borderColor: "#16a34a", borderWidth: 1 },
-      { label: "Despesas", data: monthData.map(d => d.expenses), backgroundColor: "#fecaca", borderColor: "#dc2626", borderWidth: 1 }
-    ]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { position: "bottom" } },
-    scales: {
-      y: { ticks: { callback: v => v + " €" } }
+if (document.getElementById("monthChart") && monthData.length > 0) {
+  new Chart(document.getElementById("monthChart"), {
+    type: "bar",
+    data: {
+      labels: monthData.map(d => d.month),
+      datasets: [
+        { label: "Receitas", data: monthData.map(d => d.income), backgroundColor: "#bbf7d0", borderColor: "#16a34a", borderWidth: 1 },
+        { label: "Despesas", data: monthData.map(d => d.expenses), backgroundColor: "#fecaca", borderColor: "#dc2626", borderWidth: 1 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: "bottom" } },
+      scales: { y: { ticks: { callback: v => v + " €" } } }
     }
-  }
-});
+  });
+}
+
+// ── Category doughnut ─────────────────────────────────────────────
+const catData = {{ data.by_category | tojson }};
+if (document.getElementById("catChart") && catData.length > 0) {
+  new Chart(document.getElementById("catChart"), {
+    type: "doughnut",
+    data: {
+      labels: catData.map(d => d.category),
+      datasets: [{ data: catData.map(d => d.total), backgroundColor: COLORS, borderWidth: 2, borderColor: "#fff" }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: "bottom", labels: { font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toFixed(2)} €` } }
+      }
+    }
+  });
+}
+
+// ── Per-account monthly bar charts ───────────────────────────────
+const monthByAccount = {{ data.monthly_by_account | tojson }};
+{% for p in data.patrimony_balances %}
+(function() {
+  const canvas = document.getElementById("accChart_{{ loop.index }}");
+  if (!canvas) return;
+  const acc = {{ p.category | tojson }};
+  const d = monthByAccount[acc];
+  if (!d || !d.months.length) return;
+  new Chart(canvas, {
+    type: "bar",
+    data: {
+      labels: d.months,
+      datasets: [
+        { label: "Receitas", data: d.income, backgroundColor: "#bbf7d0", borderColor: "#16a34a", borderWidth: 1 },
+        { label: "Despesas", data: d.expenses, backgroundColor: "#fecaca", borderColor: "#dc2626", borderWidth: 1 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: "bottom" } },
+      scales: { y: { ticks: { callback: v => v + " €" } } }
+    }
+  });
+})();
+{% endfor %}
+
+// ── Sticky nav active section ─────────────────────────────────────
+const sections = document.querySelectorAll("section[id], div[id^='conta-']");
+const navLinks = document.querySelectorAll("nav a[href^='#']");
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      navLinks.forEach(l => l.classList.remove("active"));
+      const link = document.querySelector(`nav a[href='#${e.target.id}']`);
+      if (link) link.classList.add("active");
+    }
+  });
+}, { threshold: 0.3 });
+sections.forEach(s => observer.observe(s));
 </script>
 </body>
 </html>
