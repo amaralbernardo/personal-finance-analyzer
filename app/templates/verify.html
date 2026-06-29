@@ -277,6 +277,19 @@
         this.className = this.value === 'Outros' ? 'needs-review' : '';
       });
     });
+
+    document.querySelectorAll('input[name^="include_"]').forEach(function(cb) {
+      var id = cb.name.replace('include_', '');
+      var row = cb.closest('tr');
+      function toggle() {
+        var required = cb.checked;
+        row.querySelectorAll('select[name="cat_' + id + '"], select[name="patrimony_' + id + '"]').forEach(function(sel) {
+          sel.required = required;
+        });
+        row.style.opacity = cb.checked ? '' : '0.4';
+      }
+      cb.addEventListener('change', toggle);
+    });
   </script>
 </body>
 </html>
