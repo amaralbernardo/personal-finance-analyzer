@@ -460,6 +460,15 @@ def joint_verify():
     )
 
 
+@app.route("/joint/generate-report", methods=["POST"])
+@admin_required
+def joint_generate_report():
+    conn = get_connection()
+    report_path = generate(conn, space='joint')
+    conn.close()
+    return redirect(url_for("joint_report", filename=report_path.name))
+
+
 @app.route("/joint/report/<filename>")
 @login_required
 def joint_report(filename):
@@ -544,6 +553,16 @@ def individual_verify():
         space=space,
         back_url=url_for("individual"),
     )
+
+
+@app.route("/individual/generate-report", methods=["POST"])
+@login_required
+def individual_generate_report():
+    space = _ind_space(current_user.id)
+    conn = get_connection()
+    report_path = generate(conn, space=space)
+    conn.close()
+    return redirect(url_for("individual_report", filename=report_path.name))
 
 
 @app.route("/individual/report/<filename>")

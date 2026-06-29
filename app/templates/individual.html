@@ -77,13 +77,13 @@
 
     <!-- Status -->
     <div class="card">
-      <p class="card-title">Estado</p>
+      <p class="card-title">Registos</p>
       {% if unverified > 0 or skipped > 0 %}
         <span class="badge badge-warn"><span class="badge-dot"></span>{{ unverified + skipped }} item(s) por verificar</span>
-        <a href="/individual/verify" class="verify-link">Verificar agora →</a>
       {% else %}
         <span class="badge badge-ok"><span class="badge-dot"></span>Tudo verificado</span>
       {% endif %}
+      <a href="/individual/verify" class="verify-link">Ver e editar registos →</a>
     </div>
 
     <!-- Patrimony -->
@@ -111,14 +111,17 @@
       {% endif %}
     </div>
 
-    <!-- Last report -->
-    {% if last_report %}
+    <!-- Report -->
     <div class="card">
-      <p class="card-title">Último Relatório</p>
-      <a href="/individual/report/{{ last_report.name }}" class="report-link" target="_blank">Ver relatório →</a>
-      <p class="report-name">{{ last_report.name }}</p>
+      <p class="card-title">Relatório</p>
+      {% if last_report %}
+      <a href="/individual/report/{{ last_report.name }}" class="report-link" target="_blank">Ver último relatório →</a>
+      <p class="report-name" style="margin-bottom:14px">{{ last_report.name }}</p>
+      {% endif %}
+      <form action="/individual/generate-report" method="post">
+        <button type="submit" class="btn">Gerar novo relatório</button>
+      </form>
     </div>
-    {% endif %}
 
     <!-- Upload -->
     <div class="card">

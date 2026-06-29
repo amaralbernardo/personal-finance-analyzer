@@ -77,14 +77,14 @@
 
     <!-- Status -->
     <div class="card">
-      <p class="card-title">Estado</p>
+      <p class="card-title">Registos</p>
       {% if unverified > 0 or skipped > 0 %}
         <span class="badge badge-warn"><span class="badge-dot"></span>{{ unverified + skipped }} item(s) por verificar</span>
-        {% if current_user.role == 'admin' %}
-        <a href="/joint/verify" class="verify-link">Verificar agora →</a>
-        {% endif %}
       {% else %}
         <span class="badge badge-ok"><span class="badge-dot"></span>Tudo verificado</span>
+      {% endif %}
+      {% if current_user.role == 'admin' %}
+      <a href="/joint/verify" class="verify-link">Ver e editar registos →</a>
       {% endif %}
     </div>
 
@@ -117,14 +117,19 @@
       {% endif %}
     </div>
 
-    <!-- Last report -->
-    {% if last_report %}
+    <!-- Report -->
     <div class="card">
-      <p class="card-title">Último Relatório</p>
-      <a href="/joint/report/{{ last_report.name }}" class="report-link" target="_blank">Ver relatório →</a>
-      <p class="report-name">{{ last_report.name }}</p>
+      <p class="card-title">Relatório</p>
+      {% if last_report %}
+      <a href="/joint/report/{{ last_report.name }}" class="report-link" target="_blank">Ver último relatório →</a>
+      <p class="report-name" style="margin-bottom:14px">{{ last_report.name }}</p>
+      {% endif %}
+      {% if current_user.role == 'admin' %}
+      <form action="/joint/generate-report" method="post">
+        <button type="submit" class="btn">Gerar novo relatório</button>
+      </form>
+      {% endif %}
     </div>
-    {% endif %}
 
     <!-- Upload (admin only) -->
     {% if current_user.role == 'admin' %}
