@@ -83,7 +83,9 @@
       {% else %}
         <span class="badge badge-ok"><span class="badge-dot"></span>Tudo verificado</span>
       {% endif %}
+      {% if total_transactions > 0 %}
       <a href="/individual/verify" class="verify-link">Ver e editar registos →</a>
+      {% endif %}
     </div>
 
     <!-- Patrimony -->

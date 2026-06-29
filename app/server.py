@@ -389,12 +389,14 @@ def joint():
     conn  = get_connection()
     patrimony           = _get_patrimony(conn, space)
     unverified, skipped = _pending_counts(conn, space)
+    total = conn.execute("SELECT COUNT(*) FROM transactions WHERE space = ?", (space,)).fetchone()[0]
     conn.close()
     return render_template(
         "joint.html",
         patrimony=patrimony,
         unverified=unverified,
         skipped=skipped,
+        total_transactions=total,
         last_report=_last_report(space),
     )
 
@@ -431,7 +433,7 @@ def joint_verify():
             conn.close()
             return redirect(url_for("joint_report", filename=report_path.name))
         conn.close()
-        return redirect(url_for("joint_verify"))
+        return redirect(url_for("joint"))
 
     conn = get_connection()
     transactions = conn.execute(
@@ -484,12 +486,14 @@ def individual():
     conn  = get_connection()
     patrimony           = _get_patrimony(conn, space)
     unverified, skipped = _pending_counts(conn, space)
+    total = conn.execute("SELECT COUNT(*) FROM transactions WHERE space = ?", (space,)).fetchone()[0]
     conn.close()
     return render_template(
         "individual.html",
         patrimony=patrimony,
         unverified=unverified,
         skipped=skipped,
+        total_transactions=total,
         last_report=_last_report(space),
     )
 
@@ -526,7 +530,7 @@ def individual_verify():
             conn.close()
             return redirect(url_for("individual_report", filename=report_path.name))
         conn.close()
-        return redirect(url_for("individual_verify"))
+        return redirect(url_for("individual"))
 
     conn = get_connection()
     transactions = conn.execute(

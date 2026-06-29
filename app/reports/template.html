@@ -72,7 +72,8 @@
 <body>
 
 <nav>
-  <span class="nav-brand">Relatório Financeiro</span>
+  <a href="javascript:history.back()" style="padding:0 14px;height:48px;display:flex;align-items:center;font-size:0.85rem;color:#888;text-decoration:none;border-right:1px solid #eee;gap:6px">← Voltar</a>
+  <span class="nav-brand" style="margin-left:8px">Relatório Financeiro</span>
   <a href="#patrimonio">Patrimônio</a>
   <a href="#fluxos">Fluxos</a>
   {% for p in data.patrimony_balances %}
