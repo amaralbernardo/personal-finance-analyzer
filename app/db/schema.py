@@ -108,6 +108,14 @@ def create_tables(conn):
     except Exception:
         pass
     try:
+        conn.execute("ALTER TABLE transactions ADD COLUMN notes TEXT")
+    except Exception:
+        pass
+    try:
+        conn.execute("ALTER TABLE transactions ADD COLUMN excluded INTEGER NOT NULL DEFAULT 0")
+    except Exception:
+        pass
+    try:
         conn.execute("ALTER TABLE patrimony ADD COLUMN reference_date TEXT NOT NULL DEFAULT '2024-01-01'")
     except Exception:
         pass

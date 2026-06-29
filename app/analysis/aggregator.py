@@ -4,21 +4,21 @@ import sqlite3
 
 def total_balance(conn: sqlite3.Connection, space: str = 'joint') -> float:
     row = conn.execute(
-        "SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE space = ?", (space,)
+        "SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE space = ? AND excluded = 0", (space,)
     ).fetchone()
     return round(row[0], 2)
 
 
 def total_expenses(conn: sqlite3.Connection, space: str = 'joint') -> float:
     row = conn.execute(
-        "SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE amount < 0 AND space = ?", (space,)
+        "SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE amount < 0 AND space = ? AND excluded = 0", (space,)
     ).fetchone()
     return round(abs(row[0]), 2)
 
 
 def total_income(conn: sqlite3.Connection, space: str = 'joint') -> float:
     row = conn.execute(
-        "SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE amount > 0 AND space = ?", (space,)
+        "SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE amount > 0 AND space = ? AND excluded = 0", (space,)
     ).fetchone()
     return round(row[0], 2)
 
@@ -30,7 +30,7 @@ def by_category(conn: sqlite3.Connection, space: str = 'joint') -> list[dict]:
                ROUND(SUM(amount), 2)  AS total,
                COUNT(*)               AS count
         FROM   transactions
-        WHERE  amount < 0 AND space = ?
+        WHERE  amount < 0 AND space = ? AND excluded = 0
         GROUP  BY category
         ORDER  BY total ASC
         """, (space,)
@@ -49,7 +49,7 @@ def by_month(conn: sqlite3.Connection, space: str = 'joint') -> list[dict]:
                ROUND(SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END), 2) AS expenses,
                ROUND(SUM(amount), 2)                                            AS net
         FROM   transactions
-        WHERE  space = ?
+        WHERE  space = ? AND excluded = 0
         GROUP  BY month
         ORDER  BY month
         """, (space,)
@@ -62,7 +62,7 @@ def top_expenses(conn: sqlite3.Connection, space: str = 'joint', n: int = 10) ->
         """
         SELECT date, description, amount, category
         FROM   transactions
-        WHERE  amount < 0 AND space = ?
+        WHERE  amount < 0 AND space = ? AND excluded = 0
         ORDER  BY amount ASC
         LIMIT  ?
         """, (space, n)

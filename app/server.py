@@ -207,9 +207,11 @@ def _process_verify_form(conn, req, space: str):
         ).fetchone()
         if row:
             pat_label = patrimony_map.get(txn_id)
+            notes     = req.form.get(f"notes_{txn_id}", "").strip() or None
+            excluded  = 0 if req.form.get(f"include_{txn_id}") == "on" else 1
             conn.execute(
-                "UPDATE transactions SET category = ?, verified = 1, patrimony_label = ? WHERE id = ? AND space = ?",
-                (category, pat_label, txn_id, space),
+                "UPDATE transactions SET category = ?, verified = 1, patrimony_label = ?, notes = ?, excluded = ? WHERE id = ? AND space = ?",
+                (category, pat_label, notes, excluded, txn_id, space),
             )
             if category != "Outros":
                 mappings[row["description"]] = category
@@ -422,13 +424,16 @@ def joint_verify():
         conn = get_connection()
         _process_verify_form(conn, request, space)
         conn.commit()
-        report_path = generate(conn, space=space)
+        if request.form.get("action") == "report":
+            report_path = generate(conn, space=space)
+            conn.close()
+            return redirect(url_for("joint_report", filename=report_path.name))
         conn.close()
-        return redirect(url_for("joint_report", filename=report_path.name))
+        return redirect(url_for("joint_verify"))
 
     conn = get_connection()
     transactions = conn.execute(
-        "SELECT id, date, description, amount, category, patrimony_label "
+        "SELECT id, date, description, amount, category, patrimony_label, notes, excluded "
         "FROM transactions WHERE space = ? ORDER BY date", (space,)
     ).fetchall()
     skipped_rows = conn.execute(
@@ -505,13 +510,16 @@ def individual_verify():
         conn = get_connection()
         _process_verify_form(conn, request, space)
         conn.commit()
-        report_path = generate(conn, space=space)
+        if request.form.get("action") == "report":
+            report_path = generate(conn, space=space)
+            conn.close()
+            return redirect(url_for("individual_report", filename=report_path.name))
         conn.close()
-        return redirect(url_for("individual_report", filename=report_path.name))
+        return redirect(url_for("individual_verify"))
 
     conn = get_connection()
     transactions = conn.execute(
-        "SELECT id, date, description, amount, category, patrimony_label "
+        "SELECT id, date, description, amount, category, patrimony_label, notes, excluded "
         "FROM transactions WHERE space = ? ORDER BY date", (space,)
     ).fetchall()
     skipped_rows = conn.execute(

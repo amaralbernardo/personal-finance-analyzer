@@ -81,7 +81,7 @@
       white-space: nowrap;
     }
     .raw-data { font-size: 0.8rem; color: #888; font-family: monospace; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .actions { display: flex; align-items: center; gap: 16px; padding: 20px 0 0; }
+    .actions { display: flex; align-items: center; gap: 12px; padding: 20px 0 0; flex-wrap: wrap; }
     .btn {
       background: #27ae60;
       color: white;
@@ -94,6 +94,30 @@
       transition: background .15s;
     }
     .btn:hover { background: #1e8449; }
+    .btn-secondary {
+      background: white;
+      color: #444;
+      border: 1px solid #ddd;
+      padding: 10px 24px;
+      border-radius: 7px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-secondary:hover { background: #f5f5f5; }
+    .notes-input {
+      padding: 4px 8px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      color: #444;
+      width: 100%;
+      min-width: 120px;
+    }
+    .notes-input:focus { outline: none; border-color: #2d6df6; }
+    .excluded-row td { opacity: 0.45; }
+    .excluded-row td:last-child { opacity: 1; }
     .count-info { color: #888; font-size: 0.875rem; }
     .section-header {
       padding: 14px 18px;
@@ -135,16 +159,22 @@
             <tr>
               <th>Data</th>
               <th>Descrição</th>
+              <th>Notas</th>
               <th>Valor</th>
               <th>Categoria</th>
               <th>Conta</th>
+              <th style="text-align:center">Incluir</th>
             </tr>
           </thead>
           <tbody>
             {% for txn in transactions %}
-            <tr>
+            <tr class="{{ 'excluded-row' if txn.excluded else '' }}" id="row-{{ txn.id }}">
               <td class="date">{{ txn.date }}</td>
               <td class="desc">{{ txn.description }}</td>
+              <td>
+                <input class="notes-input" type="text" name="notes_{{ txn.id }}"
+                       value="{{ txn.notes or '' }}" placeholder="Nota opcional…">
+              </td>
               <td class="amount {{ 'amount-neg' if txn.amount < 0 else 'amount-pos' }}">
                 {% if txn.amount < 0 %}−{% endif %}{{ "%.2f"|format(txn.amount|abs) }} €
               </td>
@@ -158,12 +188,17 @@
                 </select>
               </td>
               <td>
-                <select name="patrimony_{{ txn.id }}" style="min-width:130px">
-                  <option value="">—</option>
+                <select name="patrimony_{{ txn.id }}" style="min-width:130px" required>
+                  <option value="">— selecionar —</option>
                   {% for p in patrimony %}
                   <option value="{{ p.category }}" {{ 'selected' if txn.patrimony_label == p.category else '' }}>{{ p.category }}</option>
                   {% endfor %}
                 </select>
+              </td>
+              <td style="text-align:center">
+                <input type="checkbox" name="include_{{ txn.id }}"
+                       {{ 'checked' if not txn.excluded else '' }}
+                       onchange="document.getElementById('row-{{ txn.id }}').className = this.checked ? '' : 'excluded-row'">
               </td>
             </tr>
             {% endfor %}
@@ -229,7 +264,8 @@
       {% endif %}
 
       <div class="actions">
-        <button type="submit" class="btn">Guardar e gerar relatório</button>
+        <button type="submit" name="action" value="save" class="btn-secondary">Guardar</button>
+        <button type="submit" name="action" value="report" class="btn">Guardar e gerar relatório</button>
         <span class="count-info">
           {% if transactions %}{{ transactions|length }} transaç{{ 'ão' if transactions|length == 1 else 'ões' }}{% endif %}
           {% if transactions and skipped_rows %} · {% endif %}
