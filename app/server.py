@@ -4,6 +4,7 @@ import sys
 import json
 import time
 from collections import defaultdict
+from datetime import date as _today_date
 from pathlib import Path
 from functools import wraps
 
@@ -574,6 +575,72 @@ def individual_generate_report():
 def individual_report(filename):
     space = _ind_space(current_user.id)
     return send_file(REPORTS_DIR / space / filename)
+
+
+# ── add transaction ───────────────────────────────────────────────────────────
+
+def _add_transaction_handler(space: str, back_url: str):
+    conn = get_connection()
+    patrimony = _get_patrimony(conn, space)
+
+    if request.method == "POST":
+        date_val   = request.form.get("date", "").strip()
+        desc_val   = request.form.get("description", "").strip()
+        amount_str = request.form.get("amount", "").strip()
+        cat_val    = request.form.get("category", "Outros").strip()
+        pat_label  = request.form.get("patrimony_label", "").strip() or None
+        notes      = request.form.get("notes", "").strip() or None
+
+        error = None
+        try:
+            date_clean   = _parse_date(date_val)
+            amount_clean = float(amount_str.replace(",", "."))
+            if not desc_val:
+                raise ValueError("A descrição é obrigatória.")
+            conn.execute(
+                """INSERT INTO transactions
+                   (date, description, amount, category, source_file, verified, space, patrimony_label, notes)
+                   VALUES (?,?,?,?,?,1,?,?,?)""",
+                (date_clean, desc_val, amount_clean, cat_val, "manual", space, pat_label, notes),
+            )
+            conn.commit()
+            conn.close()
+            return redirect(back_url)
+        except ValueError as exc:
+            error = str(exc)
+
+        conn.close()
+        return render_template(
+            "add_transaction.html",
+            categories=load_categories(),
+            patrimony=patrimony,
+            space=space,
+            back_url=back_url,
+            error=error,
+            form=request.form,
+        )
+
+    conn.close()
+    return render_template(
+        "add_transaction.html",
+        categories=load_categories(),
+        patrimony=patrimony,
+        space=space,
+        back_url=back_url,
+        today=_today_date.today().isoformat(),
+    )
+
+
+@app.route("/joint/add-transaction", methods=["GET", "POST"])
+@admin_required
+def joint_add_transaction():
+    return _add_transaction_handler("joint", url_for("joint"))
+
+
+@app.route("/individual/add-transaction", methods=["GET", "POST"])
+@login_required
+def individual_add_transaction():
+    return _add_transaction_handler(_ind_space(current_user.id), url_for("individual"))
 
 
 # ── patrimony ─────────────────────────────────────────────────────────────────

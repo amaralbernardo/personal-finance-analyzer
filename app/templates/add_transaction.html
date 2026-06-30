@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Adicionar Registo</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f2f5; margin: 0; padding: 0; color: #1a1a2e; }
+    nav.topbar { background: white; border-bottom: 1px solid #eee; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .topbar-brand { font-weight: 700; font-size: 0.95rem; color: #1a1a2e; text-decoration: none; }
+    .topbar-right { display: flex; align-items: center; gap: 20px; }
+    .topbar-email { font-size: 0.85rem; color: #888; text-decoration: none; }
+    .topbar-link { font-size: 0.85rem; color: {% if space == 'joint' %}#2d6df6{% else %}#7c3aed{% endif %}; text-decoration: none; }
+    .topbar-link:hover { text-decoration: underline; }
+    .topbar-logout { font-size: 0.85rem; color: #888; text-decoration: none; }
+    .topbar-logout:hover { color: #c0392b; }
+    .page { max-width: 560px; margin: 0 auto; padding: 40px 20px; }
+    .back { color: #888; text-decoration: none; font-size: 0.875rem; display: inline-block; margin-bottom: 20px; }
+    .back:hover { color: #444; }
+    .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+    h1 { font-size: 1.5rem; margin: 0; }
+    .space-pill { font-size: 0.75rem; font-weight: 600; padding: 3px 10px; border-radius: 20px;
+      {% if space == 'joint' %}background: #e8edf8; color: #2d4a8a;{% else %}background: #ede9fe; color: #5b21b6;{% endif %} }
+    .card { background: white; border-radius: 10px; padding: 26px 28px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .error-banner { background: #fff0f0; border: 1px solid #f5c6c6; color: #c0392b; border-radius: 7px; padding: 10px 14px; font-size: 0.875rem; margin-bottom: 20px; }
+    .form-group { margin-bottom: 18px; }
+    label { display: block; font-size: 0.85rem; font-weight: 600; color: #444; margin-bottom: 6px; }
+    input[type=text], input[type=date], input[type=number], select, textarea {
+      width: 100%; padding: 9px 12px; border: 1px solid #dde1ea; border-radius: 7px;
+      font-size: 0.9rem; color: #1a1a2e; background: #fff; outline: none;
+      transition: border-color .15s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: {% if space == 'joint' %}#2d6df6{% else %}#7c3aed{% endif %}; }
+    textarea { resize: vertical; min-height: 72px; }
+    .hint { font-size: 0.78rem; color: #aaa; margin-top: 5px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .btn { display: inline-block; border: none; padding: 11px 28px; border-radius: 7px; font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: background .15s; color: white;
+      background: {% if space == 'joint' %}#2d6df6{% else %}#7c3aed{% endif %}; }
+    .btn:hover { background: {% if space == 'joint' %}#1a56d6{% else %}#6d28d9{% endif %}; }
+    .btn-row { display: flex; align-items: center; gap: 16px; margin-top: 6px; }
+    .cancel-link { font-size: 0.875rem; color: #888; text-decoration: none; }
+    .cancel-link:hover { color: #444; }
+  </style>
+</head>
+<body>
+  <nav class="topbar">
+    <a href="/" class="topbar-brand">Finanças Pessoais</a>
+    <div class="topbar-right">
+      <a href="/change-password" class="topbar-email">{{ current_user.email }}</a>
+      {% if current_user.role == 'admin' %}
+      <a href="/users" class="topbar-link">Utilizadores</a>
+      <a href="/categories" class="topbar-link">Categorias</a>
+      {% endif %}
+      <a href="/logout" class="topbar-logout">Sair</a>
+    </div>
+  </nav>
+
+  <div class="page">
+    <a href="{{ back_url }}" class="back">← Voltar</a>
+    <div class="page-header">
+      <h1>Adicionar Registo</h1>
+      <span class="space-pill">{{ "Partilhado" if space == "joint" else "Privado" }}</span>
+    </div>
+
+    <div class="card">
+      {% if error %}
+      <div class="error-banner">{{ error }}</div>
+      {% endif %}
+
+      <form method="post" novalidate>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="date">Data</label>
+            <input type="date" id="date" name="date" required
+                   value="{{ form.date if form else today or '' }}">
+          </div>
+          <div class="form-group">
+            <label for="amount">Valor (€)</label>
+            <input type="number" id="amount" name="amount" step="0.01" required
+                   placeholder="-50.00"
+                   value="{{ form.amount if form else '' }}">
+            <p class="hint">Negativo = débito &nbsp;·&nbsp; Positivo = crédito</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="description">Descrição</label>
+          <input type="text" id="description" name="description" required
+                 placeholder="ex: Compra no Continente"
+                 value="{{ form.description if form else '' }}">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="category">Categoria</label>
+            <select id="category" name="category">
+              {% for cat in categories %}
+              <option value="{{ cat }}"
+                {% if form and form.category == cat %}selected
+                {% elif not form and cat == 'Outros' %}selected{% endif %}>
+                {{ cat }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="patrimony_label">Conta</label>
+            <select id="patrimony_label" name="patrimony_label">
+              <option value="">— sem conta —</option>
+              {% for p in patrimony %}
+              <option value="{{ p.category }}"
+                {% if form and form.patrimony_label == p.category %}selected{% endif %}>
+                {{ p.label }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="notes">Notas <span style="font-weight:400;color:#aaa">(opcional)</span></label>
+          <textarea id="notes" name="notes" placeholder="Observações sobre este registo...">{{ form.notes if form else '' }}</textarea>
+        </div>
+
+        <div class="btn-row">
+          <button type="submit" class="btn">Guardar registo</button>
+          <a href="{{ back_url }}" class="cancel-link">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
