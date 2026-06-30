@@ -41,6 +41,17 @@
     .btn-row { display: flex; align-items: center; gap: 16px; margin-top: 6px; }
     .cancel-link { font-size: 0.875rem; color: #888; text-decoration: none; }
     .cancel-link:hover { color: #444; }
+    @media (max-width: 640px) {
+      nav.topbar { padding: 0 14px; }
+      .topbar-email { display: none; }
+      .topbar-right { gap: 10px; }
+      .page { padding: 24px 14px; }
+      .card { padding: 18px; }
+      .form-row { grid-template-columns: 1fr; }
+      .btn { width: 100%; text-align: center; }
+      .btn-row { flex-direction: column; align-items: stretch; }
+      .cancel-link { text-align: center; }
+    }
   </style>
 </head>
 <body>

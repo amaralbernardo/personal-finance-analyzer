@@ -136,6 +136,43 @@
       font-weight: 600;
     }
     .section-count.warn { background: #fff0f0; color: #c0392b; }
+    @media (max-width: 768px) {
+      body { padding: 20px 12px; }
+      .container { max-width: 100%; }
+      h1 { font-size: 1.2rem; }
+      .subtitle { font-size: 0.82rem; }
+      .card { overflow: visible; }
+      table, thead, tbody, tr { display: block; }
+      thead { display: none; }
+      tr {
+        border: 1px solid #e8e8e8;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        padding: 10px 14px;
+        background: white;
+      }
+      td {
+        display: flex;
+        flex-direction: column;
+        padding: 6px 0;
+        border-bottom: 1px solid #f4f4f4;
+        min-width: 0 !important;
+      }
+      td:last-child { border-bottom: none; }
+      td::before {
+        content: attr(data-label);
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        color: #aaa;
+        margin-bottom: 4px;
+      }
+      select { min-width: 0 !important; width: 100%; }
+      .raw-data { max-width: 100%; white-space: normal; }
+      .actions { flex-direction: column; align-items: stretch; }
+      .btn, .btn-secondary { width: 100%; text-align: center; }
+    }
   </style>
 </head>
 <body>
@@ -167,16 +204,16 @@
           <tbody>
             {% for txn in transactions %}
             <tr>
-              <td class="date">{{ txn.date }}</td>
-              <td class="desc">{{ txn.description }}</td>
-              <td>
+              <td class="date" data-label="Data">{{ txn.date }}</td>
+              <td class="desc" data-label="Descrição">{{ txn.description }}</td>
+              <td data-label="Notas">
                 <input class="notes-input" type="text" name="notes_{{ txn.id }}"
                        value="{{ txn.notes or '' }}" placeholder="Nota opcional…">
               </td>
-              <td class="amount {{ 'amount-neg' if txn.amount < 0 else 'amount-pos' }}">
+              <td class="amount {{ 'amount-neg' if txn.amount < 0 else 'amount-pos' }}" data-label="Valor">
                 {% if txn.amount < 0 %}−{% endif %}{{ "%.2f"|format(txn.amount|abs) }} €
               </td>
-              <td>
+              <td data-label="Categoria">
                 <select name="cat_{{ txn.id }}"
                         class="{{ 'needs-review' if txn.category == 'Outros' else '' }}"
                         required>
@@ -185,15 +222,15 @@
                   {% endfor %}
                 </select>
               </td>
-              <td>
-                <select name="patrimony_{{ txn.id }}" style="min-width:130px" required>
+              <td data-label="Conta">
+                <select name="patrimony_{{ txn.id }}" required>
                   <option value="">— selecionar —</option>
                   {% for p in patrimony %}
                   <option value="{{ p.category }}" {{ 'selected' if txn.patrimony_label == p.category else '' }}>{{ p.category }}</option>
                   {% endfor %}
                 </select>
               </td>
-              <td style="text-align:center">
+              <td style="text-align:left" data-label="Guardar">
                 <input type="checkbox" name="include_{{ txn.id }}" checked>
               </td>
             </tr>
@@ -226,30 +263,30 @@
           <tbody>
             {% for row in skipped_rows %}
             <tr>
-              <td><span class="reason-badge">{{ row.reason }}</span></td>
-              <td class="raw-data" title="{{ row.description_raw }}">
+              <td data-label="Motivo"><span class="reason-badge">{{ row.reason }}</span></td>
+              <td class="raw-data" data-label="Dados originais" title="{{ row.description_raw }}">
                 {{ row.description_raw or row.date_raw or row.amount_raw or '—' }}
               </td>
-              <td style="min-width:120px">
+              <td data-label="Data">
                 <input type="text" name="skip_date_{{ row.id }}"
                        value="{{ row.date_raw }}" placeholder="YYYY-MM-DD">
               </td>
-              <td style="min-width:200px">
+              <td data-label="Descrição">
                 <input type="text" name="skip_desc_{{ row.id }}"
                        value="{{ row.description_raw }}" placeholder="Descrição">
               </td>
-              <td style="min-width:110px">
+              <td data-label="Valor (€)">
                 <input type="text" name="skip_amount_{{ row.id }}"
                        value="{{ row.amount_raw }}" placeholder="Ex: -45.30">
               </td>
-              <td>
+              <td data-label="Categoria">
                 <select name="skip_cat_{{ row.id }}">
                   {% for cat in categories %}
                   <option value="{{ cat }}">{{ cat }}</option>
                   {% endfor %}
                 </select>
               </td>
-              <td style="text-align:center">
+              <td style="text-align:left" data-label="Incluir">
                 <input type="checkbox" name="skip_include_{{ row.id }}">
               </td>
             </tr>

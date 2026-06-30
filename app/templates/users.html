@@ -103,6 +103,17 @@
     }
     .field input:focus, .field select:focus { outline: none; border-color: #2d6df6; box-shadow: 0 0 0 3px rgba(45,109,246,.1); }
     .self-badge { font-size: 0.75rem; color: #aaa; margin-left: 4px; }
+    @media (max-width: 640px) {
+      nav.topbar { padding: 0 14px; }
+      .topbar-email { display: none; }
+      .topbar-right { gap: 12px; }
+      .page { padding: 24px 14px; }
+      .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      table { min-width: 480px; }
+      .col-date { display: none; }
+      .add-row { flex-direction: column; }
+      .field { min-width: 0 !important; max-width: 100% !important; }
+    }
   </style>
 </head>
 <body>
@@ -126,7 +137,7 @@
             <th>Email</th>
             <th>Papel</th>
             <th>Estado</th>
-            <th>Criado em</th>
+            <th class="col-date">Criado em</th>
             <th>Ações</th>
           </tr>
         </thead>
@@ -149,7 +160,7 @@
                 {{ 'Ativo' if u.active else 'Inativo' }}
               </span>
             </td>
-            <td style="color:#888;font-size:.85rem">{{ u.created_at[:10] }}</td>
+            <td class="col-date" style="color:#888;font-size:.85rem">{{ u.created_at[:10] }}</td>
             <td>
               {% if u.id != current_user.id %}
               <div class="actions-cell">
@@ -187,7 +198,7 @@
             <label>Password temporária</label>
             <input type="text" name="password" placeholder="Password inicial" required>
           </div>
-          <div class="field" style="max-width:160px">
+          <div class="field">
             <label>Papel</label>
             <select name="role">
               <option value="viewer" selected>Visualizador</option>

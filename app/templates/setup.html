@@ -40,6 +40,18 @@
     .btn-add { padding: 9px 20px; border-radius: 6px; background: #2d6df6; color: white; border: none; font-size: 0.875rem; font-weight: 500; cursor: pointer; align-self: flex-end; }
     .btn-add:hover { background: #1a56d6; }
     .empty { color: #aaa; font-size: 0.875rem; padding: 8px 0; }
+    @media (max-width: 640px) {
+      nav.topbar { padding: 0 14px; }
+      .topbar-email { display: none; }
+      .topbar-right { gap: 12px; }
+      .page { padding: 24px 14px; }
+      .card, .add-card { padding: 16px; }
+      .overflow-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      table { min-width: 480px; }
+      .add-row { flex-direction: column; }
+      .field { min-width: 0 !important; max-width: 100% !important; }
+      .btn-add { width: 100%; padding: 10px; }
+    }
   </style>
 </head>
 <body>
@@ -63,7 +75,7 @@
     <div class="card">
       <p class="card-title">Valores atuais</p>
       {% if patrimony %}
-      <table>
+      <div class="overflow-wrap"><table>
         <thead>
           <tr>
             <th>Descrição</th>
@@ -92,7 +104,7 @@
           </tr>
           {% endfor %}
         </tbody>
-      </table>
+      </table></div>
       {% else %}
       <p class="empty">Nenhum valor definido ainda.</p>
       {% endif %}
@@ -107,7 +119,7 @@
             <label>Descrição</label>
             <input type="text" name="label" placeholder="ex: Conta CGD" required>
           </div>
-          <div class="field" style="max-width:210px">
+          <div class="field">
             <label>Categoria</label>
             <select name="category">
               {% for cat in available_categories %}
@@ -115,11 +127,11 @@
               {% endfor %}
             </select>
           </div>
-          <div class="field" style="max-width:140px">
+          <div class="field">
             <label>Saldo inicial (€)</label>
             <input type="number" name="amount" step="0.01" placeholder="0.00" required>
           </div>
-          <div class="field" style="max-width:150px">
+          <div class="field">
             <label>Data de referência</label>
             <input type="date" name="reference_date" required>
           </div>
