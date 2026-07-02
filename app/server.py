@@ -4,7 +4,7 @@ import sys
 import json
 import time
 from collections import defaultdict
-from datetime import date as _today_date
+from datetime import date as _today_date, datetime as _dt
 from pathlib import Path
 from functools import wraps
 
@@ -138,6 +138,38 @@ def _last_report(space: str):
         return None
     reports = sorted(report_dir.glob("report_*.html"))
     return reports[-1] if reports else None
+
+
+def _list_reports(space: str) -> list:
+    report_dir = REPORTS_DIR / space
+    if not report_dir.exists():
+        return []
+    files = sorted(report_dir.glob("report_*.html"), reverse=True)
+    result = []
+    for f in files:
+        try:
+            parts = f.stem.split("_")
+            label = _dt.strptime(f"{parts[1]}_{parts[2]}", "%Y%m%d_%H%M%S").strftime("%d/%m/%Y %H:%M")
+        except Exception:
+            label = f.name
+        result.append({"name": f.name, "label": label, "size_kb": round(f.stat().st_size / 1024, 1)})
+    return result
+
+
+def _delete_reports_handler(space: str):
+    report_dir = REPORTS_DIR / space
+    if not report_dir.exists():
+        return
+    action = request.form.get("action")
+    if action == "keep_latest":
+        files = sorted(report_dir.glob("report_*.html"))
+        to_delete = files[:-1]
+    else:
+        filenames = request.form.getlist("filenames")
+        to_delete = [report_dir / secure_filename(f) for f in filenames]
+    for f in to_delete:
+        if f.exists() and f.parent.resolve() == report_dir.resolve():
+            f.unlink()
 
 
 def _has_data(conn, space: str) -> bool:
@@ -478,6 +510,23 @@ def joint_report(filename):
     return send_file(REPORTS_DIR / 'joint' / filename)
 
 
+@app.route("/joint/reports")
+@login_required
+def joint_reports():
+    return render_template("reports_list.html",
+                           reports=_list_reports('joint'),
+                           report_base_url="/joint/report/",
+                           delete_url=url_for("joint_reports_delete"),
+                           back_url=url_for("joint"))
+
+
+@app.route("/joint/reports/delete", methods=["POST"])
+@admin_required
+def joint_reports_delete():
+    _delete_reports_handler('joint')
+    return redirect(url_for("joint_reports"))
+
+
 # ── individual space ──────────────────────────────────────────────────────────
 
 @app.route("/individual")
@@ -575,6 +624,25 @@ def individual_generate_report():
 def individual_report(filename):
     space = _ind_space(current_user.id)
     return send_file(REPORTS_DIR / space / filename)
+
+
+@app.route("/individual/reports")
+@login_required
+def individual_reports():
+    space = _ind_space(current_user.id)
+    return render_template("reports_list.html",
+                           reports=_list_reports(space),
+                           report_base_url="/individual/report/",
+                           delete_url=url_for("individual_reports_delete"),
+                           back_url=url_for("individual"))
+
+
+@app.route("/individual/reports/delete", methods=["POST"])
+@login_required
+def individual_reports_delete():
+    space = _ind_space(current_user.id)
+    _delete_reports_handler(space)
+    return redirect(url_for("individual_reports"))
 
 
 # ── add transaction ───────────────────────────────────────────────────────────
@@ -702,6 +770,40 @@ def _patrimony_handler(space: str, back_url: str):
                            used_categories=used_categories)
 
 
+@app.route("/patrimony/edit/<int:entry_id>", methods=["POST"])
+@login_required
+def patrimony_edit(entry_id):
+    conn = get_connection()
+    row = conn.execute("SELECT space, category FROM patrimony WHERE id = ?", (entry_id,)).fetchone()
+    if row:
+        space = row["space"]
+        if space == 'joint' and current_user.role != 'admin':
+            conn.close()
+            abort(403)
+        if space != 'joint' and space != _ind_space(current_user.id):
+            conn.close()
+            abort(403)
+        old_category = row["category"]
+        new_label = request.form.get("label", "").strip()
+        new_category = request.form.get("category", "").strip()
+        new_amount = request.form.get("amount", "").strip()
+        new_reference_date = request.form.get("reference_date", "").strip()
+        if new_label and new_category and new_amount and new_reference_date:
+            conn.execute("""
+                UPDATE patrimony SET label = ?, category = ?, amount = ?, reference_date = ?
+                WHERE id = ?
+            """, (new_label, new_category, float(new_amount), new_reference_date, entry_id))
+            if new_category != old_category:
+                conn.execute("""
+                    UPDATE transactions SET patrimony_label = ?
+                    WHERE patrimony_label = ? AND space = ?
+                """, (new_category, old_category, space))
+            conn.commit()
+    conn.close()
+    back = request.form.get("back_url", url_for("index"))
+    return redirect(back)
+
+
 @app.route("/patrimony/delete/<int:entry_id>", methods=["POST"])
 @login_required
 def patrimony_delete(entry_id):
@@ -752,6 +854,20 @@ def patrimony_category_delete(cat_id):
         if not in_use:
             conn.execute("DELETE FROM patrimony_categories WHERE id = ?", (cat_id,))
             conn.commit()
+    conn.close()
+    return redirect(back)
+
+
+@app.route("/patrimony/categories/delete-unused", methods=["POST"])
+@login_required
+def patrimony_categories_delete_unused():
+    back = request.form.get("back_url", url_for("index"))
+    conn = get_connection()
+    conn.execute("""
+        DELETE FROM patrimony_categories
+        WHERE name NOT IN (SELECT DISTINCT category FROM patrimony)
+    """)
+    conn.commit()
     conn.close()
     return redirect(back)
 

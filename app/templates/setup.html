@@ -30,6 +30,9 @@
     .cat-cell { color: #888; font-size: 0.82rem; }
     .btn-delete { background: #fff0f0; color: #c0392b; border: 1px solid #f5c6c6; padding: 4px 10px; border-radius: 5px; font-size: 0.8rem; cursor: pointer; }
     .btn-delete:hover { background: #fde8e8; }
+    .btn-edit { background: #f0f4ff; color: #2d6df6; border: 1px solid #c5d5fb; padding: 4px 10px; border-radius: 5px; font-size: 0.8rem; cursor: pointer; margin-right: 4px; }
+    .btn-edit:hover { background: #e0eaff; }
+    .edit-row td { background: #f8faff; padding: 12px 10px; }
     .add-card { background: white; border-radius: 10px; padding: 22px 26px; box-shadow: 0 1px 4px rgba(0,0,0,.08); border: 2px dashed #dce2f0; }
     .add-title { font-size: 1rem; font-weight: 600; margin: 0 0 16px; color: #333; }
     .add-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
@@ -94,11 +97,45 @@
             <td class="cat-cell">{{ p.reference_date }}</td>
             <td class="amount-cell">{{ "%.2f"|format(p.initial_amount) }} €</td>
             <td class="amount-cell" style="color:{% if p.current_value >= p.initial_amount %}#1e8449{% else %}#c0392b{% endif %}">{{ "%.2f"|format(p.current_value) }} €</td>
-            <td>
+            <td style="white-space:nowrap">
+              <button type="button" class="btn-edit" onclick="toggleEdit({{ p.id }})">Editar</button>
               <form action="/patrimony/delete/{{ p.id }}" method="post" style="display:inline">
                 <input type="hidden" name="back_url" value="{{ request.url }}">
                 <button type="submit" class="btn-delete"
                         onclick="return confirm('Eliminar este registo?')">Eliminar</button>
+              </form>
+            </td>
+          </tr>
+          <tr id="edit-{{ p.id }}" class="edit-row" style="display:none">
+            <td colspan="6">
+              <form action="/patrimony/edit/{{ p.id }}" method="post">
+                <input type="hidden" name="back_url" value="{{ request.url }}">
+                <div class="add-row" style="margin:0">
+                  <div class="field">
+                    <label>Descrição</label>
+                    <input type="text" name="label" value="{{ p.label }}" required>
+                  </div>
+                  <div class="field">
+                    <label>Categoria</label>
+                    <select name="category">
+                      {% for cat in all_categories %}
+                      <option value="{{ cat.name }}" {% if cat.name == p.category %}selected{% endif %}>{{ cat.name }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label>Data de referência</label>
+                    <input type="date" name="reference_date" value="{{ p.reference_date }}" required>
+                  </div>
+                  <div class="field">
+                    <label>Saldo inicial (€)</label>
+                    <input type="number" name="amount" step="0.01" value="{{ p.initial_amount }}" required>
+                  </div>
+                  <div style="display:flex;gap:6px;align-self:flex-end">
+                    <button type="submit" class="btn-add">Guardar</button>
+                    <button type="button" class="btn-delete" onclick="toggleEdit({{ p.id }})">Cancelar</button>
+                  </div>
+                </div>
               </form>
             </td>
           </tr>
@@ -163,6 +200,16 @@
           {% endfor %}
         </tbody>
       </table>
+      {% set unused_count = all_categories | rejectattr('name', 'in', used_categories) | list | length %}
+      {% if unused_count > 0 %}
+      <form action="/patrimony/categories/delete-unused" method="post" style="margin-top:10px">
+        <input type="hidden" name="back_url" value="{{ request.url }}">
+        <button type="submit" class="btn-delete"
+                onclick="return confirm('Eliminar todas as {{ unused_count }} categorias não utilizadas?')">
+          Eliminar todas não utilizadas ({{ unused_count }})
+        </button>
+      </form>
+      {% endif %}
       <form action="/patrimony/categories/add" method="post" style="margin-top:14px">
         <input type="hidden" name="back_url" value="{{ request.url }}">
         <div style="display:flex;gap:8px;align-items:center">
@@ -173,5 +220,11 @@
       </form>
     </div>
   </div>
+  <script>
+    function toggleEdit(id) {
+      const row = document.getElementById('edit-' + id);
+      row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+    }
+  </script>
 </body>
 </html>

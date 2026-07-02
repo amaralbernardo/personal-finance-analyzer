@@ -136,6 +136,7 @@
       <a href="/joint/report/{{ last_report.name }}" class="report-link" target="_blank">Ver último relatório →</a>
       <p class="report-name" style="margin-bottom:14px">{{ last_report.name }}</p>
       {% endif %}
+      <a href="/joint/reports" class="report-link" style="font-size:0.85rem;display:block;margin-bottom:14px">Ver todos os relatórios →</a>
       {% if current_user.role == 'admin' %}
       <form action="/joint/generate-report" method="post">
         <button type="submit" class="btn">Gerar novo relatório</button>

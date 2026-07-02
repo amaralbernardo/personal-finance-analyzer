@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Relatórios</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f2f5; margin: 0; padding: 0; color: #1a1a2e; }
+    nav.topbar { background: white; border-bottom: 1px solid #eee; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .topbar-brand { font-weight: 700; font-size: 0.95rem; color: #1a1a2e; text-decoration: none; }
+    .topbar-right { display: flex; align-items: center; gap: 20px; }
+    .topbar-email { font-size: 0.85rem; color: #888; text-decoration: none; }
+    .topbar-link { font-size: 0.85rem; color: #2d6df6; text-decoration: none; }
+    .topbar-link:hover { text-decoration: underline; }
+    .topbar-logout { font-size: 0.85rem; color: #888; text-decoration: none; }
+    .topbar-logout:hover { color: #c0392b; }
+    .page { max-width: 720px; margin: 0 auto; padding: 40px 20px; }
+    .back { color: #888; text-decoration: none; font-size: 0.875rem; display: inline-block; margin-bottom: 20px; }
+    .back:hover { color: #444; }
+    h1 { font-size: 1.5rem; margin: 0 0 8px; }
+    .page-desc { color: #666; font-size: 0.9rem; margin: 0 0 28px; }
+    .card { background: white; border-radius: 10px; padding: 22px 26px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    th { text-align: left; padding: 8px 10px; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: #888; border-bottom: 1px solid #eee; }
+    td { padding: 10px 10px; border-bottom: 1px solid #f4f4f4; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    .btn-delete { background: #fff0f0; color: #c0392b; border: 1px solid #f5c6c6; padding: 6px 14px; border-radius: 5px; font-size: 0.85rem; cursor: pointer; }
+    .btn-delete:hover { background: #fde8e8; }
+    .btn-delete:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-secondary { background: #f5f6fa; color: #444; border: 1px solid #ddd; padding: 6px 14px; border-radius: 5px; font-size: 0.85rem; cursor: pointer; }
+    .btn-secondary:hover { background: #eee; }
+    .report-link { color: #2d6df6; text-decoration: none; font-weight: 500; }
+    .report-link:hover { text-decoration: underline; }
+    .actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; align-items: center; }
+    .empty { color: #aaa; font-size: 0.875rem; padding: 16px 0; }
+    input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: #2d6df6; }
+    @media (max-width: 640px) {
+      nav.topbar { padding: 0 14px; }
+      .topbar-email { display: none; }
+      .topbar-right { gap: 12px; }
+      .page { padding: 24px 14px; }
+      .card { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="topbar">
+    <a href="/" class="topbar-brand">Finanças Pessoais</a>
+    <div class="topbar-right">
+      <a href="/change-password" class="topbar-email">{{ current_user.email }}</a>
+      {% if current_user.role == 'admin' %}
+      <a href="/users" class="topbar-link">Utilizadores</a>
+      <a href="/categories" class="topbar-link">Categorias</a>
+      {% endif %}
+      <a href="/logout" class="topbar-logout">Sair</a>
+    </div>
+  </nav>
+
+  <div class="page">
+    <a href="{{ back_url }}" class="back">← Voltar</a>
+    <h1>Relatórios</h1>
+    <p class="page-desc">Todos os relatórios gerados para este espaço.</p>
+
+    <div class="card">
+      {% if reports %}
+      <form action="{{ delete_url }}" method="post" id="delete-form">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:36px"><input type="checkbox" id="select-all" title="Selecionar todos"></th>
+              <th>Data / Hora</th>
+              <th>Ficheiro</th>
+              <th style="text-align:right">Tamanho</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in reports %}
+            <tr>
+              <td><input type="checkbox" name="filenames" value="{{ r.name }}" class="row-check"></td>
+              <td>{{ r.label }}</td>
+              <td style="color:#aaa;font-size:0.8rem">{{ r.name }}</td>
+              <td style="text-align:right;color:#aaa;font-size:0.8rem;white-space:nowrap">{{ r.size_kb }} KB</td>
+              <td style="text-align:right;white-space:nowrap">
+                <a href="{{ report_base_url }}{{ r.name }}" target="_blank" class="report-link">Abrir →</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <div class="actions">
+          <button type="submit" name="action" value="selected" class="btn-delete" id="btn-delete-selected" disabled>
+            Eliminar selecionados
+          </button>
+          {% if reports | length > 1 %}
+          <button type="submit" name="action" value="keep_latest" class="btn-secondary"
+                  onclick="return confirm('Eliminar todos os relatórios exceto o último?')">
+            Eliminar todos exceto o último
+          </button>
+          {% endif %}
+        </div>
+      </form>
+      {% else %}
+      <p class="empty">Nenhum relatório gerado ainda.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <script>
+    const selectAll = document.getElementById('select-all');
+    const btnDelete = document.getElementById('btn-delete-selected');
+
+    function updateBtn() {
+      const any = [...document.querySelectorAll('.row-check')].some(c => c.checked);
+      if (btnDelete) btnDelete.disabled = !any;
+    }
+
+    if (selectAll) {
+      selectAll.addEventListener('change', () => {
+        document.querySelectorAll('.row-check').forEach(c => c.checked = selectAll.checked);
+        updateBtn();
+      });
+    }
+
+    document.querySelectorAll('.row-check').forEach(c => {
+      c.addEventListener('change', () => {
+        selectAll.checked = [...document.querySelectorAll('.row-check')].every(c => c.checked);
+        updateBtn();
+      });
+    });
+  </script>
+</body>
+</html>

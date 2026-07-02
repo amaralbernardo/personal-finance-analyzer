@@ -79,8 +79,11 @@ def create_tables(conn):
     conn.execute(CREATE_SKIPPED_ROWS)
     conn.execute(CREATE_USERS)
     conn.execute(CREATE_PATRIMONY)
+    patrimony_cat_existed = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='patrimony_categories'"
+    ).fetchone() is not None
     conn.execute(CREATE_PATRIMONY_CATEGORIES)
-    if conn.execute("SELECT COUNT(*) FROM patrimony_categories").fetchone()[0] == 0:
+    if not patrimony_cat_existed:
         for name in _DEFAULT_PATRIMONY_CATEGORIES:
             conn.execute("INSERT OR IGNORE INTO patrimony_categories (name) VALUES (?)", (name,))
     try:

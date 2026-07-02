@@ -72,7 +72,7 @@
 <body>
 
 <nav>
-  <a href="javascript:history.back()" style="padding:0 14px;height:48px;display:flex;align-items:center;font-size:0.85rem;color:#888;text-decoration:none;border-right:1px solid #eee;gap:6px">← Voltar</a>
+  <a id="back-btn" href="#" style="padding:0 14px;height:48px;display:flex;align-items:center;font-size:0.85rem;color:#888;text-decoration:none;border-right:1px solid #eee;gap:6px">← Voltar</a>
   <span class="nav-brand" style="margin-left:8px">Relatório Financeiro</span>
   <a href="#patrimonio">Patrimônio</a>
   <a href="#fluxos">Fluxos</a>
@@ -485,6 +485,17 @@ const observer = new IntersectionObserver(entries => {
   });
 }, { threshold: 0.3 });
 sections.forEach(s => observer.observe(s));
+
+(function () {
+  var btn = document.getElementById('back-btn');
+  if (!btn) return;
+  if (history.length <= 1) {
+    btn.textContent = '✕ Fechar';
+    btn.addEventListener('click', function (e) { e.preventDefault(); window.close(); });
+  } else {
+    btn.addEventListener('click', function (e) { e.preventDefault(); history.back(); });
+  }
+})();
 </script>
 </body>
 </html>
