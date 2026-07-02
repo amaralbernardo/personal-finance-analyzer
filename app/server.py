@@ -645,6 +645,80 @@ def individual_reports_delete():
     return redirect(url_for("individual_reports"))
 
 
+# ── records (view/validate all transactions) ─────────────────────────────────
+
+def _process_records_form(conn, req, space: str):
+    mappings = {}
+    if MAPPINGS_PATH.exists():
+        with open(MAPPINGS_PATH, encoding="utf-8") as f:
+            mappings = json.load(f)
+
+    all_ids_raw = req.form.get("all_ids", "")
+    if not all_ids_raw:
+        return
+
+    all_ids = [int(x) for x in all_ids_raw.split(",") if x.strip()]
+    for txn_id in all_ids:
+        verified = 1 if req.form.get(f"verified_{txn_id}") == "on" else 0
+        category = req.form.get(f"cat_{txn_id}", "").strip()
+        notes    = req.form.get(f"notes_{txn_id}", "").strip() or None
+        if not category:
+            continue
+        conn.execute(
+            "UPDATE transactions SET verified = ?, category = ?, notes = ? WHERE id = ? AND space = ?",
+            (verified, category, notes, txn_id, space),
+        )
+        if category != "Outros":
+            row = conn.execute("SELECT description FROM transactions WHERE id = ?", (txn_id,)).fetchone()
+            if row:
+                mappings[row["description"]] = category
+
+    MAPPINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(MAPPINGS_PATH, "w", encoding="utf-8") as f:
+        json.dump(mappings, f, ensure_ascii=False, indent=2)
+
+
+def _records_handler(space: str, back_url: str):
+    conn = get_connection()
+
+    if request.method == "POST":
+        _process_records_form(conn, request, space)
+        conn.commit()
+        conn.close()
+        return redirect(request.url)
+
+    rows = conn.execute(
+        "SELECT id, date, description, amount, category, patrimony_label, notes, verified "
+        "FROM transactions WHERE space = ? ORDER BY date DESC, id DESC", (space,)
+    ).fetchall()
+    conn.close()
+
+    unverified = [r for r in rows if r["verified"] == 0]
+    verified   = [r for r in rows if r["verified"] == 1]
+
+    return render_template(
+        "records.html",
+        unverified=unverified,
+        verified=verified,
+        categories=load_categories(),
+        back_url=back_url,
+        space=space,
+    )
+
+
+@app.route("/joint/records", methods=["GET", "POST"])
+@admin_required
+def joint_records():
+    return _records_handler('joint', url_for("joint"))
+
+
+@app.route("/individual/records", methods=["GET", "POST"])
+@login_required
+def individual_records():
+    space = _ind_space(current_user.id)
+    return _records_handler(space, url_for("individual"))
+
+
 # ── add transaction ───────────────────────────────────────────────────────────
 
 def _add_transaction_handler(space: str, back_url: str):

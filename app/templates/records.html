@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Registos</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f2f5; margin: 0; padding: 40px 20px; color: #1a1a2e; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    nav.topbar { background: white; border-bottom: 1px solid #eee; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; margin: -40px -20px 32px; }
+    .topbar-brand { font-weight: 700; font-size: 0.95rem; color: #1a1a2e; text-decoration: none; }
+    .topbar-right { display: flex; align-items: center; gap: 20px; }
+    .topbar-email { font-size: 0.85rem; color: #888; text-decoration: none; }
+    .topbar-link { font-size: 0.85rem; color: #2d6df6; text-decoration: none; }
+    .topbar-link:hover { text-decoration: underline; }
+    .topbar-logout { font-size: 0.85rem; color: #888; text-decoration: none; }
+    .topbar-logout:hover { color: #c0392b; }
+    .back { color: #888; text-decoration: none; font-size: 0.875rem; display: inline-block; margin-bottom: 20px; }
+    .back:hover { color: #444; }
+    h1 { font-size: 1.5rem; margin: 0 0 6px; }
+    .subtitle { color: #666; margin: 0 0 24px; font-size: 0.9rem; }
+    .card { background: white; border-radius: 10px; padding: 0; box-shadow: 0 1px 4px rgba(0,0,0,.08); overflow: hidden; margin-bottom: 20px; }
+    .section-header { padding: 14px 18px; background: #f8f9fb; border-bottom: 1px solid #eee; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
+    .section-count { background: #e8edf8; color: #2d6df6; border-radius: 10px; padding: 1px 8px; font-size: 0.8rem; font-weight: 600; }
+    .section-count.warn { background: #fff0f0; color: #c0392b; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    thead { background: #f8f9fb; }
+    th { text-align: left; padding: 10px 14px; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #888; border-bottom: 1px solid #eee; }
+    td { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafbfc; }
+    .date { color: #888; font-size: 0.82rem; white-space: nowrap; }
+    .desc { font-weight: 500; max-width: 260px; }
+    .amount { font-weight: 600; white-space: nowrap; }
+    .amount-neg { color: #c0392b; }
+    .amount-pos { color: #1e8449; }
+    .cat-cell { color: #888; font-size: 0.82rem; }
+    select { padding: 5px 9px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85rem; background: white; min-width: 150px; color: #222; cursor: pointer; }
+    select:focus { outline: none; border-color: #2d6df6; box-shadow: 0 0 0 3px rgba(45,109,246,.1); }
+    select.needs-review { border-color: #e74c3c; background: #fff8f8; }
+    .notes-input { padding: 4px 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.82rem; color: #444; width: 100%; min-width: 110px; }
+    .notes-input:focus { outline: none; border-color: #2d6df6; }
+    input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: #2d6df6; }
+    .actions { display: flex; align-items: center; gap: 12px; padding: 20px 0 0; flex-wrap: wrap; }
+    .btn { background: #27ae60; color: white; border: none; padding: 11px 32px; border-radius: 7px; font-size: 0.95rem; font-weight: 500; cursor: pointer; }
+    .btn:hover { background: #1e8449; }
+    .empty { color: #aaa; font-size: 0.875rem; padding: 18px; }
+    .unverified-row { opacity: 1; }
+    .unverified-row.pending { opacity: 0.5; }
+    @media (max-width: 900px) {
+      body { padding: 56px 14px 24px; }
+      nav.topbar { margin: -56px -14px 24px; }
+      .desc { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="topbar">
+    <a href="/" class="topbar-brand">Finanças Pessoais</a>
+    <div class="topbar-right">
+      <a href="/change-password" class="topbar-email">{{ current_user.email }}</a>
+      {% if current_user.role == 'admin' %}
+      <a href="/users" class="topbar-link">Utilizadores</a>
+      <a href="/categories" class="topbar-link">Categorias</a>
+      {% endif %}
+      <a href="/logout" class="topbar-logout">Sair</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <a href="{{ back_url }}" class="back">← Voltar</a>
+    <h1>Registos</h1>
+    <p class="subtitle">Valida ou invalida registos e edita categorias e notas.</p>
+
+    {% set all_ids = (unverified + verified) | map(attribute='id') | join(',') %}
+
+    <form method="post">
+      <input type="hidden" name="all_ids" value="{{ all_ids }}">
+
+      <!-- Por validar -->
+      <div class="card">
+        <div class="section-header">
+          Por validar
+          <span class="section-count warn">{{ unverified | length }}</span>
+        </div>
+        {% if unverified %}
+        <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th title="Validar">✓</th>
+              <th>Data</th>
+              <th>Descrição</th>
+              <th>Valor</th>
+              <th>Categoria</th>
+              <th>Conta</th>
+              <th>Notas</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for txn in unverified %}
+            <tr id="row-{{ txn.id }}" class="unverified-row">
+              <td><input type="checkbox" name="verified_{{ txn.id }}" onchange="toggleRow(this, {{ txn.id }})"></td>
+              <td class="date">{{ txn.date }}</td>
+              <td class="desc">{{ txn.description }}</td>
+              <td class="amount {% if txn.amount < 0 %}amount-neg{% else %}amount-pos{% endif %}">
+                {{ "%.2f"|format(txn.amount|abs) }} €
+              </td>
+              <td>
+                <select name="cat_{{ txn.id }}" class="{{ 'needs-review' if txn.category == 'Outros' else '' }}">
+                  {% for cat in categories %}
+                  <option value="{{ cat }}" {% if cat == txn.category %}selected{% endif %}>{{ cat }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td class="cat-cell">{{ txn.patrimony_label or '—' }}</td>
+              <td><input type="text" class="notes-input" name="notes_{{ txn.id }}" value="{{ txn.notes or '' }}" placeholder="Nota…"></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        </div>
+        {% else %}
+        <p class="empty">Nenhum registo por validar.</p>
+        {% endif %}
+      </div>
+
+      <!-- Validados -->
+      <div class="card">
+        <div class="section-header">
+          Validados
+          <span class="section-count">{{ verified | length }}</span>
+        </div>
+        {% if verified %}
+        <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th title="Validado">✓</th>
+              <th>Data</th>
+              <th>Descrição</th>
+              <th>Valor</th>
+              <th>Categoria</th>
+              <th>Conta</th>
+              <th>Notas</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for txn in verified %}
+            <tr id="row-{{ txn.id }}">
+              <td><input type="checkbox" name="verified_{{ txn.id }}" checked onchange="toggleRow(this, {{ txn.id }})"></td>
+              <td class="date">{{ txn.date }}</td>
+              <td class="desc">{{ txn.description }}</td>
+              <td class="amount {% if txn.amount < 0 %}amount-neg{% else %}amount-pos{% endif %}">
+                {{ "%.2f"|format(txn.amount|abs) }} €
+              </td>
+              <td>
+                <select name="cat_{{ txn.id }}" class="{{ 'needs-review' if txn.category == 'Outros' else '' }}">
+                  {% for cat in categories %}
+                  <option value="{{ cat }}" {% if cat == txn.category %}selected{% endif %}>{{ cat }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td class="cat-cell">{{ txn.patrimony_label or '—' }}</td>
+              <td><input type="text" class="notes-input" name="notes_{{ txn.id }}" value="{{ txn.notes or '' }}" placeholder="Nota…"></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        </div>
+        {% else %}
+        <p class="empty">Nenhum registo validado ainda.</p>
+        {% endif %}
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn">Guardar</button>
+        <span style="color:#aaa;font-size:0.875rem">{{ (unverified + verified) | length }} registo(s) no total</span>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    function toggleRow(cb, id) {
+      const row = document.getElementById('row-' + id);
+      if (row) row.style.opacity = cb.checked ? '1' : '0.45';
+    }
+
+    document.querySelectorAll('select[name^="cat_"]').forEach(function(sel) {
+      sel.addEventListener('change', function() {
+        this.className = this.value === 'Outros' ? 'needs-review' : '';
+      });
+    });
+  </script>
+</body>
+</html>

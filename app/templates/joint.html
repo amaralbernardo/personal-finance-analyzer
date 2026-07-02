@@ -93,7 +93,10 @@
         <span class="badge badge-ok"><span class="badge-dot"></span>Tudo verificado</span>
       {% endif %}
       {% if current_user.role == 'admin' and total_transactions > 0 %}
-      <a href="/joint/verify" class="verify-link">Ver e editar registos →</a>
+      <a href="/joint/records" class="verify-link">Ver todos os registos →</a>
+      {% endif %}
+      {% if current_user.role == 'admin' and (unverified > 0 or skipped > 0) %}
+      <a href="/joint/verify" class="verify-link">Verificar novos →</a>
       {% endif %}
       {% if current_user.role == 'admin' %}
       <a href="/joint/add-transaction" class="verify-link" style="margin-left:{% if total_transactions > 0 %}12{% else %}0{% endif %}px">+ Adicionar registo</a>
