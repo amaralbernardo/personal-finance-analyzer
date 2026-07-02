@@ -239,15 +239,13 @@ def _process_verify_form(conn, req, space: str):
             "SELECT description FROM transactions WHERE id = ? AND space = ?", (txn_id, space)
         ).fetchone()
         if row:
-            if req.form.get(f"include_{txn_id}") != "on":
-                conn.execute("DELETE FROM transactions WHERE id = ? AND space = ?", (txn_id, space))
-            else:
-                pat_label = patrimony_map.get(txn_id)
-                notes     = req.form.get(f"notes_{txn_id}", "").strip() or None
-                conn.execute(
-                    "UPDATE transactions SET category = ?, verified = 1, patrimony_label = ?, notes = ? WHERE id = ? AND space = ?",
-                    (category, pat_label, notes, txn_id, space),
-                )
+            pat_label = patrimony_map.get(txn_id)
+            notes     = req.form.get(f"notes_{txn_id}", "").strip() or None
+            validated = 1 if req.form.get(f"validated_{txn_id}") == "on" else 0
+            conn.execute(
+                "UPDATE transactions SET category = ?, verified = ?, patrimony_label = ?, notes = ? WHERE id = ? AND space = ?",
+                (category, validated, pat_label, notes, txn_id, space),
+            )
             if category != "Outros":
                 mappings[row["description"]] = category
 
@@ -471,7 +469,7 @@ def joint_verify():
     conn = get_connection()
     transactions = conn.execute(
         "SELECT id, date, description, amount, category, patrimony_label, notes "
-        "FROM transactions WHERE space = ? ORDER BY date", (space,)
+        "FROM transactions WHERE verified = 0 AND space = ? ORDER BY date", (space,)
     ).fetchall()
     skipped_rows = conn.execute(
         "SELECT id, source_file, date_raw, description_raw, amount_raw, reason "
@@ -585,7 +583,7 @@ def individual_verify():
     conn = get_connection()
     transactions = conn.execute(
         "SELECT id, date, description, amount, category, patrimony_label, notes "
-        "FROM transactions WHERE space = ? ORDER BY date", (space,)
+        "FROM transactions WHERE verified = 0 AND space = ? ORDER BY date", (space,)
     ).fetchall()
     skipped_rows = conn.execute(
         "SELECT id, source_file, date_raw, description_raw, amount_raw, reason "

@@ -198,7 +198,7 @@
               <th>Valor</th>
               <th>Categoria</th>
               <th>Conta</th>
-              <th style="text-align:center" title="Desmarcar elimina a transação permanentemente">Guardar</th>
+              <th style="text-align:center">Validado</th>
             </tr>
           </thead>
           <tbody>
@@ -223,15 +223,15 @@
                 </select>
               </td>
               <td data-label="Conta">
-                <select name="patrimony_{{ txn.id }}" required>
+                <select name="patrimony_{{ txn.id }}">
                   <option value="">— selecionar —</option>
                   {% for p in patrimony %}
                   <option value="{{ p.category }}" {{ 'selected' if txn.patrimony_label == p.category else '' }}>{{ p.category }}</option>
                   {% endfor %}
                 </select>
               </td>
-              <td style="text-align:left" data-label="Guardar">
-                <input type="checkbox" name="include_{{ txn.id }}" checked>
+              <td style="text-align:left" data-label="Validado">
+                <input type="checkbox" name="validated_{{ txn.id }}">
               </td>
             </tr>
             {% endfor %}
@@ -315,17 +315,11 @@
       });
     });
 
-    document.querySelectorAll('input[name^="include_"]').forEach(function(cb) {
-      var id = cb.name.replace('include_', '');
+    document.querySelectorAll('input[name^="validated_"]').forEach(function(cb) {
       var row = cb.closest('tr');
-      function toggle() {
-        var required = cb.checked;
-        row.querySelectorAll('select[name="cat_' + id + '"], select[name="patrimony_' + id + '"]').forEach(function(sel) {
-          sel.required = required;
-        });
-        row.style.opacity = cb.checked ? '' : '0.4';
-      }
-      cb.addEventListener('change', toggle);
+      cb.addEventListener('change', function() {
+        row.style.opacity = cb.checked ? '0.45' : '';
+      });
     });
   </script>
 </body>
