@@ -111,12 +111,12 @@
         {% set total.val = total.val + p.current_value %}
         <tr>
           <td>{{ p.label }}<br><span class="patrimony-cat">{{ p.category }} · ref. {{ p.reference_date }}</span></td>
-          <td class="patrimony-amount" style="color:{% if p.current_value >= p.initial_amount %}#1e8449{% else %}#c0392b{% endif %}">{{ "%.2f"|format(p.current_value) }} €</td>
+          <td class="patrimony-amount"{% if p.current_value < 0 %} style="color:#c0392b"{% endif %}>{{ "%.2f"|format(p.current_value) }} €</td>
         </tr>
         {% endfor %}
         <tr>
           <td class="patrimony-total">Total</td>
-          <td class="patrimony-amount patrimony-total">{{ "%.2f"|format(total.val) }} €</td>
+          <td class="patrimony-amount patrimony-total"{% if total.val > 0 %} style="color:#1e8449"{% endif %}>{{ "%.2f"|format(total.val) }} €</td>
         </tr>
       </table>
       <a href="/patrimony/individual" class="setup-cta" style="display:inline-block;margin-top:12px;">Editar →</a>

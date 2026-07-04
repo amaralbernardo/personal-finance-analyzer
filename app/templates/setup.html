@@ -90,13 +90,15 @@
           </tr>
         </thead>
         <tbody>
+          {% set total = namespace(val=0) %}
           {% for p in patrimony %}
+          {% set total.val = total.val + p.current_value %}
           <tr>
             <td>{{ p.label }}</td>
             <td class="cat-cell">{{ p.category }}</td>
             <td class="cat-cell">{{ p.reference_date }}</td>
             <td class="amount-cell">{{ "%.2f"|format(p.initial_amount) }} €</td>
-            <td class="amount-cell" style="color:{% if p.current_value >= p.initial_amount %}#1e8449{% else %}#c0392b{% endif %}">{{ "%.2f"|format(p.current_value) }} €</td>
+            <td class="amount-cell"{% if p.current_value < 0 %} style="color:#c0392b"{% endif %}>{{ "%.2f"|format(p.current_value) }} €</td>
             <td style="white-space:nowrap">
               <button type="button" class="btn-edit" onclick="toggleEdit({{ p.id }})">Editar</button>
               <form action="/patrimony/delete/{{ p.id }}" method="post" style="display:inline">
@@ -140,6 +142,11 @@
             </td>
           </tr>
           {% endfor %}
+          <tr>
+            <td colspan="4" style="font-weight:700;border-top:2px solid #eee;padding-top:10px">Total</td>
+            <td class="amount-cell" style="font-weight:700;border-top:2px solid #eee;padding-top:10px;{% if total.val > 0 %}color:#1e8449{% endif %}">{{ "%.2f"|format(total.val) }} €</td>
+            <td style="border-top:2px solid #eee;padding-top:10px"></td>
+          </tr>
         </tbody>
       </table></div>
       {% else %}

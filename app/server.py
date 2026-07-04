@@ -689,6 +689,7 @@ def _records_handler(space: str, back_url: str):
         "SELECT id, date, description, amount, category, patrimony_label, notes, verified "
         "FROM transactions WHERE space = ? ORDER BY date DESC, id DESC", (space,)
     ).fetchall()
+    patrimony_map = {p["category"]: p["label"] for p in _get_patrimony(conn, space)}
     conn.close()
 
     unverified = [r for r in rows if r["verified"] == 0]
@@ -701,6 +702,7 @@ def _records_handler(space: str, back_url: str):
         categories=load_categories(),
         back_url=back_url,
         space=space,
+        patrimony_map=patrimony_map,
     )
 
 
