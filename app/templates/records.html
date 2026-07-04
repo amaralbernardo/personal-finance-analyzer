@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Registos</title>
+  <title>Registos Validados</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f2f5; margin: 0; padding: 40px 20px; color: #1a1a2e; }
@@ -23,7 +23,6 @@
     .card { background: white; border-radius: 10px; padding: 0; box-shadow: 0 1px 4px rgba(0,0,0,.08); overflow: hidden; margin-bottom: 20px; }
     .section-header { padding: 14px 18px; background: #f8f9fb; border-bottom: 1px solid #eee; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
     .section-count { background: #e8edf8; color: #2d6df6; border-radius: 10px; padding: 1px 8px; font-size: 0.8rem; font-weight: 600; }
-    .section-count.warn { background: #fff0f0; color: #c0392b; }
     table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
     thead { background: #f8f9fb; }
     th { text-align: left; padding: 10px 14px; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #888; border-bottom: 1px solid #eee; }
@@ -46,8 +45,6 @@
     .btn { background: #27ae60; color: white; border: none; padding: 11px 32px; border-radius: 7px; font-size: 0.95rem; font-weight: 500; cursor: pointer; }
     .btn:hover { background: #1e8449; }
     .empty { color: #aaa; font-size: 0.875rem; padding: 18px; }
-    .unverified-row { opacity: 1; }
-    .unverified-row.pending { opacity: 0.5; }
     @media (max-width: 900px) {
       body { padding: 56px 14px 24px; }
       nav.topbar { margin: -56px -14px 24px; }
@@ -70,69 +67,20 @@
 
   <div class="container">
     <a href="{{ back_url }}" class="back">← Voltar</a>
-    <h1>Registos</h1>
-    <p class="subtitle">Valida ou invalida registos e edita categorias e notas.</p>
+    <h1>Registos Validados</h1>
+    <p class="subtitle">Consulta e edita categoria e notas dos registos já validados.</p>
 
-    {% set all_ids = (unverified + verified) | map(attribute='id') | join(',') %}
+    {% set all_ids = transactions | map(attribute='id') | join(',') %}
 
     <form method="post">
       <input type="hidden" name="all_ids" value="{{ all_ids }}">
 
-      <!-- Por validar -->
-      <div class="card">
-        <div class="section-header">
-          Por validar
-          <span class="section-count warn">{{ unverified | length }}</span>
-        </div>
-        {% if unverified %}
-        <div style="overflow-x:auto">
-        <table>
-          <thead>
-            <tr>
-              <th title="Validar">✓</th>
-              <th>Data</th>
-              <th>Descrição</th>
-              <th>Valor</th>
-              <th>Categoria</th>
-              <th>Conta</th>
-              <th>Notas</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for txn in unverified %}
-            <tr id="row-{{ txn.id }}" class="unverified-row">
-              <td><input type="checkbox" name="verified_{{ txn.id }}" onchange="toggleRow(this, {{ txn.id }})"></td>
-              <td class="date">{{ txn.date }}</td>
-              <td class="desc">{{ txn.description }}</td>
-              <td class="amount {% if txn.amount < 0 %}amount-neg{% else %}amount-pos{% endif %}">
-                {{ "%.2f"|format(txn.amount|abs) }} €
-              </td>
-              <td>
-                <select name="cat_{{ txn.id }}" class="{{ 'needs-review' if txn.category == 'Outros' else '' }}">
-                  {% for cat in categories %}
-                  <option value="{{ cat }}" {% if cat == txn.category %}selected{% endif %}>{{ cat }}</option>
-                  {% endfor %}
-                </select>
-              </td>
-              <td class="cat-cell">{{ patrimony_map.get(txn.patrimony_label, txn.patrimony_label) or '—' }}</td>
-              <td><input type="text" class="notes-input" name="notes_{{ txn.id }}" value="{{ txn.notes or '' }}" placeholder="Nota…"></td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        </div>
-        {% else %}
-        <p class="empty">Nenhum registo por validar.</p>
-        {% endif %}
-      </div>
-
-      <!-- Validados -->
       <div class="card">
         <div class="section-header">
           Validados
-          <span class="section-count">{{ verified | length }}</span>
+          <span class="section-count">{{ transactions | length }}</span>
         </div>
-        {% if verified %}
+        {% if transactions %}
         <div style="overflow-x:auto">
         <table>
           <thead>
@@ -147,10 +95,10 @@
             </tr>
           </thead>
           <tbody>
-            {% for txn in verified %}
+            {% for txn in transactions %}
             <tr id="row-{{ txn.id }}">
               <td><input type="checkbox" name="verified_{{ txn.id }}" checked onchange="toggleRow(this, {{ txn.id }})"></td>
-              <td class="date">{{ txn.date }}</td>
+              <td class="date">{{ txn.date | datefmt }}</td>
               <td class="desc">{{ txn.description }}</td>
               <td class="amount {% if txn.amount < 0 %}amount-neg{% else %}amount-pos{% endif %}">
                 {{ "%.2f"|format(txn.amount|abs) }} €
@@ -176,7 +124,7 @@
 
       <div class="actions">
         <button type="submit" class="btn">Guardar</button>
-        <span style="color:#aaa;font-size:0.875rem">{{ (unverified + verified) | length }} registo(s) no total</span>
+        <span style="color:#aaa;font-size:0.875rem">{{ transactions | length }} registo(s)</span>
       </div>
     </form>
   </div>

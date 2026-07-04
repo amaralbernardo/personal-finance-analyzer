@@ -17,7 +17,6 @@
     .back { color: #888; text-decoration: none; font-size: 0.875rem; display: inline-block; margin-bottom: 20px; }
     .back:hover { color: #444; }
     h1 { font-size: 1.5rem; margin: 0 0 6px; }
-    h2 { font-size: 1.1rem; margin: 28px 0 8px; color: #444; }
     .subtitle { color: #666; margin: 0 0 24px; font-size: 0.9rem; }
     .card {
       background: white;
@@ -69,6 +68,7 @@
     }
     input[type="text"]:focus { outline: none; border-color: #2d6df6; box-shadow: 0 0 0 3px rgba(45,109,246,.1); }
     input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+    input.del-check { accent-color: #c0392b; }
     .reason-badge {
       display: inline-block;
       padding: 2px 8px;
@@ -106,6 +106,17 @@
       transition: background .15s;
     }
     .btn-secondary:hover { background: #f5f5f5; }
+    .btn-danger {
+      background: #fff0f0;
+      color: #c0392b;
+      border: 1px solid #f5c6c6;
+      padding: 10px 24px;
+      border-radius: 7px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .btn-danger:hover { background: #fde8e8; }
     .notes-input {
       padding: 4px 8px;
       border: 1px solid #ddd;
@@ -136,6 +147,28 @@
       font-weight: 600;
     }
     .section-count.warn { background: #fff0f0; color: #c0392b; }
+    .bulk-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 10px 14px;
+      background: #fafbfc;
+      border-bottom: 1px solid #eee;
+      flex-wrap: wrap;
+    }
+    .bulk-item { display: flex; align-items: center; gap: 8px; }
+    .bulk-label { font-size: 0.82rem; font-weight: 600; color: #666; white-space: nowrap; }
+    .btn-bulk {
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      background: white;
+      font-size: 0.85rem;
+      cursor: pointer;
+      color: #444;
+      white-space: nowrap;
+    }
+    .btn-bulk:hover { background: #f0f0f0; }
     @media (max-width: 768px) {
       body { padding: 20px 12px; }
       .container { max-width: 100%; }
@@ -171,7 +204,9 @@
       select { min-width: 0 !important; width: 100%; }
       .raw-data { max-width: 100%; white-space: normal; }
       .actions { flex-direction: column; align-items: stretch; }
-      .btn, .btn-secondary { width: 100%; text-align: center; }
+      .btn, .btn-secondary, .btn-danger { width: 100%; text-align: center; }
+      .bulk-toolbar { flex-direction: column; align-items: stretch; }
+      .bulk-item { flex-wrap: wrap; }
     }
   </style>
 </head>
@@ -182,6 +217,7 @@
     <p class="subtitle">Confirma as categorias, associa contas de patrimônio e preenche os dados em falta antes de gerar o relatório.</p>
 
     <form action="{{ '/joint/verify' if space == 'joint' else '/individual/verify' }}" method="post">
+      <input type="hidden" name="delete_ids" id="delete-ids-input" value="">
 
       {% if transactions %}
       <div class="card">
@@ -189,9 +225,28 @@
           Transações
           <span class="section-count">{{ transactions|length }}</span>
         </div>
+        <div class="bulk-toolbar">
+          {% if patrimony %}
+          <div class="bulk-item">
+            <span class="bulk-label">Conta para todos:</span>
+            <select id="bulk-account">
+              <option value="">— sem alteração —</option>
+              {% for p in patrimony %}
+              <option value="{{ p.category }}">{{ p.label }}</option>
+              {% endfor %}
+            </select>
+            <button type="button" class="btn-bulk" onclick="applyBulkAccount()">Aplicar</button>
+          </div>
+          {% endif %}
+          <div class="bulk-item">
+            <button type="button" class="btn-bulk" onclick="validateAll()">✓ Validar todos</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
         <table>
           <thead>
             <tr>
+              <th style="width:32px">🗑</th>
               <th>Data</th>
               <th>Descrição</th>
               <th>Notas</th>
@@ -204,7 +259,10 @@
           <tbody>
             {% for txn in transactions %}
             <tr>
-              <td class="date" data-label="Data">{{ txn.date }}</td>
+              <td data-label="Eliminar">
+                <input type="checkbox" class="del-check" data-id="{{ txn.id }}" onchange="updateDeleteBtn()">
+              </td>
+              <td class="date" data-label="Data">{{ txn.date | datefmt }}</td>
               <td class="desc" data-label="Descrição">{{ txn.description }}</td>
               <td data-label="Notas">
                 <input class="notes-input" type="text" name="notes_{{ txn.id }}"
@@ -226,7 +284,7 @@
                 <select name="patrimony_{{ txn.id }}">
                   <option value="">— selecionar —</option>
                   {% for p in patrimony %}
-                  <option value="{{ p.category }}" {{ 'selected' if txn.patrimony_label == p.category else '' }}>{{ p.category }}</option>
+                  <option value="{{ p.category }}" {{ 'selected' if txn.patrimony_label == p.category else '' }}>{{ p.label }}</option>
                   {% endfor %}
                 </select>
               </td>
@@ -237,6 +295,7 @@
             {% endfor %}
           </tbody>
         </table>
+        </div>
       </div>
       {% endif %}
 
@@ -299,6 +358,7 @@
       <div class="actions">
         <button type="submit" name="action" value="save" class="btn-secondary">Guardar</button>
         <button type="submit" name="action" value="report" class="btn">Guardar e gerar relatório</button>
+        <button type="submit" name="action" value="delete" id="btn-delete" class="btn-danger" style="display:none">Eliminar selecionados (<span id="delete-count">0</span>)</button>
         <span class="count-info">
           {% if transactions %}{{ transactions|length }} transaç{{ 'ão' if transactions|length == 1 else 'ões' }}{% endif %}
           {% if transactions and skipped_rows %} · {% endif %}
@@ -321,6 +381,37 @@
         row.style.opacity = cb.checked ? '0.45' : '';
       });
     });
+
+    function applyBulkAccount() {
+      var value = document.getElementById('bulk-account').value;
+      if (!value) return;
+      document.querySelectorAll('select[name^="patrimony_"]').forEach(function(sel) {
+        sel.value = value;
+      });
+    }
+
+    function validateAll() {
+      document.querySelectorAll('input[name^="validated_"]').forEach(function(cb) {
+        if (!cb.checked) {
+          cb.checked = true;
+          var row = cb.closest('tr');
+          if (row) row.style.opacity = '0.45';
+        }
+      });
+    }
+
+    function updateDeleteBtn() {
+      var checked = document.querySelectorAll('.del-check:checked');
+      var ids = Array.from(checked).map(function(cb) { return cb.dataset.id; }).join(',');
+      document.getElementById('delete-ids-input').value = ids;
+      var btn = document.getElementById('btn-delete');
+      if (checked.length > 0) {
+        document.getElementById('delete-count').textContent = checked.length;
+        btn.style.display = '';
+      } else {
+        btn.style.display = 'none';
+      }
+    }
   </script>
 </body>
 </html>

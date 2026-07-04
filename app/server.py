@@ -45,6 +45,16 @@ login_manager = LoginManager(app)
 login_manager.login_view = "login"
 
 
+@app.template_filter('datefmt')
+def datefmt(value):
+    if not value:
+        return ''
+    try:
+        return _dt.strptime(str(value), '%Y-%m-%d').strftime('%d/%m/%Y')
+    except (ValueError, TypeError):
+        return str(value)
+
+
 @app.before_request
 def enforce_password_change():
     if current_user.is_authenticated and current_user.must_change_password:
@@ -214,6 +224,15 @@ def _save_uploaded_files(files, dest_dir: Path) -> int:
         f.save(dest_dir / secure_filename(f.filename))
         saved += 1
     return saved
+
+
+def _delete_selected_transactions(conn, req, space: str):
+    delete_ids_raw = req.form.get("delete_ids", "")
+    if delete_ids_raw:
+        for did in [int(x) for x in delete_ids_raw.split(",") if x.strip()]:
+            conn.execute(
+                "DELETE FROM transactions WHERE id = ? AND space = ? AND verified = 0", (did, space)
+            )
 
 
 def _process_verify_form(conn, req, space: str):
@@ -457,9 +476,15 @@ def joint_verify():
     space = 'joint'
     if request.method == "POST":
         conn = get_connection()
+        action = request.form.get("action")
+        if action == "delete":
+            _delete_selected_transactions(conn, request, space)
+            conn.commit()
+            conn.close()
+            return redirect(url_for("joint_verify"))
         _process_verify_form(conn, request, space)
         conn.commit()
-        if request.form.get("action") == "report":
+        if action == "report":
             report_path = generate(conn, space=space)
             conn.close()
             return redirect(url_for("joint_report", filename=report_path.name))
@@ -571,9 +596,15 @@ def individual_verify():
     space = _ind_space(current_user.id)
     if request.method == "POST":
         conn = get_connection()
+        action = request.form.get("action")
+        if action == "delete":
+            _delete_selected_transactions(conn, request, space)
+            conn.commit()
+            conn.close()
+            return redirect(url_for("individual_verify"))
         _process_verify_form(conn, request, space)
         conn.commit()
-        if request.form.get("action") == "report":
+        if action == "report":
             report_path = generate(conn, space=space)
             conn.close()
             return redirect(url_for("individual_report", filename=report_path.name))
@@ -687,18 +718,14 @@ def _records_handler(space: str, back_url: str):
 
     rows = conn.execute(
         "SELECT id, date, description, amount, category, patrimony_label, notes, verified "
-        "FROM transactions WHERE space = ? ORDER BY date DESC, id DESC", (space,)
+        "FROM transactions WHERE space = ? AND verified = 1 ORDER BY date DESC, id DESC", (space,)
     ).fetchall()
     patrimony_map = {p["category"]: p["label"] for p in _get_patrimony(conn, space)}
     conn.close()
 
-    unverified = [r for r in rows if r["verified"] == 0]
-    verified   = [r for r in rows if r["verified"] == 1]
-
     return render_template(
         "records.html",
-        unverified=unverified,
-        verified=verified,
+        transactions=rows,
         categories=load_categories(),
         back_url=back_url,
         space=space,

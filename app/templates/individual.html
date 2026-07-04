@@ -53,6 +53,15 @@
     .file-item { display: flex; align-items: center; justify-content: space-between; background: #f8f9fb; border: 1px solid #eee; border-radius: 6px; padding: 7px 12px; font-size: 0.85rem; color: #333; }
     .file-remove { background: none; border: none; color: #bbb; cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 0 0 8px; }
     .file-remove:hover { color: #c0392b; }
+    .action-group { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+    .action-group-sep { margin-top:10px; padding-top:10px; border-top:1px solid #f0f0f0; }
+    .action-btn { display:inline-block; padding:8px 16px; border-radius:7px; font-size:0.875rem; font-weight:500; text-decoration:none; transition:background .15s; }
+    .action-btn-primary { background:#7c3aed; color:white; }
+    .action-btn-primary:hover { background:#6d28d9; }
+    .action-btn-secondary { background:#faf7ff; color:#7c3aed; border:1px solid #d8c8f8; }
+    .action-btn-secondary:hover { background:#f0e8ff; }
+    .action-btn-ghost { background:#f8f9fb; color:#444; border:1px solid #e8e8e8; }
+    .action-btn-ghost:hover { background:#f0f0f0; }
     @media (max-width: 640px) {
       nav.topbar { padding: 0 14px; }
       .topbar-email { display: none; }
@@ -92,13 +101,17 @@
       {% else %}
         <span class="badge badge-ok"><span class="badge-dot"></span>Tudo verificado</span>
       {% endif %}
+      <div class="action-group">
+        {% if unverified > 0 or skipped > 0 %}
+        <a href="/individual/verify" class="action-btn action-btn-primary">Verificar novos</a>
+        {% endif %}
+        <a href="/individual/add-transaction" class="action-btn action-btn-secondary">+ Adicionar registo</a>
+      </div>
       {% if total_transactions > 0 %}
-      <a href="/individual/records" class="verify-link">Ver todos os registos →</a>
+      <div class="action-group action-group-sep">
+        <a href="/individual/records" class="action-btn action-btn-ghost">Ver registos validados</a>
+      </div>
       {% endif %}
-      {% if unverified > 0 or skipped > 0 %}
-      <a href="/individual/verify" class="verify-link">Verificar novos →</a>
-      {% endif %}
-      <a href="/individual/add-transaction" class="verify-link" style="margin-left:{% if total_transactions > 0 %}12{% else %}0{% endif %}px">+ Adicionar registo</a>
     </div>
 
     <!-- Patrimony -->
@@ -110,7 +123,7 @@
         {% for p in patrimony %}
         {% set total.val = total.val + p.current_value %}
         <tr>
-          <td>{{ p.label }}<br><span class="patrimony-cat">{{ p.category }} · ref. {{ p.reference_date }}</span></td>
+          <td>{{ p.label }}<br><span class="patrimony-cat">{{ p.category }} · ref. {{ p.reference_date | datefmt }}</span></td>
           <td class="patrimony-amount"{% if p.current_value < 0 %} style="color:#c0392b"{% endif %}>{{ "%.2f"|format(p.current_value) }} €</td>
         </tr>
         {% endfor %}
