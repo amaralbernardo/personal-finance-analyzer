@@ -883,13 +883,29 @@ def _add_transaction_handler(space: str, back_url: str):
     conn = get_connection()
     patrimony = _get_patrimony(conn, space)
 
+    def _desc_map(mappings):
+        result = {}
+        for desc, val in mappings.items():
+            if isinstance(val, str):
+                entries = [{"category": val, "subcategory": None}]
+            elif isinstance(val, dict):
+                entries = [val]
+            elif isinstance(val, list):
+                entries = [e for e in val if isinstance(e, dict)]
+            else:
+                continue
+            if entries:
+                result[desc] = entries
+        return result
+
     if request.method == "POST":
-        date_val   = request.form.get("date", "").strip()
-        desc_val   = request.form.get("description", "").strip()
-        amount_str = request.form.get("amount", "").strip()
-        cat_val    = request.form.get("category", "Outros").strip()
-        pat_label  = request.form.get("patrimony_label", "").strip() or None
-        notes      = request.form.get("notes", "").strip() or None
+        date_val    = request.form.get("date", "").strip()
+        desc_val    = request.form.get("description", "").strip()
+        amount_str  = request.form.get("amount", "").strip()
+        cat_val     = request.form.get("category", "Outros").strip()
+        subcat_val  = request.form.get("subcategory", "").strip() or None
+        pat_label   = request.form.get("patrimony_label", "").strip() or None
+        notes       = request.form.get("notes", "").strip() or None
 
         error = None
         try:
@@ -899,9 +915,9 @@ def _add_transaction_handler(space: str, back_url: str):
                 raise ValueError("A descrição é obrigatória.")
             conn.execute(
                 """INSERT INTO transactions
-                   (date, description, amount, category, source_file, verified, space, patrimony_label, notes)
-                   VALUES (?,?,?,?,?,1,?,?,?)""",
-                (date_clean, desc_val, amount_clean, cat_val, "manual", space, pat_label, notes),
+                   (date, description, amount, category, subcategory, source_file, verified, space, patrimony_label, notes)
+                   VALUES (?,?,?,?,?,?,1,?,?,?)""",
+                (date_clean, desc_val, amount_clean, cat_val, subcat_val, "manual", space, pat_label, notes),
             )
             conn.commit()
             conn.close()
@@ -910,11 +926,10 @@ def _add_transaction_handler(space: str, back_url: str):
             error = str(exc)
 
         mappings = _load_mappings(MAPPINGS_PATH, space)
-        all_categories = sorted({m["category"] for m in mappings.values() if isinstance(m, dict) and m.get("category")})
         conn.close()
         return render_template(
             "add_transaction.html",
-            all_categories=all_categories,
+            mappings_json=_desc_map(mappings),
             patrimony=patrimony,
             space=space,
             back_url=back_url,
@@ -923,11 +938,10 @@ def _add_transaction_handler(space: str, back_url: str):
         )
 
     mappings = _load_mappings(MAPPINGS_PATH, space)
-    all_categories = sorted({m["category"] for m in mappings.values() if isinstance(m, dict) and m.get("category")})
     conn.close()
     return render_template(
         "add_transaction.html",
-        all_categories=all_categories,
+        mappings_json=_desc_map(mappings),
         patrimony=patrimony,
         space=space,
         back_url=back_url,

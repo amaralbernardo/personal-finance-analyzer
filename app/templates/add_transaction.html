@@ -41,6 +41,10 @@
     .btn-row { display: flex; align-items: center; gap: 16px; margin-top: 6px; }
     .cancel-link { font-size: 0.875rem; color: #888; text-decoration: none; }
     .cancel-link:hover { color: #444; }
+    .suggestions-label { font-size: 0.78rem; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+    .suggestions-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .suggestion-chip { padding: 4px 12px; background: #e8f0fe; color: {% if space == 'joint' %}#2d6df6{% else %}#7c3aed{% endif %}; border: 1px solid {% if space == 'joint' %}#c5d5fb{% else %}#d8c8f8{% endif %}; border-radius: 20px; font-size: 0.82rem; cursor: pointer; font-weight: 500; }
+    .suggestion-chip:hover { opacity: .8; }
     @media (max-width: 640px) {
       nav.topbar { padding: 0 14px; }
       .topbar-email { display: none; }
@@ -98,32 +102,42 @@
           <label for="description">Descrição</label>
           <input type="text" id="description" name="description" required
                  placeholder="ex: Compra no Continente"
-                 value="{{ form.description if form else '' }}">
+                 value="{{ form.description if form else '' }}"
+                 oninput="onDescInput(this.value)">
+        </div>
+
+        <!-- Suggestion chips (shown when description matches known mappings) -->
+        <div id="suggestions-area" style="display:none; margin-bottom:14px">
+          <div class="suggestions-label">Anteriores:</div>
+          <div class="suggestions-chips" id="suggestions-chips"></div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
             <label for="category">Categoria</label>
             <input type="text" id="category" name="category"
-                   value="{{ form.category if form else 'Outros' }}"
-                   list="cat-list" placeholder="Ex: Alimentação">
-            <datalist id="cat-list">
-              {% for cat in all_categories %}<option value="{{ cat }}">{% endfor %}
-            </datalist>
+                   value="{{ form.category if form else '' }}"
+                   placeholder="Ex: Alimentação">
           </div>
-
           <div class="form-group">
-            <label for="patrimony_label">Conta</label>
-            <select id="patrimony_label" name="patrimony_label">
-              <option value="">— sem conta —</option>
-              {% for p in patrimony %}
-              <option value="{{ p.label }}"
-                {% if form and form.patrimony_label == p.label %}selected{% endif %}>
-                {{ p.label }}
-              </option>
-              {% endfor %}
-            </select>
+            <label for="subcategory">Subcategoria <span style="font-weight:400;color:#aaa">(opcional)</span></label>
+            <input type="text" id="subcategory" name="subcategory"
+                   value="{{ form.subcategory if form else '' }}"
+                   placeholder="Ex: Supermercado">
           </div>
+        </div>
+
+        <div class="form-group">
+          <label for="patrimony_label">Conta</label>
+          <select id="patrimony_label" name="patrimony_label">
+            <option value="">— sem conta —</option>
+            {% for p in patrimony %}
+            <option value="{{ p.label }}"
+              {% if form and form.patrimony_label == p.label %}selected{% endif %}>
+              {{ p.label }}
+            </option>
+            {% endfor %}
+          </select>
         </div>
 
         <div class="form-group">
@@ -138,5 +152,34 @@
       </form>
     </div>
   </div>
+
+  <script>
+    const MAPPINGS = {{ mappings_json | tojson }};
+
+    function onDescInput(desc) {
+      const entries = MAPPINGS[desc.trim()] || [];
+      const area    = document.getElementById('suggestions-area');
+      const chips   = document.getElementById('suggestions-chips');
+      if (!entries.length) { area.style.display = 'none'; return; }
+      area.style.display = '';
+      chips.innerHTML = '';
+      entries.forEach(e => {
+        const label = e.subcategory ? `${e.category} - ${e.subcategory}` : e.category;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'suggestion-chip';
+        btn.textContent = label;
+        btn.onclick = () => {
+          document.getElementById('category').value  = e.category  || '';
+          document.getElementById('subcategory').value = e.subcategory || '';
+        };
+        chips.appendChild(btn);
+      });
+    }
+
+    // Trigger on load if form was re-rendered with a description value
+    const descVal = document.getElementById('description').value;
+    if (descVal) onDescInput(descVal);
+  </script>
 </body>
 </html>
