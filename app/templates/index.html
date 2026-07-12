@@ -72,8 +72,8 @@
           <p class="space-desc">Dados partilhados entre todos os utilizadores. Ideal para finanças de agregado familiar.</p>
         </div>
         <div class="space-status">
-          {% if joint_unverified > 0 or joint_skipped > 0 %}
-            <span class="badge badge-warn"><span class="badge-dot"></span>{{ joint_unverified + joint_skipped }} item(s) por verificar</span>
+          {% if joint_unverified > 0 %}
+            <span class="badge badge-warn"><span class="badge-dot"></span>{{ joint_unverified }} item(s) por rever</span>
           {% elif joint_has_data or joint_has_patrimony %}
             <span class="badge badge-ok"><span class="badge-dot"></span>Tudo verificado</span>
           {% else %}
@@ -93,8 +93,8 @@
           <p class="space-desc">Os teus dados pessoais. Apenas tu tens acesso a esta análise.</p>
         </div>
         <div class="space-status">
-          {% if ind_unverified > 0 or ind_skipped > 0 %}
-            <span class="badge badge-warn"><span class="badge-dot"></span>{{ ind_unverified + ind_skipped }} item(s) por verificar</span>
+          {% if ind_unverified > 0 %}
+            <span class="badge badge-warn"><span class="badge-dot"></span>{{ ind_unverified }} item(s) por rever</span>
           {% elif ind_has_data or ind_has_patrimony %}
             <span class="badge badge-ok"><span class="badge-dot"></span>Tudo verificado</span>
           {% else %}

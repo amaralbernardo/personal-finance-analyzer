@@ -100,14 +100,14 @@
     <!-- Status -->
     <div class="card">
       <p class="card-title">Registos</p>
-      {% if unverified > 0 or skipped > 0 %}
-        <span class="badge badge-warn"><span class="badge-dot"></span>{{ unverified + skipped }} item(s) por verificar</span>
+      {% if unverified > 0 %}
+        <span class="badge badge-warn"><span class="badge-dot"></span>{{ unverified }} item(s) por rever</span>
       {% else %}
         <span class="badge badge-ok"><span class="badge-dot"></span>Tudo verificado</span>
       {% endif %}
       {% if current_user.role == 'admin' %}
       <div class="action-group">
-        {% if unverified > 0 or skipped > 0 %}
+        {% if unverified > 0 %}
         <a href="/joint/review" class="action-btn action-btn-primary">Rever novos</a>
         {% endif %}
         <a href="/joint/add-transaction" class="action-btn action-btn-secondary">+ Adicionar registo</a>
