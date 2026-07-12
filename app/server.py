@@ -19,15 +19,18 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from app.db.connection import get_connection
 from app.ingest.loader import load_directory
 from app.ingest.normalizer import _parse_date, _parse_amount
-from app.categorize.engine import categorize_all, recategorize_all, load_categories, RULES_PATH
+from app.categorize.engine import (
+    _load_mappings, _save_mappings,
+)
 from app.reports.generator import generate
 from app.email import send_welcome_email
 
-BASE_DIR      = Path(__file__).parents[1]
-INPUT_DIR     = BASE_DIR / "data" / "input"
-PROCESSED_DIR = BASE_DIR / "data" / "processed"
-MAPPINGS_PATH = BASE_DIR / "data" / "user_mappings.json"
-REPORTS_DIR   = BASE_DIR / "reports"
+BASE_DIR             = Path(__file__).parents[1]
+INPUT_DIR            = BASE_DIR / "data" / "input"
+PROCESSED_DIR        = BASE_DIR / "data" / "processed"
+MAPPINGS_PATH        = BASE_DIR / "data" / "user_mappings.json"
+FILE_ACCOUNT_MAP_PATH = BASE_DIR / "data" / "file_account_map.json"
+REPORTS_DIR          = BASE_DIR / "reports"
 
 _ALLOWED_EXTENSIONS = {".csv", ".ofx", ".qfx", ".xlsx", ".xls", ".pdf"}
 
@@ -134,7 +137,8 @@ def _ind_space(user_id) -> str:
 
 def _pending_counts(conn, space: str):
     unverified = conn.execute(
-        "SELECT COUNT(*) as n FROM transactions WHERE verified = 0 AND space = ?", (space,)
+        "SELECT COUNT(*) as n FROM transactions WHERE verified = 0 AND (excluded IS NULL OR excluded = 0) AND space = ?",
+        (space,)
     ).fetchone()["n"]
     skipped = conn.execute(
         "SELECT COUNT(*) as n FROM skipped_rows WHERE space = ?", (space,)
@@ -192,6 +196,30 @@ def _imported_files(conn, space: str) -> list:
     ).fetchall()
 
 
+def _load_file_account_map() -> dict:
+    if not FILE_ACCOUNT_MAP_PATH.exists():
+        return {}
+    with open(FILE_ACCOUNT_MAP_PATH, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _save_file_account_map(data: dict) -> None:
+    FILE_ACCOUNT_MAP_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(FILE_ACCOUNT_MAP_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def _unknown_source_files(conn, space: str) -> list:
+    space_map = _load_file_account_map().get(space, {})
+    rows = conn.execute(
+        """SELECT DISTINCT source_file FROM transactions
+           WHERE space = ? AND verified = 0 AND (excluded IS NULL OR excluded = 0)
+           AND source_file != 'manual' AND patrimony_label IS NULL""",
+        (space,)
+    ).fetchall()
+    return [r["source_file"] for r in rows if r["source_file"] not in space_map]
+
+
 def _has_data(conn, space: str) -> bool:
     n = conn.execute(
         "SELECT COUNT(*) as n FROM transactions WHERE space = ?", (space,)
@@ -246,10 +274,7 @@ def _delete_selected_transactions(conn, req, space: str):
 
 
 def _process_verify_form(conn, req, space: str):
-    mappings = {}
-    if MAPPINGS_PATH.exists():
-        with open(MAPPINGS_PATH, encoding="utf-8") as f:
-            mappings = json.load(f)
+    mappings = _load_mappings(MAPPINGS_PATH, space)
 
     patrimony_map = {}
     for key, val in req.form.items():
@@ -307,9 +332,7 @@ def _process_verify_form(conn, req, space: str):
                     pass
             conn.execute("DELETE FROM skipped_rows WHERE id = ? AND space = ?", (sid, space))
 
-    MAPPINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(MAPPINGS_PATH, "w", encoding="utf-8") as f:
-        json.dump(mappings, f, ensure_ascii=False, indent=2)
+    _save_mappings(MAPPINGS_PATH, space, mappings)
 
 
 # ── auth routes ───────────────────────────────────────────────────────────────
@@ -477,57 +500,159 @@ def joint_upload():
 
     conn = get_connection()
     load_directory(input_dir, conn, space=space, processed_dir=proc_dir)
-    categorize_all(conn, space=space)
+    space_map = _load_file_account_map().get(space, {})
+    for filename, account in space_map.items():
+        conn.execute(
+            "UPDATE transactions SET patrimony_label = ? WHERE source_file = ? AND space = ? AND patrimony_label IS NULL",
+            (account, filename, space)
+        )
+    conn.commit()
+    unknown = _unknown_source_files(conn, space)
     conn.close()
-    return redirect(url_for("joint_verify"))
+    if unknown:
+        return redirect(url_for("joint_select_account"))
+    return redirect(url_for("joint_review"))
 
 
-@app.route("/joint/verify", methods=["GET", "POST"])
-@admin_required
-def joint_verify():
-    space = 'joint'
+def _select_account_handler(space: str, back_url: str, review_url: str):
+    conn = get_connection()
     if request.method == "POST":
-        conn = get_connection()
+        file_map = _load_file_account_map()
+        space_map = file_map.get(space, {})
+        for key, val in request.form.items():
+            if key.startswith("account_") and val:
+                filename = key[len("account_"):]
+                space_map[filename] = val
+                conn.execute(
+                    "UPDATE transactions SET patrimony_label = ? WHERE source_file = ? AND space = ? AND patrimony_label IS NULL",
+                    (val, filename, space)
+                )
+        file_map[space] = space_map
+        _save_file_account_map(file_map)
+        conn.commit()
+        conn.close()
+        return redirect(review_url)
+    unknown_files = _unknown_source_files(conn, space)
+    patrimony = _get_patrimony(conn, space)
+    conn.close()
+    if not unknown_files:
+        return redirect(review_url)
+    return render_template("select_account.html",
+                           unknown_files=unknown_files,
+                           patrimony=patrimony,
+                           space=space,
+                           back_url=back_url)
+
+
+def _review_handler(space: str, back_url: str):
+    conn = get_connection()
+
+    if request.method == "POST":
+        txn_id = int(request.form.get("txn_id"))
         action = request.form.get("action")
-        if action == "delete":
-            _delete_selected_transactions(conn, request, space)
+
+        if action == "skip":
+            conn.execute("DELETE FROM transactions WHERE id = ? AND space = ?", (txn_id, space))
             conn.commit()
             conn.close()
-            return redirect(url_for("joint_verify"))
-        _process_verify_form(conn, request, space)
-        conn.commit()
-        if action == "report":
-            report_path = generate(conn, space=space)
+            return redirect(request.url)
+
+        elif action == "add":
+            category    = request.form.get("category", "").strip() or "Outros"
+            subcategory = request.form.get("subcategory", "").strip() or None
+            txn_row = conn.execute(
+                "SELECT description FROM transactions WHERE id = ? AND space = ?",
+                (txn_id, space)
+            ).fetchone()
+            if txn_row:
+                conn.execute(
+                    "UPDATE transactions SET category = ?, subcategory = ?, verified = 1 WHERE id = ? AND space = ?",
+                    (category, subcategory, txn_id, space)
+                )
+                conn.commit()
+                mappings = _load_mappings(MAPPINGS_PATH, space)
+                mappings[txn_row["description"]] = {"category": category, "subcategory": subcategory}
+                _save_mappings(MAPPINGS_PATH, space, mappings)
             conn.close()
-            return redirect(url_for("joint_report", filename=report_path.name))
-        conn.close()
-        return redirect(url_for("joint"))
+            return redirect(request.url)
 
-    conn = get_connection()
-    transactions = conn.execute(
-        "SELECT id, date, description, amount, category, patrimony_label, notes "
-        "FROM transactions WHERE verified = 0 AND space = ? ORDER BY date", (space,)
-    ).fetchall()
-    skipped_rows = conn.execute(
-        "SELECT id, source_file, date_raw, description_raw, amount_raw, reason "
-        "FROM skipped_rows WHERE space = ? ORDER BY imported_at", (space,)
-    ).fetchall()
+        elif action == "split":
+            original = conn.execute(
+                "SELECT date, description, amount, source_file, patrimony_label FROM transactions WHERE id = ? AND space = ?",
+                (txn_id, space)
+            ).fetchone()
+            if original:
+                amounts = []
+                for key in sorted(k for k in request.form if k.startswith("amount_")):
+                    try:
+                        amounts.append(float(request.form[key].replace(",", ".")))
+                    except ValueError:
+                        pass
+                if amounts and abs(sum(amounts) - original["amount"]) < 0.005:
+                    conn.execute("DELETE FROM transactions WHERE id = ? AND space = ?", (txn_id, space))
+                    for amt in amounts:
+                        conn.execute(
+                            """INSERT INTO transactions
+                               (date, description, amount, category, source_file, space, patrimony_label, verified)
+                               VALUES (?, ?, ?, 'Outros', ?, ?, ?, 0)""",
+                            (original["date"], original["description"], amt,
+                             original["source_file"], space, original["patrimony_label"])
+                        )
+                    conn.commit()
+            conn.close()
+            return redirect(request.url)
 
-    if not transactions and not skipped_rows:
         conn.close()
-        return redirect(url_for("joint"))
+        return redirect(request.url)
+
+    txn = conn.execute(
+        """SELECT id, date, description, amount, category, subcategory, patrimony_label
+           FROM transactions
+           WHERE space = ? AND verified = 0 AND (excluded IS NULL OR excluded = 0)
+           ORDER BY date, id LIMIT 1""",
+        (space,)
+    ).fetchone()
+
+    if not txn:
+        conn.close()
+        return redirect(back_url)
+
+    total_pending = conn.execute(
+        "SELECT COUNT(*) FROM transactions WHERE space = ? AND verified = 0 AND (excluded IS NULL OR excluded = 0)",
+        (space,)
+    ).fetchone()[0]
+
+    mappings = _load_mappings(MAPPINGS_PATH, space)
+    desc_mapping = mappings.get(txn["description"])
+    all_categories    = sorted({m["category"]    for m in mappings.values() if isinstance(m, dict) and m.get("category")})
+    all_subcategories = sorted({m["subcategory"] for m in mappings.values() if isinstance(m, dict) and m.get("subcategory")})
 
     patrimony = _get_patrimony(conn, space)
     conn.close()
+
     return render_template(
-        "verify.html",
-        transactions=transactions,
-        skipped_rows=skipped_rows,
-        categories=load_categories(),
+        "review.html",
+        txn=txn,
+        total_pending=total_pending,
+        desc_mapping=desc_mapping,
+        all_categories=all_categories,
+        all_subcategories=all_subcategories,
         patrimony=patrimony,
         space=space,
-        back_url=url_for("joint"),
+        back_url=back_url,
     )
+
+
+@app.route("/joint/select-account", methods=["GET", "POST"])
+@admin_required
+def joint_select_account():
+    return _select_account_handler('joint', url_for("joint"), url_for("joint_review"))
+
+
+@app.route("/joint/review", methods=["GET", "POST"])
+@admin_required
+def joint_review():
+    return _review_handler('joint', url_for("joint"))
 
 
 @app.route("/joint/generate-report", methods=["POST"])
@@ -599,57 +724,32 @@ def individual_upload():
 
     conn = get_connection()
     load_directory(input_dir, conn, space=space, processed_dir=proc_dir)
-    categorize_all(conn, space=space)
+    space_map = _load_file_account_map().get(space, {})
+    for filename, account in space_map.items():
+        conn.execute(
+            "UPDATE transactions SET patrimony_label = ? WHERE source_file = ? AND space = ? AND patrimony_label IS NULL",
+            (account, filename, space)
+        )
+    conn.commit()
+    unknown = _unknown_source_files(conn, space)
     conn.close()
-    return redirect(url_for("individual_verify"))
+    if unknown:
+        return redirect(url_for("individual_select_account"))
+    return redirect(url_for("individual_review"))
 
 
-@app.route("/individual/verify", methods=["GET", "POST"])
+@app.route("/individual/select-account", methods=["GET", "POST"])
 @login_required
-def individual_verify():
+def individual_select_account():
     space = _ind_space(current_user.id)
-    if request.method == "POST":
-        conn = get_connection()
-        action = request.form.get("action")
-        if action == "delete":
-            _delete_selected_transactions(conn, request, space)
-            conn.commit()
-            conn.close()
-            return redirect(url_for("individual_verify"))
-        _process_verify_form(conn, request, space)
-        conn.commit()
-        if action == "report":
-            report_path = generate(conn, space=space)
-            conn.close()
-            return redirect(url_for("individual_report", filename=report_path.name))
-        conn.close()
-        return redirect(url_for("individual"))
+    return _select_account_handler(space, url_for("individual"), url_for("individual_review"))
 
-    conn = get_connection()
-    transactions = conn.execute(
-        "SELECT id, date, description, amount, category, patrimony_label, notes "
-        "FROM transactions WHERE verified = 0 AND space = ? ORDER BY date", (space,)
-    ).fetchall()
-    skipped_rows = conn.execute(
-        "SELECT id, source_file, date_raw, description_raw, amount_raw, reason "
-        "FROM skipped_rows WHERE space = ? ORDER BY imported_at", (space,)
-    ).fetchall()
 
-    if not transactions and not skipped_rows:
-        conn.close()
-        return redirect(url_for("individual"))
-
-    patrimony = _get_patrimony(conn, space)
-    conn.close()
-    return render_template(
-        "verify.html",
-        transactions=transactions,
-        skipped_rows=skipped_rows,
-        categories=load_categories(),
-        patrimony=patrimony,
-        space=space,
-        back_url=url_for("individual"),
-    )
+@app.route("/individual/review", methods=["GET", "POST"])
+@login_required
+def individual_review():
+    space = _ind_space(current_user.id)
+    return _review_handler(space, url_for("individual"))
 
 
 @app.route("/individual/generate-report", methods=["POST"])
@@ -691,10 +791,7 @@ def individual_reports_delete():
 # ── records (view/validate all transactions) ─────────────────────────────────
 
 def _process_records_form(conn, req, space: str):
-    mappings = {}
-    if MAPPINGS_PATH.exists():
-        with open(MAPPINGS_PATH, encoding="utf-8") as f:
-            mappings = json.load(f)
+    mappings = _load_mappings(MAPPINGS_PATH, space)
 
     all_ids_raw = req.form.get("all_ids", "")
     if not all_ids_raw:
@@ -716,9 +813,7 @@ def _process_records_form(conn, req, space: str):
             if row:
                 mappings[row["description"]] = category
 
-    MAPPINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(MAPPINGS_PATH, "w", encoding="utf-8") as f:
-        json.dump(mappings, f, ensure_ascii=False, indent=2)
+    _save_mappings(MAPPINGS_PATH, space, mappings)
 
 
 def _records_handler(space: str, back_url: str):
@@ -736,10 +831,13 @@ def _records_handler(space: str, back_url: str):
     ).fetchall()
     conn.close()
 
+    mappings = _load_mappings(MAPPINGS_PATH, space)
+    all_categories = sorted({m["category"] for m in mappings.values() if isinstance(m, dict) and m.get("category")})
+
     return render_template(
         "records.html",
         transactions=rows,
-        categories=load_categories(),
+        all_categories=all_categories,
         back_url=back_url,
         space=space,
     )
@@ -790,10 +888,12 @@ def _add_transaction_handler(space: str, back_url: str):
         except ValueError as exc:
             error = str(exc)
 
+        mappings = _load_mappings(MAPPINGS_PATH, space)
+        all_categories = sorted({m["category"] for m in mappings.values() if isinstance(m, dict) and m.get("category")})
         conn.close()
         return render_template(
             "add_transaction.html",
-            categories=load_categories(),
+            all_categories=all_categories,
             patrimony=patrimony,
             space=space,
             back_url=back_url,
@@ -801,10 +901,12 @@ def _add_transaction_handler(space: str, back_url: str):
             form=request.form,
         )
 
+    mappings = _load_mappings(MAPPINGS_PATH, space)
+    all_categories = sorted({m["category"] for m in mappings.values() if isinstance(m, dict) and m.get("category")})
     conn.close()
     return render_template(
         "add_transaction.html",
-        categories=load_categories(),
+        all_categories=all_categories,
         patrimony=patrimony,
         space=space,
         back_url=back_url,
@@ -983,83 +1085,6 @@ def patrimony_categories_delete_unused():
     conn.commit()
     conn.close()
     return redirect(back)
-
-
-# ── transaction categories routes ─────────────────────────────────────────────
-
-def _load_rules() -> dict:
-    with open(RULES_PATH, encoding="utf-8") as f:
-        return json.load(f)
-
-
-def _save_rules(rules: dict) -> None:
-    with open(RULES_PATH, "w", encoding="utf-8") as f:
-        json.dump(rules, f, ensure_ascii=False, indent=2)
-
-
-@app.route("/categories")
-@admin_required
-def categories():
-    return render_template("categories.html", rules=_load_rules())
-
-
-@app.route("/categories/add", methods=["POST"])
-@admin_required
-def categories_add():
-    name    = request.form.get("name", "").strip()
-    keyword = request.form.get("keyword", "").strip().lower()
-    if name and keyword:
-        rules = _load_rules()
-        if name not in rules:
-            rules[name] = [keyword]
-            _save_rules(rules)
-    return redirect(url_for("categories"))
-
-
-@app.route("/categories/delete", methods=["POST"])
-@admin_required
-def categories_delete():
-    name = request.form.get("name", "").strip()
-    if name:
-        rules = _load_rules()
-        rules.pop(name, None)
-        _save_rules(rules)
-    return redirect(url_for("categories"))
-
-
-@app.route("/categories/add-keyword", methods=["POST"])
-@admin_required
-def categories_add_keyword():
-    name    = request.form.get("name", "").strip()
-    keyword = request.form.get("keyword", "").strip().lower()
-    if name and keyword:
-        rules = _load_rules()
-        if name in rules and keyword not in rules[name]:
-            rules[name].append(keyword)
-            _save_rules(rules)
-    return redirect(url_for("categories"))
-
-
-@app.route("/categories/remove-keyword", methods=["POST"])
-@admin_required
-def categories_remove_keyword():
-    name    = request.form.get("name", "").strip()
-    keyword = request.form.get("keyword", "").strip()
-    if name and keyword:
-        rules = _load_rules()
-        if name in rules:
-            rules[name] = [kw for kw in rules[name] if kw != keyword]
-            _save_rules(rules)
-    return redirect(url_for("categories"))
-
-
-@app.route("/categories/recategorize", methods=["POST"])
-@admin_required
-def categories_recategorize():
-    conn = get_connection()
-    recategorize_all(conn)
-    conn.close()
-    return redirect(url_for("categories"))
 
 
 # ── users routes ──────────────────────────────────────────────────────────────

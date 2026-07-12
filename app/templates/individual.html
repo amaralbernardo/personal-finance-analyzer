@@ -85,7 +85,6 @@
       <a href="/change-password" class="topbar-email">{{ current_user.email }}</a>
       {% if current_user.role == 'admin' %}
       <a href="/users" class="topbar-link">Utilizadores</a>
-      <a href="/categories" class="topbar-link">Categorias</a>
       {% endif %}
       <a href="/logout" class="topbar-logout">Sair</a>
     </div>
@@ -108,7 +107,7 @@
       {% endif %}
       <div class="action-group">
         {% if unverified > 0 or skipped > 0 %}
-        <a href="/individual/verify" class="action-btn action-btn-primary">Verificar novos</a>
+        <a href="/individual/review" class="action-btn action-btn-primary">Rever novos</a>
         {% endif %}
         <a href="/individual/add-transaction" class="action-btn action-btn-secondary">+ Adicionar registo</a>
       </div>

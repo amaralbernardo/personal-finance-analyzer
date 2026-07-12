@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Associar Contas</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f2f5; margin: 0; padding: 0; color: #1a1a2e; }
+    nav.topbar { background: white; border-bottom: 1px solid #eee; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .topbar-brand { font-weight: 700; font-size: 0.95rem; color: #1a1a2e; text-decoration: none; }
+    .topbar-right { display: flex; align-items: center; gap: 20px; }
+    .topbar-email { font-size: 0.85rem; color: #888; text-decoration: none; }
+    .topbar-logout { font-size: 0.85rem; color: #888; text-decoration: none; }
+    .topbar-logout:hover { color: #c0392b; }
+    .page { max-width: 560px; margin: 0 auto; padding: 40px 20px; }
+    .back { color: #888; text-decoration: none; font-size: 0.875rem; display: inline-block; margin-bottom: 20px; }
+    h1 { font-size: 1.4rem; margin: 0 0 6px; }
+    .subtitle { color: #666; font-size: 0.9rem; margin: 0 0 28px; }
+    .card { background: white; border-radius: 10px; padding: 22px 26px; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 16px; }
+    .file-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+    .file-row:last-child { border-bottom: none; }
+    .file-name { font-size: 0.875rem; font-weight: 500; flex: 1; word-break: break-all; }
+    select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.875rem; color: #222; min-width: 180px; }
+    select:focus { outline: none; border-color: #2d6df6; }
+    .btn { background: #2d6df6; color: white; border: none; padding: 11px 28px; border-radius: 7px; font-size: 0.95rem; font-weight: 500; cursor: pointer; margin-top: 8px; }
+    .btn:hover { background: #1a56d6; }
+    .warn { color: #c0392b; font-size: 0.875rem; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <nav class="topbar">
+    <a href="/" class="topbar-brand">Finanças Pessoais</a>
+    <div class="topbar-right">
+      <a href="/change-password" class="topbar-email">{{ current_user.email }}</a>
+      <a href="/logout" class="topbar-logout">Sair</a>
+    </div>
+  </nav>
+  <div class="page">
+    <a href="{{ back_url }}" class="back">← Voltar</a>
+    <h1>Associar Contas</h1>
+    <p class="subtitle">Indica a conta bancária correspondente a cada ficheiro importado. Esta associação será recordada para futuras importações.</p>
+    <form method="post">
+      <div class="card">
+        {% for filename in unknown_files %}
+        <div class="file-row">
+          <span class="file-name">{{ filename }}</span>
+          <select name="account_{{ filename }}" required>
+            <option value="">— selecionar conta —</option>
+            {% for p in patrimony %}
+            <option value="{{ p.label }}">{{ p.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endfor %}
+      </div>
+      {% if patrimony %}
+      <button type="submit" class="btn">Confirmar e continuar</button>
+      {% else %}
+      <p class="warn">Configura primeiro o Patrimônio antes de importar ficheiros.</p>
+      <a href="{{ back_url }}" class="back">← Voltar</a>
+      {% endif %}
+    </form>
+  </div>
+</body>
+</html>

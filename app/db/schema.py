@@ -123,7 +123,7 @@ def create_tables(conn):
     except Exception:
         pass
     try:
-        conn.execute("DELETE FROM transactions WHERE excluded = 1")
+        conn.execute("ALTER TABLE transactions ADD COLUMN subcategory TEXT")
     except Exception:
         pass
     try:

@@ -59,7 +59,6 @@
       <a href="/change-password" class="topbar-email">{{ current_user.email }}</a>
       {% if current_user.role == 'admin' %}
       <a href="/users" class="topbar-link">Utilizadores</a>
-      <a href="/categories" class="topbar-link">Categorias</a>
       {% endif %}
       <a href="/logout" class="topbar-logout">Sair</a>
     </div>
@@ -104,11 +103,9 @@
                 {{ "%.2f"|format(txn.amount|abs) }} €
               </td>
               <td>
-                <select name="cat_{{ txn.id }}" class="{{ 'needs-review' if txn.category == 'Outros' else '' }}">
-                  {% for cat in categories %}
-                  <option value="{{ cat }}" {% if cat == txn.category %}selected{% endif %}>{{ cat }}</option>
-                  {% endfor %}
-                </select>
+                <input type="text" class="notes-input {{ 'needs-review' if txn.category == 'Outros' else '' }}"
+                       name="cat_{{ txn.id }}" value="{{ txn.category }}"
+                       list="cat-options" style="min-width:140px">
               </td>
               <td class="cat-cell">{{ txn.patrimony_label or '—' }}</td>
               <td><input type="text" class="notes-input" name="notes_{{ txn.id }}" value="{{ txn.notes or '' }}" placeholder="Nota…"></td>
@@ -129,17 +126,14 @@
     </form>
   </div>
 
+  <datalist id="cat-options">
+    {% for cat in all_categories %}<option value="{{ cat }}">{% endfor %}
+  </datalist>
   <script>
     function toggleRow(cb, id) {
       const row = document.getElementById('row-' + id);
       if (row) row.style.opacity = cb.checked ? '1' : '0.45';
     }
-
-    document.querySelectorAll('select[name^="cat_"]').forEach(function(sel) {
-      sel.addEventListener('change', function() {
-        this.className = this.value === 'Outros' ? 'needs-review' : '';
-      });
-    });
   </script>
 </body>
 </html>
