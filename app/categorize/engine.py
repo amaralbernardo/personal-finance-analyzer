@@ -12,11 +12,23 @@ def _load_rules(rules_path: Path = RULES_PATH) -> dict[str, list[str]]:
         return json.load(f)
 
 
-def _load_mappings(mappings_path: Path = MAPPINGS_PATH) -> dict[str, str]:
+def _load_mappings(mappings_path: Path = MAPPINGS_PATH, space: str = 'joint') -> dict[str, str]:
     if not mappings_path.exists():
         return {}
     with open(mappings_path, encoding="utf-8") as f:
-        return json.load(f)
+        data = json.load(f)
+    return data.get(space, {})
+
+
+def _save_mappings(mappings_path: Path, space: str, mappings: dict) -> None:
+    data = {}
+    if mappings_path.exists():
+        with open(mappings_path, encoding="utf-8") as f:
+            data = json.load(f)
+    data[space] = mappings
+    mappings_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(mappings_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
 
 def load_categories(rules_path: Path = RULES_PATH) -> list[str]:
@@ -32,80 +44,60 @@ def categorize(description: str, rules: dict[str, list[str]]) -> str:
     return "Outros"
 
 
-def categorize_all(conn: sqlite3.Connection, space: str = None,
+def categorize_all(conn: sqlite3.Connection, space: str = 'joint',
                    rules_path: Path = RULES_PATH,
                    mappings_path: Path = MAPPINGS_PATH) -> int:
     rules = _load_rules(rules_path)
-    mappings = _load_mappings(mappings_path)
+    mappings = _load_mappings(mappings_path, space)
 
-    if space is not None:
-        rows = conn.execute(
-            "SELECT id, description FROM transactions WHERE verified = 0 AND space = ?", (space,)
-        ).fetchall()
-    else:
-        rows = conn.execute(
-            "SELECT id, description FROM transactions WHERE verified = 0"
-        ).fetchall()
+    rows = conn.execute(
+        "SELECT id, description FROM transactions WHERE verified = 0 AND space = ?", (space,)
+    ).fetchall()
 
     updated = 0
     for row in rows:
         desc = row["description"]
         if desc in mappings:
-            if space is not None:
-                conn.execute(
-                    "UPDATE transactions SET category = ?, verified = 1 WHERE id = ? AND space = ?",
-                    (mappings[desc], row["id"], space),
-                )
-            else:
-                conn.execute(
-                    "UPDATE transactions SET category = ?, verified = 1 WHERE id = ?",
-                    (mappings[desc], row["id"]),
-                )
+            conn.execute(
+                "UPDATE transactions SET category = ?, verified = 1 WHERE id = ? AND space = ?",
+                (mappings[desc], row["id"], space),
+            )
             updated += 1
         else:
             cat = categorize(desc, rules)
             if cat != "Outros":
-                if space is not None:
-                    conn.execute(
-                        "UPDATE transactions SET category = ? WHERE id = ? AND space = ?",
-                        (cat, row["id"], space),
-                    )
-                else:
-                    conn.execute(
-                        "UPDATE transactions SET category = ? WHERE id = ?",
-                        (cat, row["id"]),
-                    )
+                conn.execute(
+                    "UPDATE transactions SET category = ? WHERE id = ? AND space = ?",
+                    (cat, row["id"], space),
+                )
                 updated += 1
 
     conn.commit()
     return updated
 
 
-def recategorize_all(conn: sqlite3.Connection, space: str = None,
+def recategorize_all(conn: sqlite3.Connection, space: str = 'joint',
                      rules_path: Path = RULES_PATH,
                      mappings_path: Path = MAPPINGS_PATH) -> int:
     rules = _load_rules(rules_path)
-    mappings = _load_mappings(mappings_path)
+    mappings = _load_mappings(mappings_path, space)
 
-    if space is not None:
-        rows = conn.execute(
-            "SELECT id, description FROM transactions WHERE space = ?", (space,)
-        ).fetchall()
-    else:
-        rows = conn.execute("SELECT id, description FROM transactions").fetchall()
+    rows = conn.execute(
+        "SELECT id, description FROM transactions WHERE space = ?", (space,)
+    ).fetchall()
 
     for row in rows:
         desc = row["description"]
         if desc in mappings:
             conn.execute(
-                "UPDATE transactions SET category = ?, verified = 1 WHERE id = ?",
-                (mappings[desc], row["id"]),
+                "UPDATE transactions SET category = ?, verified = 1 WHERE id = ? AND space = ?",
+                (mappings[desc], row["id"], space),
             )
         else:
             cat = categorize(desc, rules)
             conn.execute(
-                "UPDATE transactions SET category = ?, verified = 0 WHERE id = ?",
-                (cat, row["id"]),
+                "UPDATE transactions SET category = ?, verified = 0 WHERE id = ? AND space = ?",
+                (cat, row["id"], space),
             )
 
     conn.commit()

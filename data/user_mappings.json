@@ -1,1 +1,16 @@
-{}
+{
+  "joint": {
+    "PG.BXV   VIA VERDE": {
+      "category": "Transportes",
+      "subcategory": "Carro"
+    },
+    "COMPRA   BP AVEIRO FR": {
+      "category": "Transporte",
+      "subcategory": "Carro"
+    },
+    "COMPRA   ZARA.COM": {
+      "category": "Outros Gastos",
+      "subcategory": "Prendas"
+    }
+  }
+}

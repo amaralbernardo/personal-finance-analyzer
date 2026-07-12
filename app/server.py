@@ -560,14 +560,15 @@ def _review_handler(space: str, back_url: str):
         elif action == "add":
             category    = request.form.get("category", "").strip() or "Outros"
             subcategory = request.form.get("subcategory", "").strip() or None
+            notes       = request.form.get("notes", "").strip() or None
             txn_row = conn.execute(
                 "SELECT description FROM transactions WHERE id = ? AND space = ?",
                 (txn_id, space)
             ).fetchone()
             if txn_row:
                 conn.execute(
-                    "UPDATE transactions SET category = ?, subcategory = ?, verified = 1 WHERE id = ? AND space = ?",
-                    (category, subcategory, txn_id, space)
+                    "UPDATE transactions SET category = ?, subcategory = ?, notes = ?, verified = 1 WHERE id = ? AND space = ?",
+                    (category, subcategory, notes, txn_id, space)
                 )
                 conn.commit()
                 mappings = _load_mappings(MAPPINGS_PATH, space)

@@ -105,7 +105,7 @@
           <label>Categoria</label>
           <input type="text" name="category" id="category-input"
                  value="{{ desc_mapping.category if desc_mapping else '' }}"
-                 placeholder="Ex: Alimentação" autocomplete="off" list="cat-list" required>
+                 placeholder="Ex: Alimentação" list="cat-list" required>
           <datalist id="cat-list">
             {% for c in all_categories %}<option value="{{ c }}">{% endfor %}
           </datalist>
@@ -120,7 +120,7 @@
           <label>Subcategoria <span style="font-weight:400;color:#aaa">(opcional)</span></label>
           <input type="text" name="subcategory" id="subcat-input"
                  value="{{ desc_mapping.subcategory if desc_mapping and desc_mapping.subcategory else '' }}"
-                 placeholder="Ex: Supermercado" autocomplete="off" list="subcat-list">
+                 placeholder="Ex: Supermercado" list="subcat-list">
           <datalist id="subcat-list">
             {% for s in all_subcategories %}<option value="{{ s }}">{% endfor %}
           </datalist>
@@ -129,6 +129,11 @@
             Sugestão: {{ desc_mapping.subcategory }}
           </div>
           {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label>Notas <span style="font-weight:400;color:#aaa">(opcional)</span></label>
+          <textarea name="notes" placeholder="Observações sobre esta transação..." style="width:100%;padding:9px 12px;border:1px solid #dde1ea;border-radius:7px;font-size:0.875rem;color:#1a1a2e;resize:vertical;min-height:64px;font-family:inherit"></textarea>
         </div>
 
         <button type="submit" class="btn-submit">Guardar</button>
