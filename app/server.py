@@ -634,10 +634,16 @@ def _review_handler(space: str, back_url: str):
     mappings = _load_mappings(MAPPINGS_PATH, space)
 
     def _iter_entries(v):
-        if isinstance(v, dict):
+        if isinstance(v, str):
+            yield {"category": v, "subcategory": None}
+        elif isinstance(v, dict):
             yield v
         elif isinstance(v, list):
-            yield from v
+            for item in v:
+                if isinstance(item, dict):
+                    yield item
+                elif isinstance(item, str):
+                    yield {"category": item, "subcategory": None}
 
     raw = mappings.get(txn["description"])
     desc_mappings = list(_iter_entries(raw)) if raw else []
