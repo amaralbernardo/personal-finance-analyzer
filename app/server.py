@@ -834,28 +834,25 @@ def _process_records_form(conn, req, space: str):
     _save_mappings(MAPPINGS_PATH, space, mappings)
 
 
-def _records_handler(space: str, back_url: str):
+def _records_handler(space: str, back_url: str, review_url: str):
     conn = get_connection()
 
-    if request.method == "POST":
-        _process_records_form(conn, request, space)
+    if request.method == "POST" and request.form.get("action") == "unverify":
+        txn_id = int(request.form.get("txn_id"))
+        conn.execute("UPDATE transactions SET verified = 0 WHERE id = ? AND space = ?", (txn_id, space))
         conn.commit()
         conn.close()
-        return redirect(request.url)
+        return redirect(review_url)
 
     rows = conn.execute(
-        "SELECT id, date, description, amount, category, patrimony_label, notes, verified "
+        "SELECT id, date, description, amount, category, subcategory, patrimony_label, notes "
         "FROM transactions WHERE space = ? AND verified = 1 ORDER BY date DESC, id DESC", (space,)
     ).fetchall()
     conn.close()
 
-    mappings = _load_mappings(MAPPINGS_PATH, space)
-    all_categories = sorted({m["category"] for m in mappings.values() if isinstance(m, dict) and m.get("category")})
-
     return render_template(
         "records.html",
         transactions=rows,
-        all_categories=all_categories,
         back_url=back_url,
         space=space,
     )
@@ -864,14 +861,14 @@ def _records_handler(space: str, back_url: str):
 @app.route("/joint/records", methods=["GET", "POST"])
 @admin_required
 def joint_records():
-    return _records_handler('joint', url_for("joint"))
+    return _records_handler('joint', url_for("joint"), url_for("joint_review"))
 
 
 @app.route("/individual/records", methods=["GET", "POST"])
 @login_required
 def individual_records():
     space = _ind_space(current_user.id)
-    return _records_handler(space, url_for("individual"))
+    return _records_handler(space, url_for("individual"), url_for("individual_review"))
 
 
 # ── add transaction ───────────────────────────────────────────────────────────
