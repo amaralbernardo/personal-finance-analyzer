@@ -37,34 +37,11 @@
     .section-title { font-weight: 600; margin-bottom: 16px; font-size: 0.95rem; }
     .form-group { margin-bottom: 16px; position: relative; }
     label { display: block; font-size: 0.82rem; font-weight: 600; color: #666; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
-    /* combobox */
-    .combo-wrap { position: relative; }
-    .combo-input-row { display: flex; }
-    .combo-input-row input[type=text] {
-      flex: 1; padding: 9px 12px; border: 1px solid #dde1ea; border-right: none;
-      border-radius: 7px 0 0 7px; font-size: 0.9rem; color: #1a1a2e; background: white; outline: none;
+    input[type=text], input[type=number] {
+      width: 100%; padding: 9px 12px; border: 1px solid #dde1ea; border-radius: 7px;
+      font-size: 0.9rem; color: #1a1a2e; background: white; outline: none;
     }
-    .combo-input-row input[type=text]:focus { border-color: #2d6df6; }
-    .combo-arrow {
-      background: white; border: 1px solid #dde1ea; border-radius: 0 7px 7px 0;
-      padding: 0 11px; cursor: pointer; color: #888; font-size: 0.75rem; line-height: 1;
-      transition: background .12s;
-    }
-    .combo-arrow:hover { background: #f4f6fb; }
-    .combo-dropdown {
-      display: none; position: absolute; top: calc(100% + 2px); left: 0; right: 0;
-      background: white; border: 1px solid #dde1ea; border-radius: 7px; z-index: 200;
-      max-height: 200px; overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,.1);
-    }
-    .combo-dropdown.open { display: block; }
-    .combo-option {
-      padding: 8px 12px; cursor: pointer; font-size: 0.875rem; color: #1a1a2e;
-    }
-    .combo-option:hover, .combo-option.focused { background: #f0f4ff; color: #2d6df6; }
-    .combo-empty { padding: 8px 12px; font-size: 0.82rem; color: #aaa; }
-    /* plain inputs (e.g. number) */
-    input[type=number] { width: 100%; padding: 9px 12px; border: 1px solid #dde1ea; border-radius: 7px; font-size: 0.9rem; color: #1a1a2e; background: white; outline: none; }
-    input[type=number]:focus { border-color: #2d6df6; }
+    input[type=text]:focus, input[type=number]:focus { border-color: #2d6df6; }
     .btn-submit { background: #2d6df6; color: white; border: none; padding: 11px 28px; border-radius: 7px; font-size: 0.95rem; font-weight: 500; cursor: pointer; width: 100%; margin-top: 4px; }
     .btn-submit:hover { background: #1a56d6; }
     .btn-cancel { background: none; border: none; color: #888; font-size: 0.875rem; cursor: pointer; width: 100%; margin-top: 8px; }
@@ -131,7 +108,7 @@
           <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">
             {% for m in desc_mappings %}
             <button type="button"
-              onclick="setCombo('category-input','cat-dropdown','{{ m.category }}');setCombo('subcat-input','subcat-dropdown','{{ m.subcategory or '' }}')"
+              onclick="document.getElementById('category-input').value='{{ m.category }}';document.getElementById('subcat-input').value='{{ m.subcategory or '' }}'"
               style="padding:4px 12px;background:#e8f0fe;color:#2d6df6;border:1px solid #c5d5fb;border-radius:20px;font-size:0.82rem;cursor:pointer;font-weight:500">
               {{ m.category }}{% if m.subcategory %} - {{ m.subcategory }}{% endif %}
             </button>
@@ -142,38 +119,12 @@
 
         <div class="form-group">
           <label>Categoria</label>
-          <div class="combo-wrap">
-            <div class="combo-input-row">
-              <input type="text" id="category-input" name="category" placeholder="Ex: Alimentação"
-                     oninput="filterCombo(this,'cat-dropdown')" onfocus="openCombo('cat-dropdown')"
-                     autocomplete="off" required>
-              <button type="button" class="combo-arrow" onclick="toggleCombo('category-input','cat-dropdown')">▾</button>
-            </div>
-            <div class="combo-dropdown" id="cat-dropdown">
-              {% for c in all_categories %}
-              <div class="combo-option" onclick="setCombo('category-input','cat-dropdown','{{ c }}')">{{ c }}</div>
-              {% endfor %}
-              {% if not all_categories %}<div class="combo-empty">Sem opções anteriores</div>{% endif %}
-            </div>
-          </div>
+          <input type="text" id="category-input" name="category" placeholder="Ex: Alimentação" required>
         </div>
 
         <div class="form-group">
           <label>Subcategoria <span style="font-weight:400;color:#aaa;text-transform:none;letter-spacing:0">(opcional)</span></label>
-          <div class="combo-wrap">
-            <div class="combo-input-row">
-              <input type="text" id="subcat-input" name="subcategory" placeholder="Ex: Supermercado"
-                     oninput="filterCombo(this,'subcat-dropdown')" onfocus="openCombo('subcat-dropdown')"
-                     autocomplete="off">
-              <button type="button" class="combo-arrow" onclick="toggleCombo('subcat-input','subcat-dropdown')">▾</button>
-            </div>
-            <div class="combo-dropdown" id="subcat-dropdown">
-              {% for s in all_subcategories %}
-              <div class="combo-option" onclick="setCombo('subcat-input','subcat-dropdown','{{ s }}')">{{ s }}</div>
-              {% endfor %}
-              {% if not all_subcategories %}<div class="combo-empty">Sem opções anteriores</div>{% endif %}
-            </div>
-          </div>
+          <input type="text" id="subcat-input" name="subcategory" placeholder="Ex: Supermercado">
         </div>
 
         <div class="form-group">
@@ -244,46 +195,6 @@
     function confirmSkip() {
       if (confirm('Eliminar esta transação sem guardar?')) document.getElementById('skip-form').submit();
     }
-
-    /* ── combobox ── */
-    function openCombo(ddId) {
-      closeAllCombos();
-      document.getElementById(ddId).classList.add('open');
-    }
-    function toggleCombo(inputId, ddId) {
-      const dd = document.getElementById(ddId);
-      if (dd.classList.contains('open')) {
-        dd.classList.remove('open');
-      } else {
-        closeAllCombos();
-        filterCombo(document.getElementById(inputId), ddId);
-        dd.classList.add('open');
-        document.getElementById(inputId).focus();
-      }
-    }
-    function closeAllCombos() {
-      document.querySelectorAll('.combo-dropdown').forEach(d => d.classList.remove('open'));
-    }
-    function setCombo(inputId, ddId, value) {
-      document.getElementById(inputId).value = value;
-      document.getElementById(ddId).classList.remove('open');
-    }
-    function filterCombo(input, ddId) {
-      const filter = input.value.toLowerCase();
-      const dd = document.getElementById(ddId);
-      let any = false;
-      dd.querySelectorAll('.combo-option').forEach(opt => {
-        const match = opt.textContent.toLowerCase().includes(filter);
-        opt.style.display = match ? '' : 'none';
-        if (match) any = true;
-      });
-      const empty = dd.querySelector('.combo-empty');
-      if (empty) empty.style.display = any ? 'none' : '';
-      dd.classList.add('open');
-    }
-    document.addEventListener('click', e => {
-      if (!e.target.closest('.combo-wrap')) closeAllCombos();
-    });
 
     /* ── split ── */
     function addRow() {
