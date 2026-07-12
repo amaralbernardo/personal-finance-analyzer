@@ -136,25 +136,6 @@ def create_tables(conn):
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_patrimony_space_category ON patrimony(space, category)")
     except Exception:
         pass
-    try:
-        # migrate patrimony_label from label text to category text
-        conn.execute("""
-            UPDATE transactions
-            SET patrimony_label = (
-                SELECT p.category FROM patrimony p
-                WHERE p.label = transactions.patrimony_label
-                  AND p.space = transactions.space
-                LIMIT 1
-            )
-            WHERE patrimony_label IS NOT NULL
-              AND EXISTS (
-                SELECT 1 FROM patrimony p
-                WHERE p.label = transactions.patrimony_label
-                  AND p.space = transactions.space
-              )
-        """)
-    except Exception:
-        pass
     for idx in CREATE_INDEXES:
         conn.execute(idx)
     conn.commit()

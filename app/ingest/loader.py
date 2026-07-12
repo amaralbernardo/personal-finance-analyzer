@@ -65,6 +65,7 @@ def load_file(path: Path, conn: sqlite3.Connection,
     source_file = path.name
     if _already_loaded(conn, source_file, space):
         print(f"  [saltar] {source_file} já foi importado anteriormente.")
+        path.unlink(missing_ok=True)
         return 0
 
     print(f"  [a importar] {source_file} …")

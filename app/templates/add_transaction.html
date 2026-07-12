@@ -121,8 +121,8 @@
             <select id="patrimony_label" name="patrimony_label">
               <option value="">— sem conta —</option>
               {% for p in patrimony %}
-              <option value="{{ p.category }}"
-                {% if form and form.patrimony_label == p.category %}selected{% endif %}>
+              <option value="{{ p.label }}"
+                {% if form and form.patrimony_label == p.label %}selected{% endif %}>
                 {{ p.label }}
               </option>
               {% endfor %}

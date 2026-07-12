@@ -62,6 +62,11 @@
     .action-btn-secondary:hover { background:#f0e8ff; }
     .action-btn-ghost { background:#f8f9fb; color:#444; border:1px solid #e8e8e8; }
     .action-btn-ghost:hover { background:#f0f0f0; }
+    .imported-list { list-style:none; padding:0; margin:14px 0 0; display:flex; flex-direction:column; gap:4px; }
+    .imported-item { display:flex; align-items:center; justify-content:space-between; font-size:0.82rem; padding:5px 0; border-bottom:1px solid #f4f4f4; color:#444; }
+    .imported-item:last-child { border-bottom:none; }
+    .imported-name { font-weight:500; word-break:break-all; }
+    .imported-meta { color:#aaa; white-space:nowrap; margin-left:10px; text-align:right; }
     @media (max-width: 640px) {
       nav.topbar { padding: 0 14px; }
       .topbar-email { display: none; }
@@ -165,6 +170,21 @@
         <ul class="file-list" id="file-list"></ul>
         <button type="submit" class="btn" id="upload-btn" style="display:none">Carregar e processar</button>
       </form>
+      {% if imported_files %}
+      <details style="margin-top:16px">
+        <summary style="cursor:pointer;font-size:0.82rem;color:#888;user-select:none">
+          Ficheiros já importados ({{ imported_files|length }})
+        </summary>
+        <ul class="imported-list">
+          {% for f in imported_files %}
+          <li class="imported-item">
+            <span class="imported-name">{{ f.source_file }}</span>
+            <span class="imported-meta">{{ f.tx_count }} transações · {{ f.imported_at[:10] | datefmt }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </details>
+      {% endif %}
     </div>
   </div>
 

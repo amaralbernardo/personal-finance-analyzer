@@ -110,7 +110,7 @@
                   {% endfor %}
                 </select>
               </td>
-              <td class="cat-cell">{{ patrimony_map.get(txn.patrimony_label, txn.patrimony_label) or '—' }}</td>
+              <td class="cat-cell">{{ txn.patrimony_label or '—' }}</td>
               <td><input type="text" class="notes-input" name="notes_{{ txn.id }}" value="{{ txn.notes or '' }}" placeholder="Nota…"></td>
             </tr>
             {% endfor %}

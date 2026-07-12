@@ -182,6 +182,16 @@ def _delete_reports_handler(space: str):
             f.unlink()
 
 
+def _imported_files(conn, space: str) -> list:
+    return conn.execute(
+        """SELECT source_file, COUNT(*) AS tx_count, MIN(imported_at) AS imported_at
+           FROM transactions
+           WHERE space = ? AND source_file != 'manual'
+           GROUP BY source_file ORDER BY imported_at DESC""",
+        (space,)
+    ).fetchall()
+
+
 def _has_data(conn, space: str) -> bool:
     n = conn.execute(
         "SELECT COUNT(*) as n FROM transactions WHERE space = ?", (space,)
@@ -204,7 +214,7 @@ def _get_patrimony(conn, space: str) -> list:
                    CASE WHEN t.date >= p.reference_date THEN t.amount ELSE 0 END
                ), 0) AS current_value
         FROM patrimony p
-        LEFT JOIN transactions t ON t.patrimony_label = p.category AND t.space = p.space
+        LEFT JOIN transactions t ON t.patrimony_label = p.label AND t.space = p.space
         WHERE p.space = ?
         GROUP BY p.id
         ORDER BY p.category, p.label
@@ -440,6 +450,7 @@ def joint():
     patrimony           = _get_patrimony(conn, space)
     unverified, skipped = _pending_counts(conn, space)
     total = conn.execute("SELECT COUNT(*) FROM transactions WHERE space = ?", (space,)).fetchone()[0]
+    imported_files      = _imported_files(conn, space)
     conn.close()
     return render_template(
         "joint.html",
@@ -448,6 +459,7 @@ def joint():
         skipped=skipped,
         total_transactions=total,
         last_report=_last_report(space),
+        imported_files=imported_files,
     )
 
 
@@ -560,6 +572,7 @@ def individual():
     patrimony           = _get_patrimony(conn, space)
     unverified, skipped = _pending_counts(conn, space)
     total = conn.execute("SELECT COUNT(*) FROM transactions WHERE space = ?", (space,)).fetchone()[0]
+    imported_files      = _imported_files(conn, space)
     conn.close()
     return render_template(
         "individual.html",
@@ -568,6 +581,7 @@ def individual():
         skipped=skipped,
         total_transactions=total,
         last_report=_last_report(space),
+        imported_files=imported_files,
     )
 
 
@@ -720,7 +734,6 @@ def _records_handler(space: str, back_url: str):
         "SELECT id, date, description, amount, category, patrimony_label, notes, verified "
         "FROM transactions WHERE space = ? AND verified = 1 ORDER BY date DESC, id DESC", (space,)
     ).fetchall()
-    patrimony_map = {p["category"]: p["label"] for p in _get_patrimony(conn, space)}
     conn.close()
 
     return render_template(
@@ -729,7 +742,6 @@ def _records_handler(space: str, back_url: str):
         categories=load_categories(),
         back_url=back_url,
         space=space,
-        patrimony_map=patrimony_map,
     )
 
 
@@ -875,7 +887,7 @@ def _patrimony_handler(space: str, back_url: str):
 @login_required
 def patrimony_edit(entry_id):
     conn = get_connection()
-    row = conn.execute("SELECT space, category FROM patrimony WHERE id = ?", (entry_id,)).fetchone()
+    row = conn.execute("SELECT space, category, label FROM patrimony WHERE id = ?", (entry_id,)).fetchone()
     if row:
         space = row["space"]
         if space == 'joint' and current_user.role != 'admin':
@@ -884,7 +896,7 @@ def patrimony_edit(entry_id):
         if space != 'joint' and space != _ind_space(current_user.id):
             conn.close()
             abort(403)
-        old_category = row["category"]
+        old_label = row["label"]
         new_label = request.form.get("label", "").strip()
         new_category = request.form.get("category", "").strip()
         new_amount = request.form.get("amount", "").strip()
@@ -894,11 +906,11 @@ def patrimony_edit(entry_id):
                 UPDATE patrimony SET label = ?, category = ?, amount = ?, reference_date = ?
                 WHERE id = ?
             """, (new_label, new_category, float(new_amount), new_reference_date, entry_id))
-            if new_category != old_category:
+            if new_label != old_label:
                 conn.execute("""
                     UPDATE transactions SET patrimony_label = ?
                     WHERE patrimony_label = ? AND space = ?
-                """, (new_category, old_category, space))
+                """, (new_label, old_label, space))
             conn.commit()
     conn.close()
     back = request.form.get("back_url", url_for("index"))

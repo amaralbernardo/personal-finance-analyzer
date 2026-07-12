@@ -93,7 +93,7 @@ def patrimony_balances(conn: sqlite3.Connection, space: str = 'joint') -> list[d
                p.amount + COALESCE(SUM(t.amount), 0) AS current_value
         FROM patrimony p
         LEFT JOIN transactions t
-               ON t.patrimony_label = p.category
+               ON t.patrimony_label = p.label
               AND t.space = p.space
               AND t.date >= p.reference_date
         WHERE p.space = ?
@@ -104,7 +104,7 @@ def patrimony_balances(conn: sqlite3.Connection, space: str = 'joint') -> list[d
 
 def patrimony_evolution(conn: sqlite3.Connection, space: str = 'joint') -> dict:
     patrimonies = conn.execute(
-        "SELECT category, amount, reference_date FROM patrimony WHERE space = ?", (space,)
+        "SELECT label, amount, reference_date FROM patrimony WHERE space = ?", (space,)
     ).fetchall()
     if not patrimonies:
         return {}
@@ -113,7 +113,7 @@ def patrimony_evolution(conn: sqlite3.Connection, space: str = 'joint') -> dict:
     all_months: set = set()
 
     for p in patrimonies:
-        cat = p["category"]
+        lbl = p["label"]
         ref_month = p["reference_date"][:7]
         all_months.add(ref_month)
 
@@ -122,7 +122,7 @@ def patrimony_evolution(conn: sqlite3.Connection, space: str = 'joint') -> dict:
             FROM transactions
             WHERE patrimony_label = ? AND space = ? AND date >= ?
             GROUP BY month ORDER BY month
-        """, (cat, space, p["reference_date"])).fetchall()
+        """, (lbl, space, p["reference_date"])).fetchall()
 
         by_month_map: dict = {}
         running = p["amount"]
@@ -133,11 +133,11 @@ def patrimony_evolution(conn: sqlite3.Connection, space: str = 'joint') -> dict:
             running = round(running + m["net"], 2)
             by_month_map[ms] = running
 
-        account_data[cat] = {"by_month": by_month_map, "ref_month": ref_month, "initial": p["amount"]}
+        account_data[lbl] = {"by_month": by_month_map, "ref_month": ref_month, "initial": p["amount"]}
 
     sorted_months = sorted(all_months)
     result = {}
-    for cat, info in account_data.items():
+    for lbl, info in account_data.items():
         months, values = [], []
         last = info["initial"]
         for month in sorted_months:
@@ -146,7 +146,7 @@ def patrimony_evolution(conn: sqlite3.Connection, space: str = 'joint') -> dict:
             last = info["by_month"].get(month, last)
             months.append(month)
             values.append(last)
-        result[cat] = {"months": months, "values": values}
+        result[lbl] = {"months": months, "values": values}
 
     return result
 

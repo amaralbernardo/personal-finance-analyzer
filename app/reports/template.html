@@ -247,12 +247,12 @@
     {% for p in data.patrimony_balances %}
     {% set chg = p.current_value - p.initial_amount %}
     {% set pct = (chg / p.initial_amount * 100) if p.initial_amount != 0 else 0 %}
-    {% set acc_txns = data.transactions_by_account.get(p.category, []) %}
-    {% set acc_monthly = data.monthly_by_account.get(p.category) %}
+    {% set acc_txns = data.transactions_by_account.get(p.label, []) %}
+    {% set acc_monthly = data.monthly_by_account.get(p.label) %}
 
     <div class="account-section" id="conta-{{ loop.index }}">
       <div class="account-header">
-        <div class="account-title">{{ p.category }} <span style="font-weight:400;color:#888;font-size:0.9rem">· {{ p.label }}</span></div>
+        <div class="account-title">{{ p.label }} <span style="font-weight:400;color:#888;font-size:0.9rem">· {{ p.category }}</span></div>
         <div class="account-cards">
           <div class="account-card">
             <div class="label">Valor Atual</div>
@@ -393,7 +393,7 @@ if (document.getElementById("distribChart") && distribData.length > 0) {
   new Chart(document.getElementById("distribChart"), {
     type: "doughnut",
     data: {
-      labels: distribData.map(d => d.category),
+      labels: distribData.map(d => d.label),
       datasets: [{ data: distribData.map(d => d.current_value), backgroundColor: COLORS, borderWidth: 2, borderColor: "#fff" }]
     },
     options: {
@@ -451,7 +451,7 @@ const monthByAccount = {{ data.monthly_by_account | tojson }};
 (function() {
   const canvas = document.getElementById("accChart_{{ loop.index }}");
   if (!canvas) return;
-  const acc = {{ p.category | tojson }};
+  const acc = {{ p.label | tojson }};
   const d = monthByAccount[acc];
   if (!d || !d.months.length) return;
   new Chart(canvas, {
