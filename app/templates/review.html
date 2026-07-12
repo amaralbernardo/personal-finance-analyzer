@@ -103,32 +103,32 @@
 
         <div class="form-group">
           <label>Categoria</label>
+          {% if desc_mappings %}
+          <div style="margin-bottom:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+            <span style="font-size:0.78rem;color:#666;white-space:nowrap">Anteriores:</span>
+            {% for m in desc_mappings %}
+            <button type="button"
+              onclick="document.getElementById('category-input').value='{{ m.category }}';document.getElementById('subcat-input').value='{{ m.subcategory or '' }}'"
+              style="padding:3px 10px;background:#e8f0fe;color:#2d6df6;border:1px solid #c5d5fb;border-radius:20px;font-size:0.8rem;cursor:pointer;font-weight:500;white-space:nowrap">
+              {{ m.category }}{% if m.subcategory %} · {{ m.subcategory }}{% endif %}
+            </button>
+            {% endfor %}
+          </div>
+          {% endif %}
           <input type="text" name="category" id="category-input"
-                 value="{{ desc_mapping.category if desc_mapping else '' }}"
                  placeholder="Ex: Alimentação" list="cat-list" required>
           <datalist id="cat-list">
             {% for c in all_categories %}<option value="{{ c }}">{% endfor %}
           </datalist>
-          {% if desc_mapping and desc_mapping.category %}
-          <div class="suggestion" onclick="document.getElementById('category-input').value='{{ desc_mapping.category }}'">
-            Sugestão: {{ desc_mapping.category }}
-          </div>
-          {% endif %}
         </div>
 
         <div class="form-group">
           <label>Subcategoria <span style="font-weight:400;color:#aaa">(opcional)</span></label>
           <input type="text" name="subcategory" id="subcat-input"
-                 value="{{ desc_mapping.subcategory if desc_mapping and desc_mapping.subcategory else '' }}"
                  placeholder="Ex: Supermercado" list="subcat-list">
           <datalist id="subcat-list">
             {% for s in all_subcategories %}<option value="{{ s }}">{% endfor %}
           </datalist>
-          {% if desc_mapping and desc_mapping.subcategory %}
-          <div class="suggestion" onclick="document.getElementById('subcat-input').value='{{ desc_mapping.subcategory }}'">
-            Sugestão: {{ desc_mapping.subcategory }}
-          </div>
-          {% endif %}
         </div>
 
         <div class="form-group">

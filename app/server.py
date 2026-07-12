@@ -572,7 +572,15 @@ def _review_handler(space: str, back_url: str):
                 )
                 conn.commit()
                 mappings = _load_mappings(MAPPINGS_PATH, space)
-                mappings[txn_row["description"]] = {"category": category, "subcategory": subcategory}
+                existing = mappings.get(txn_row["description"])
+                if isinstance(existing, dict):
+                    existing = [existing]
+                elif not isinstance(existing, list):
+                    existing = []
+                new_entry = {"category": category, "subcategory": subcategory}
+                if new_entry not in existing:
+                    existing.append(new_entry)
+                mappings[txn_row["description"]] = existing
                 _save_mappings(MAPPINGS_PATH, space, mappings)
             conn.close()
             return redirect(request.url)
@@ -624,9 +632,18 @@ def _review_handler(space: str, back_url: str):
     ).fetchone()[0]
 
     mappings = _load_mappings(MAPPINGS_PATH, space)
-    desc_mapping = mappings.get(txn["description"])
-    all_categories    = sorted({m["category"]    for m in mappings.values() if isinstance(m, dict) and m.get("category")})
-    all_subcategories = sorted({m["subcategory"] for m in mappings.values() if isinstance(m, dict) and m.get("subcategory")})
+
+    def _iter_entries(v):
+        if isinstance(v, dict):
+            yield v
+        elif isinstance(v, list):
+            yield from v
+
+    raw = mappings.get(txn["description"])
+    desc_mappings = list(_iter_entries(raw)) if raw else []
+
+    all_categories    = sorted({e["category"]    for v in mappings.values() for e in _iter_entries(v) if e.get("category")})
+    all_subcategories = sorted({e["subcategory"] for v in mappings.values() for e in _iter_entries(v) if e.get("subcategory")})
 
     patrimony = _get_patrimony(conn, space)
     conn.close()
@@ -635,7 +652,7 @@ def _review_handler(space: str, back_url: str):
         "review.html",
         txn=txn,
         total_pending=total_pending,
-        desc_mapping=desc_mapping,
+        desc_mappings=desc_mappings,
         all_categories=all_categories,
         all_subcategories=all_subcategories,
         patrimony=patrimony,
