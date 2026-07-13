@@ -25,6 +25,9 @@
     select:focus { outline: none; border-color: #2d6df6; }
     .btn { background: #2d6df6; color: white; border: none; padding: 11px 28px; border-radius: 7px; font-size: 0.95rem; font-weight: 500; cursor: pointer; margin-top: 8px; }
     .btn:hover { background: #1a56d6; }
+    .btn-cancel { background: none; color: #c0392b; border: 1px solid #f5c6c6; padding: 10px 22px; border-radius: 7px; font-size: 0.9rem; font-weight: 500; cursor: pointer; margin-top: 8px; }
+    .btn-cancel:hover { background: #fff0f0; }
+    .btn-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
     .warn { color: #c0392b; font-size: 0.875rem; margin-top: 8px; }
   </style>
 </head>
@@ -37,9 +40,8 @@
     </div>
   </nav>
   <div class="page">
-    <a href="{{ back_url }}" class="back">← Voltar</a>
     <h1>Associar Contas</h1>
-    <p class="subtitle">Indica a conta bancária correspondente a cada ficheiro importado. Esta associação será recordada para futuras importações.</p>
+    <p class="subtitle">Indica a conta bancária correspondente a cada ficheiro importado.</p>
     <form method="post">
       <div class="card">
         {% for filename in unknown_files %}
@@ -55,12 +57,27 @@
         {% endfor %}
       </div>
       {% if patrimony %}
-      <button type="submit" class="btn">Confirmar e continuar</button>
+      <div class="btn-row">
+        <button type="submit" class="btn">Confirmar e continuar</button>
+        <button type="submit" formaction="{{ cancel_url }}" formnovalidate class="btn-cancel"
+                onclick="return confirm('Cancelar a importação? As transações deste ficheiro serão removidas.')">
+          Cancelar importação
+        </button>
+      </div>
       {% else %}
       <p class="warn">Configura primeiro o Patrimônio antes de importar ficheiros.</p>
-      <a href="{{ back_url }}" class="back">← Voltar</a>
+      <button type="submit" formaction="{{ cancel_url }}" formnovalidate class="btn-cancel"
+              onclick="return confirm('Cancelar a importação? As transações deste ficheiro serão removidas.')">
+        Cancelar importação
+      </button>
       {% endif %}
     </form>
   </div>
+  <script>
+    history.replaceState(null, '', location.href);
+    window.addEventListener('popstate', function() {
+      history.pushState(null, '', location.href);
+    });
+  </script>
 </body>
 </html>

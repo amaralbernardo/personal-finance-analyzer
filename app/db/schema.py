@@ -68,8 +68,10 @@ _DEFAULT_PATRIMONY_CATEGORIES = [
 
 CREATE_PATRIMONY_CATEGORIES = """
 CREATE TABLE IF NOT EXISTS patrimony_categories (
-    id   INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT    NOT NULL UNIQUE
+    id    INTEGER PRIMARY KEY AUTOINCREMENT,
+    name  TEXT NOT NULL,
+    space TEXT NOT NULL DEFAULT 'joint',
+    UNIQUE(name, space)
 )
 """
 
@@ -85,7 +87,7 @@ def create_tables(conn):
     conn.execute(CREATE_PATRIMONY_CATEGORIES)
     if not patrimony_cat_existed:
         for name in _DEFAULT_PATRIMONY_CATEGORIES:
-            conn.execute("INSERT OR IGNORE INTO patrimony_categories (name) VALUES (?)", (name,))
+            conn.execute("INSERT OR IGNORE INTO patrimony_categories (name, space) VALUES (?, 'joint')", (name,))
     try:
         conn.execute("ALTER TABLE transactions ADD COLUMN verified INTEGER NOT NULL DEFAULT 0")
     except Exception:
@@ -124,6 +126,22 @@ def create_tables(conn):
         pass
     try:
         conn.execute("ALTER TABLE transactions ADD COLUMN subcategory TEXT")
+    except Exception:
+        pass
+    try:
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(patrimony_categories)").fetchall()]
+        if "space" not in cols:
+            conn.execute("""
+                CREATE TABLE patrimony_categories_new (
+                    id    INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name  TEXT NOT NULL,
+                    space TEXT NOT NULL DEFAULT 'joint',
+                    UNIQUE(name, space)
+                )
+            """)
+            conn.execute("INSERT INTO patrimony_categories_new (id, name, space) SELECT id, name, 'joint' FROM patrimony_categories")
+            conn.execute("DROP TABLE patrimony_categories")
+            conn.execute("ALTER TABLE patrimony_categories_new RENAME TO patrimony_categories")
     except Exception:
         pass
     try:

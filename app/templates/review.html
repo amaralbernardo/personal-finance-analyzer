@@ -76,7 +76,11 @@
 
   <div class="page">
     <a href="{{ back_url }}" class="back">← Voltar</a>
-    <p class="progress">{{ total_pending }} transaç{{ 'ão' if total_pending == 1 else 'ões' }} por rever</p>
+    <p class="progress">
+      {{ total_pending }} transaç{{ 'ão' if total_pending == 1 else 'ões' }} por rever
+      &nbsp;·&nbsp;
+      <a href="{{ pending_list_url }}" style="color:#2d6df6;text-decoration:none;font-size:0.82rem">Ver todas</a>
+    </p>
 
     <div class="txn-card">
       <div class="txn-date">{{ txn.date | datefmt }}</div>

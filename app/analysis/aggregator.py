@@ -96,6 +96,7 @@ def patrimony_balances(conn: sqlite3.Connection, space: str = 'joint') -> list[d
                ON t.patrimony_label = p.label
               AND t.space = p.space
               AND t.date >= p.reference_date
+              AND t.verified = 1
         WHERE p.space = ?
         GROUP BY p.id
         ORDER BY p.category
@@ -120,7 +121,7 @@ def patrimony_evolution(conn: sqlite3.Connection, space: str = 'joint') -> dict:
         monthly = conn.execute("""
             SELECT SUBSTR(date, 1, 7) AS month, ROUND(SUM(amount), 2) AS net
             FROM transactions
-            WHERE patrimony_label = ? AND space = ? AND date >= ?
+            WHERE patrimony_label = ? AND space = ? AND date >= ? AND verified = 1
             GROUP BY month ORDER BY month
         """, (lbl, space, p["reference_date"])).fetchall()
 

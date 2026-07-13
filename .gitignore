@@ -1,0 +1,7 @@
+data/finance.db
+data/processed/
+data/input/
+__pycache__/
+*.pyc
+*.pyo
+reports/

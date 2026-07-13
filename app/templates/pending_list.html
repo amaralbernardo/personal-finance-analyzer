@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Registos Pendentes</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f2f5; margin: 0; padding: 0; color: #1a1a2e; }
+    nav.topbar { background: white; border-bottom: 1px solid #eee; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .topbar-brand { font-weight: 700; font-size: 0.95rem; color: #1a1a2e; text-decoration: none; }
+    .topbar-right { display: flex; align-items: center; gap: 20px; }
+    .topbar-email { font-size: 0.85rem; color: #888; text-decoration: none; }
+    .topbar-logout { font-size: 0.85rem; color: #888; text-decoration: none; }
+    .topbar-logout:hover { color: #c0392b; }
+    .page { max-width: 960px; margin: 0 auto; padding: 40px 20px; }
+    .back { color: #888; text-decoration: none; font-size: 0.875rem; display: inline-block; margin-bottom: 20px; }
+    .back:hover { color: #444; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+    h1 { font-size: 1.4rem; margin: 0; }
+    .count-badge { font-size: 0.82rem; color: #888; }
+    .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+    .btn { padding: 9px 20px; border-radius: 7px; font-size: 0.875rem; font-weight: 500; cursor: pointer; border: none; }
+    .btn-delete { background: #fff0f0; color: #c0392b; border: 1px solid #f5c6c6; }
+    .btn-delete:hover { background: #fde8e8; }
+    .btn-delete:disabled { opacity: .4; cursor: not-allowed; }
+    .btn-delete-all { background: #c0392b; color: white; }
+    .btn-delete-all:hover { background: #a93226; }
+    .btn-back { background: white; color: #444; border: 1px solid #dde; }
+    .btn-back:hover { background: #f8f8f8; }
+    .card { background: white; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.08); overflow: hidden; }
+    .overflow-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; min-width: 580px; }
+    thead th { text-align: left; padding: 10px 12px; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: #888; border-bottom: 1px solid #eee; background: #fafafa; }
+    thead th.check-col { width: 36px; text-align: center; }
+    tbody td { padding: 11px 12px; border-bottom: 1px solid #f4f4f4; vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: #fafbff; }
+    tbody tr.selected { background: #f0f4ff; }
+    .amount-neg { color: #c0392b; font-weight: 600; text-align: right; }
+    .amount-pos { color: #1e8449; font-weight: 600; text-align: right; }
+    .col-date { white-space: nowrap; color: #888; font-size: 0.82rem; }
+    .col-desc { font-weight: 500; }
+    .col-cat  { color: #888; font-size: 0.82rem; }
+    .col-acct { color: #888; font-size: 0.82rem; }
+    .check-col { text-align: center; }
+    input[type=checkbox] { width: 15px; height: 15px; cursor: pointer; accent-color: #2d6df6; }
+    .empty { padding: 40px; text-align: center; color: #aaa; }
+    @media (max-width: 640px) {
+      nav.topbar { padding: 0 14px; }
+      .topbar-email { display: none; }
+      .page { padding: 24px 14px; }
+      .toolbar { flex-direction: column; align-items: stretch; }
+      .btn { width: 100%; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="topbar">
+    <a href="/" class="topbar-brand">Finanças Pessoais</a>
+    <div class="topbar-right">
+      <a href="/change-password" class="topbar-email">{{ current_user.email }}</a>
+      <a href="/logout" class="topbar-logout">Sair</a>
+    </div>
+  </nav>
+
+  <div class="page">
+    <a href="{{ review_url }}" class="back">← Voltar à revisão</a>
+    <div class="page-header">
+      <h1>Registos Pendentes</h1>
+      <span class="count-badge">{{ rows | length }} registo{{ 's' if rows | length != 1 else '' }}</span>
+    </div>
+
+    {% if rows %}
+    <form method="post" id="main-form">
+      <div class="toolbar">
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.875rem;cursor:pointer;font-weight:500">
+          <input type="checkbox" id="select-all" onchange="toggleAll(this)"> Selecionar todos
+        </label>
+        <button type="submit" name="action" value="delete_selected" class="btn btn-delete" id="btn-del-sel"
+                disabled onclick="return confirm('Eliminar os registos selecionados?')">
+          Eliminar selecionados
+        </button>
+        <button type="submit" name="action" value="delete_all" class="btn btn-delete-all"
+                onclick="return confirm('Eliminar todos os {{ rows | length }} registos pendentes?')">
+          Eliminar todos
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="overflow-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="check-col"><input type="checkbox" id="select-all-th" onchange="toggleAll(this)"></th>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Categoria</th>
+                <th>Conta</th>
+                <th style="text-align:right">Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in rows %}
+              <tr id="row-{{ row.id }}">
+                <td class="check-col">
+                  <input type="checkbox" name="ids" value="{{ row.id }}" class="row-check" onchange="onCheckChange()">
+                </td>
+                <td class="col-date">{{ row.date | datefmt }}</td>
+                <td class="col-desc">{{ row.description }}</td>
+                <td class="col-cat">{{ row.category or '—' }}</td>
+                <td class="col-acct">{{ row.patrimony_label or '—' }}</td>
+                <td class="{{ 'amount-neg' if row.amount < 0 else 'amount-pos' }}">
+                  {{ '%+.2f' | format(row.amount) }} €
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </form>
+    {% else %}
+    <div class="card"><p class="empty">Sem registos pendentes.</p></div>
+    {% endif %}
+  </div>
+
+  <script>
+    function toggleAll(src) {
+      document.querySelectorAll('.row-check').forEach(cb => {
+        cb.checked = src.checked;
+        cb.closest('tr').classList.toggle('selected', src.checked);
+      });
+      document.getElementById('select-all').checked = src.checked;
+      document.getElementById('select-all-th').checked = src.checked;
+      updateDeleteBtn();
+    }
+
+    function onCheckChange() {
+      const checks = document.querySelectorAll('.row-check');
+      const all    = [...checks].every(c => c.checked);
+      const none   = [...checks].every(c => !c.checked);
+      document.getElementById('select-all').checked    = all;
+      document.getElementById('select-all-th').checked = all;
+      event.target.closest('tr').classList.toggle('selected', event.target.checked);
+      updateDeleteBtn();
+    }
+
+    function updateDeleteBtn() {
+      const any = [...document.querySelectorAll('.row-check')].some(c => c.checked);
+      document.getElementById('btn-del-sel').disabled = !any;
+    }
+  </script>
+</body>
+</html>

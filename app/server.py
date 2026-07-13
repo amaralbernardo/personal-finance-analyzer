@@ -23,7 +23,7 @@ from app.categorize.engine import (
     _load_mappings, _save_mappings,
 )
 from app.reports.generator import generate
-from app.email import send_welcome_email
+from app.mailer import send_welcome_email
 
 BASE_DIR             = Path(__file__).parents[1]
 INPUT_DIR            = BASE_DIR / "data" / "input"
@@ -242,7 +242,7 @@ def _get_patrimony(conn, space: str) -> list:
                    CASE WHEN t.date >= p.reference_date THEN t.amount ELSE 0 END
                ), 0) AS current_value
         FROM patrimony p
-        LEFT JOIN transactions t ON t.patrimony_label = p.label AND t.space = p.space
+        LEFT JOIN transactions t ON t.patrimony_label = p.label AND t.space = p.space AND t.verified = 1
         WHERE p.space = ?
         GROUP BY p.id
         ORDER BY p.category, p.label
@@ -514,7 +514,7 @@ def joint_upload():
     return redirect(url_for("joint_review"))
 
 
-def _select_account_handler(space: str, back_url: str, review_url: str):
+def _select_account_handler(space: str, back_url: str, review_url: str, cancel_url: str = ""):
     conn = get_connection()
     if request.method == "POST":
         file_map = _load_file_account_map()
@@ -541,7 +541,8 @@ def _select_account_handler(space: str, back_url: str, review_url: str):
                            unknown_files=unknown_files,
                            patrimony=patrimony,
                            space=space,
-                           back_url=back_url)
+                           back_url=back_url,
+                           cancel_url=cancel_url)
 
 
 def _review_handler(space: str, back_url: str):
@@ -654,6 +655,7 @@ def _review_handler(space: str, back_url: str):
     patrimony = _get_patrimony(conn, space)
     conn.close()
 
+    pending_list_url = url_for("joint_pending_list") if space == "joint" else url_for("individual_pending_list")
     return render_template(
         "review.html",
         txn=txn,
@@ -664,19 +666,78 @@ def _review_handler(space: str, back_url: str):
         patrimony=patrimony,
         space=space,
         back_url=back_url,
+        pending_list_url=pending_list_url,
     )
+
+
+def _cancel_import_handler(space: str, back_url: str):
+    conn = get_connection()
+    files = _unknown_source_files(conn, space)
+    if files:
+        placeholders = ",".join("?" * len(files))
+        conn.execute(f"DELETE FROM transactions WHERE source_file IN ({placeholders}) AND space = ?",
+                     [*files, space])
+        conn.execute(f"DELETE FROM skipped_rows WHERE source_file IN ({placeholders}) AND space = ?",
+                     [*files, space])
+        conn.commit()
+    conn.close()
+    return redirect(back_url)
 
 
 @app.route("/joint/select-account", methods=["GET", "POST"])
 @admin_required
 def joint_select_account():
-    return _select_account_handler('joint', url_for("joint"), url_for("joint_review"))
+    return _select_account_handler('joint', url_for("joint"), url_for("joint_review"), url_for("joint_cancel_import"))
+
+
+@app.route("/joint/select-account/cancel", methods=["POST"])
+@admin_required
+def joint_cancel_import():
+    return _cancel_import_handler('joint', url_for("joint"))
+
+
+def _pending_list_handler(space: str, review_url: str):
+    conn = get_connection()
+    if request.method == "POST":
+        action = request.form.get("action")
+        if action == "delete_all":
+            conn.execute(
+                "DELETE FROM transactions WHERE space = ? AND verified = 0 AND (excluded IS NULL OR excluded = 0)",
+                (space,)
+            )
+        elif action == "delete_selected":
+            ids = request.form.getlist("ids")
+            if ids:
+                placeholders = ",".join("?" * len(ids))
+                conn.execute(
+                    f"DELETE FROM transactions WHERE id IN ({placeholders}) AND space = ? AND verified = 0",
+                    [*ids, space]
+                )
+        conn.commit()
+        conn.close()
+        return redirect(review_url)
+
+    rows = conn.execute(
+        """SELECT id, date, description, amount, patrimony_label, category
+           FROM transactions
+           WHERE space = ? AND verified = 0 AND (excluded IS NULL OR excluded = 0)
+           ORDER BY date, id""",
+        (space,)
+    ).fetchall()
+    conn.close()
+    return render_template("pending_list.html", rows=rows, space=space, review_url=review_url)
 
 
 @app.route("/joint/review", methods=["GET", "POST"])
 @admin_required
 def joint_review():
     return _review_handler('joint', url_for("joint"))
+
+
+@app.route("/joint/review/pending", methods=["GET", "POST"])
+@admin_required
+def joint_pending_list():
+    return _pending_list_handler('joint', url_for("joint_review"))
 
 
 @app.route("/joint/generate-report", methods=["POST"])
@@ -766,7 +827,14 @@ def individual_upload():
 @login_required
 def individual_select_account():
     space = _ind_space(current_user.id)
-    return _select_account_handler(space, url_for("individual"), url_for("individual_review"))
+    return _select_account_handler(space, url_for("individual"), url_for("individual_review"), url_for("individual_cancel_import"))
+
+
+@app.route("/individual/select-account/cancel", methods=["POST"])
+@login_required
+def individual_cancel_import():
+    space = _ind_space(current_user.id)
+    return _cancel_import_handler(space, url_for("individual"))
 
 
 @app.route("/individual/review", methods=["GET", "POST"])
@@ -774,6 +842,13 @@ def individual_select_account():
 def individual_review():
     space = _ind_space(current_user.id)
     return _review_handler(space, url_for("individual"))
+
+
+@app.route("/individual/review/pending", methods=["GET", "POST"])
+@login_required
+def individual_pending_list():
+    space = _ind_space(current_user.id)
+    return _pending_list_handler(space, url_for("individual_review"))
 
 
 @app.route("/individual/generate-report", methods=["POST"])
@@ -921,6 +996,18 @@ def _add_transaction_handler(space: str, back_url: str):
             )
             conn.commit()
             conn.close()
+            if cat_val and cat_val != "Outros":
+                mappings = _load_mappings(MAPPINGS_PATH, space)
+                existing = mappings.get(desc_val)
+                if isinstance(existing, dict):
+                    existing = [existing]
+                elif not isinstance(existing, list):
+                    existing = []
+                new_entry = {"category": cat_val, "subcategory": subcat_val}
+                if new_entry not in existing:
+                    existing.append(new_entry)
+                mappings[desc_val] = existing
+                _save_mappings(MAPPINGS_PATH, space, mappings)
             return redirect(back_url)
         except ValueError as exc:
             error = str(exc)
@@ -975,9 +1062,9 @@ def patrimony_individual():
     return _patrimony_handler(_ind_space(current_user.id), url_for("individual"))
 
 
-def _all_patrimony_categories(conn) -> list:
+def _all_patrimony_categories(conn, space: str) -> list:
     return conn.execute(
-        "SELECT id, name FROM patrimony_categories ORDER BY name"
+        "SELECT id, name FROM patrimony_categories WHERE space = ? ORDER BY name", (space,)
     ).fetchall()
 
 
@@ -985,7 +1072,7 @@ def _available_categories(conn, space: str) -> list:
     used = {row["category"] for row in conn.execute(
         "SELECT category FROM patrimony WHERE space = ?", (space,)
     ).fetchall()}
-    return [r["name"] for r in _all_patrimony_categories(conn) if r["name"] not in used]
+    return [r["name"] for r in _all_patrimony_categories(conn, space) if r["name"] not in used]
 
 
 def _patrimony_handler(space: str, back_url: str):
@@ -1007,11 +1094,16 @@ def _patrimony_handler(space: str, back_url: str):
         conn.close()
         return redirect(request.url)
 
-    patrimony            = _get_patrimony(conn, space)
+    patrimony = _get_patrimony(conn, space)
+    if not conn.execute("SELECT 1 FROM patrimony_categories WHERE space = ? LIMIT 1", (space,)).fetchone():
+        from app.db.schema import _DEFAULT_PATRIMONY_CATEGORIES
+        for name in _DEFAULT_PATRIMONY_CATEGORIES:
+            conn.execute("INSERT OR IGNORE INTO patrimony_categories (name, space) VALUES (?, ?)", (name, space))
+        conn.commit()
+    all_categories       = _all_patrimony_categories(conn, space)
     available_categories = _available_categories(conn, space)
-    all_categories       = _all_patrimony_categories(conn)
     used_categories      = {row["category"] for row in conn.execute(
-        "SELECT DISTINCT category FROM patrimony"
+        "SELECT DISTINCT category FROM patrimony WHERE space = ?", (space,)
     ).fetchall()}
     conn.close()
     return render_template("setup.html", patrimony=patrimony, space=space, back_url=back_url,
@@ -1079,12 +1171,13 @@ def patrimony_delete(entry_id):
 @app.route("/patrimony/categories/add", methods=["POST"])
 @login_required
 def patrimony_category_add():
-    name = request.form.get("name", "").strip()
-    back = request.form.get("back_url", url_for("index"))
+    name  = request.form.get("name", "").strip()
+    space = request.form.get("space", "joint").strip()
+    back  = request.form.get("back_url", url_for("index"))
     if name:
         conn = get_connection()
         try:
-            conn.execute("INSERT OR IGNORE INTO patrimony_categories (name) VALUES (?)", (name,))
+            conn.execute("INSERT OR IGNORE INTO patrimony_categories (name, space) VALUES (?, ?)", (name, space))
             conn.commit()
         finally:
             conn.close()
@@ -1096,10 +1189,10 @@ def patrimony_category_add():
 def patrimony_category_delete(cat_id):
     back = request.form.get("back_url", url_for("index"))
     conn = get_connection()
-    row = conn.execute("SELECT name FROM patrimony_categories WHERE id = ?", (cat_id,)).fetchone()
+    row = conn.execute("SELECT name, space FROM patrimony_categories WHERE id = ?", (cat_id,)).fetchone()
     if row:
         in_use = conn.execute(
-            "SELECT 1 FROM patrimony WHERE category = ? LIMIT 1", (row["name"],)
+            "SELECT 1 FROM patrimony WHERE category = ? AND space = ? LIMIT 1", (row["name"], row["space"])
         ).fetchone()
         if not in_use:
             conn.execute("DELETE FROM patrimony_categories WHERE id = ?", (cat_id,))
@@ -1111,12 +1204,13 @@ def patrimony_category_delete(cat_id):
 @app.route("/patrimony/categories/delete-unused", methods=["POST"])
 @login_required
 def patrimony_categories_delete_unused():
-    back = request.form.get("back_url", url_for("index"))
-    conn = get_connection()
+    back  = request.form.get("back_url", url_for("index"))
+    space = request.form.get("space", "joint").strip()
+    conn  = get_connection()
     conn.execute("""
         DELETE FROM patrimony_categories
-        WHERE name NOT IN (SELECT DISTINCT category FROM patrimony)
-    """)
+        WHERE space = ? AND name NOT IN (SELECT DISTINCT category FROM patrimony WHERE space = ?)
+    """, (space, space))
     conn.commit()
     conn.close()
     return redirect(back)

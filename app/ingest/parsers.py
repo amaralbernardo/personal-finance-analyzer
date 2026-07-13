@@ -51,6 +51,13 @@ def _find_header_row(path: Path, sep: str, encoding: str) -> int:
 
 
 def parse_csv(path: Path) -> list[dict]:
+    for encoding in ("utf-8-sig", "utf-8", "latin-1", "cp1252"):
+        try:
+            df = pd.read_csv(path, sep=None, engine="python", dtype=str,
+                             encoding=encoding, encoding_errors="strict")
+            return _extract_rows(df, path)
+        except (UnicodeDecodeError, ValueError):
+            continue
     df = pd.read_csv(path, sep=None, engine="python", dtype=str, encoding_errors="replace")
     return _extract_rows(df, path)
 

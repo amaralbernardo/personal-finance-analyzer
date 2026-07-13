@@ -51,7 +51,6 @@
       <a href="/change-password" class="topbar-email">{{ current_user.email }}</a>
       {% if current_user.role == 'admin' %}
       <a href="/users" class="topbar-link">Utilizadores</a>
-      <a href="/categories" class="topbar-link">Categorias</a>
       {% endif %}
       <a href="/logout" class="topbar-logout">Sair</a>
     </div>
