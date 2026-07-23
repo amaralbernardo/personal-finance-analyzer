@@ -1,4 +1,5 @@
 """Raw file parsers — return a list of dicts with raw column names intact."""
+import re
 import pandas as pd
 from pathlib import Path
 
@@ -168,6 +169,59 @@ def parse_pdf(path: Path) -> list[dict]:
         return _extract_rows(df, path)
     except Exception as exc:
         raise ValueError(f"{path.name}: falha ao processar texto do PDF: {exc}")
+
+
+def parse_html(path: Path) -> list[dict]:
+    from bs4 import BeautifulSoup
+    from datetime import datetime
+
+    # Extract cutoff date from filename (e.g. MyEdenred_20260601.html → 2026-06-01)
+    cutoff = None
+    m = re.search(r"(\d{4})(\d{2})(\d{2})", path.stem)
+    if m:
+        cutoff = datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+
+    for encoding in ("utf-8", "utf-8-sig", "latin-1", "cp1252"):
+        try:
+            with open(path, "r", encoding=encoding) as f:
+                soup = BeautifulSoup(f, "html.parser")
+            break
+        except UnicodeDecodeError:
+            continue
+
+    table_body = soup.find("div", class_="table-body")
+    if not table_body:
+        raise ValueError(f"{path.name}: estrutura HTML não reconhecida (div.table-body não encontrada).")
+
+    rows = []
+    for row in table_body.find_all("div", class_="no-animations"):
+        date_div   = row.find("div", class_="data-wrapper")
+        desc_div   = row.find("div", class_="description-wrapper")
+        amount_div = row.find("div", class_=lambda c: c and "amount-wrapper" in c and "balance-wrapper" not in c)
+
+        if not (date_div and desc_div and amount_div):
+            continue
+
+        date_raw = date_div.get_text(strip=True)
+        dm = re.search(r"(\d{2}/\d{2}/\d{4})", date_raw)
+        if not dm:
+            continue
+
+        if cutoff:
+            row_date = datetime.strptime(dm.group(1), "%d/%m/%Y")
+            if row_date < cutoff:
+                continue
+
+        rows.append({
+            "date": dm.group(1),
+            "description": desc_div.get_text(strip=True),
+            "amount_raw": amount_div.get_text(strip=True),
+        })
+
+    if not rows:
+        raise ValueError(f"{path.name}: nenhuma transação encontrada no HTML.")
+
+    return rows
 
 
 def _extract_rows(df: pd.DataFrame, path: Path) -> list[dict]:

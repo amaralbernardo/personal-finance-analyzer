@@ -32,7 +32,7 @@ MAPPINGS_PATH        = BASE_DIR / "data" / "user_mappings.json"
 FILE_ACCOUNT_MAP_PATH = BASE_DIR / "data" / "file_account_map.json"
 REPORTS_DIR          = BASE_DIR / "reports"
 
-_ALLOWED_EXTENSIONS = {".csv", ".ofx", ".qfx", ".xlsx", ".xls", ".pdf"}
+_ALLOWED_EXTENSIONS = {".csv", ".ofx", ".qfx", ".xlsx", ".xls", ".pdf", ".html"}
 
 _SECRET_KEY = os.environ.get("SECRET_KEY", "")
 if not _SECRET_KEY:
