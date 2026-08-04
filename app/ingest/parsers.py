@@ -236,17 +236,23 @@ def parse_pdf(path: Path) -> list[dict]:
         raise ValueError(f"{path.name}: falha ao processar texto do PDF: {exc}")
 
 
-def _parse_edenred_html(html_content: str, path: Path) -> list[dict]:
-    """Parse MyEdenred HTML content (shared by parse_html and parse_mhtml)."""
+def parse_html(path: Path) -> list[dict]:
     from bs4 import BeautifulSoup
     from datetime import datetime
 
+    # Extract cutoff date from filename (e.g. MyEdenred_20260601.html → 2026-06-01)
     cutoff = None
     m = re.search(r"(\d{4})(\d{2})(\d{2})", path.stem)
     if m:
         cutoff = datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)))
 
-    soup = BeautifulSoup(html_content, "html.parser")
+    for encoding in ("utf-8", "utf-8-sig", "latin-1", "cp1252"):
+        try:
+            with open(path, "r", encoding=encoding) as f:
+                soup = BeautifulSoup(f, "html.parser")
+            break
+        except UnicodeDecodeError:
+            continue
 
     table_body = soup.find("div", class_="table-body")
     if not table_body:
@@ -281,41 +287,6 @@ def _parse_edenred_html(html_content: str, path: Path) -> list[dict]:
         raise ValueError(f"{path.name}: nenhuma transação encontrada no HTML.")
 
     return rows
-
-
-def parse_html(path: Path) -> list[dict]:
-    for encoding in ("utf-8", "utf-8-sig", "latin-1", "cp1252"):
-        try:
-            with open(path, "r", encoding=encoding) as f:
-                html_content = f.read()
-            break
-        except UnicodeDecodeError:
-            continue
-    else:
-        with open(path, "r", encoding="utf-8", errors="replace") as f:
-            html_content = f.read()
-
-    return _parse_edenred_html(html_content, path)
-
-
-def parse_mhtml(path: Path) -> list[dict]:
-    import email as _email
-
-    with open(path, "rb") as f:
-        msg = _email.message_from_binary_file(f)
-
-    html_content = None
-    for part in msg.walk():
-        if part.get_content_type() == "text/html":
-            charset = part.get_content_charset() or "utf-8"
-            payload = part.get_payload(decode=True)
-            html_content = payload.decode(charset, errors="replace")
-            break
-
-    if not html_content:
-        raise ValueError(f"{path.name}: não foi possível extrair HTML do ficheiro MHTML.")
-
-    return _parse_edenred_html(html_content, path)
 
 
 def _extract_rows(df: pd.DataFrame, path: Path) -> list[dict]:
