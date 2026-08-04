@@ -58,8 +58,6 @@
       .cat-panel { width: 85vw; }
     }
     /* ── category panel ── */
-    .cat-panel-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.15); z-index: 19; display: none; }
-    .cat-panel-overlay.open { display: block; }
     .cat-panel {
       position: fixed; top: 52px; right: 0; width: 260px; height: calc(100vh - 52px);
       background: white; border-left: 1px solid #e0e4ee; box-shadow: -2px 0 16px rgba(0,0,0,.1);
@@ -183,7 +181,6 @@
   </div>
 
   <!-- Category panel -->
-  <div class="cat-panel-overlay" id="cat-overlay" onclick="toggleCatPanel()"></div>
   <div class="cat-panel" id="cat-panel">
     <div class="cat-panel-header">
       <span class="cat-panel-title">Categorias usadas</span>
@@ -211,8 +208,7 @@
     const MAPPINGS = {{ mappings_json | tojson }};
 
     function toggleCatPanel() {
-      const open = document.getElementById('cat-panel').classList.toggle('open');
-      document.getElementById('cat-overlay').classList.toggle('open', open);
+      document.getElementById('cat-panel').classList.toggle('open');
     }
 
     function onDescInput(desc) {
