@@ -135,6 +135,28 @@ def _ind_space(user_id) -> str:
     return str(user_id)
 
 
+def _build_cat_tree(mappings: dict) -> dict:
+    """Build {category: [subcategory, ...]} from user mappings for the category panel."""
+    tree: dict = {}
+    for val in mappings.values():
+        if isinstance(val, str):
+            entries = [{"category": val, "subcategory": None}]
+        elif isinstance(val, dict):
+            entries = [val]
+        elif isinstance(val, list):
+            entries = [e for e in val if isinstance(e, dict)]
+        else:
+            continue
+        for e in entries:
+            cat = e.get("category")
+            sub = e.get("subcategory")
+            if cat:
+                tree.setdefault(cat, set())
+                if sub:
+                    tree[cat].add(sub)
+    return {cat: sorted(subs) for cat, subs in sorted(tree.items())}
+
+
 def _pending_counts(conn, space: str):
     unverified = conn.execute(
         "SELECT COUNT(*) as n FROM transactions WHERE verified = 0 AND (excluded IS NULL OR excluded = 0) AND space = ?",
@@ -663,6 +685,7 @@ def _review_handler(space: str, back_url: str):
         desc_mappings=desc_mappings,
         all_categories=all_categories,
         all_subcategories=all_subcategories,
+        cat_tree=_build_cat_tree(mappings),
         patrimony=patrimony,
         space=space,
         back_url=back_url,
@@ -1017,6 +1040,7 @@ def _add_transaction_handler(space: str, back_url: str):
         return render_template(
             "add_transaction.html",
             mappings_json=_desc_map(mappings),
+            cat_tree=_build_cat_tree(mappings),
             patrimony=patrimony,
             space=space,
             back_url=back_url,
@@ -1029,6 +1053,7 @@ def _add_transaction_handler(space: str, back_url: str):
     return render_template(
         "add_transaction.html",
         mappings_json=_desc_map(mappings),
+        cat_tree=_build_cat_tree(mappings),
         patrimony=patrimony,
         space=space,
         back_url=back_url,
