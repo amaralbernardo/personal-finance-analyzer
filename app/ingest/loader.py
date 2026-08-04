@@ -2,7 +2,7 @@
 import sqlite3
 from pathlib import Path
 
-from app.ingest.parsers import parse_csv, parse_xlsx, parse_ofx, parse_pdf, parse_html
+from app.ingest.parsers import parse_csv, parse_xlsx, parse_ofx, parse_pdf, parse_html, parse_mhtml
 from app.ingest.normalizer import normalize
 
 PROCESSED_DIR = Path(__file__).parents[2] / "data" / "processed"
@@ -14,7 +14,8 @@ _PARSERS = {
     ".ofx":  parse_ofx,
     ".qfx":  parse_ofx,
     ".pdf":  parse_pdf,
-    ".html": parse_html,
+    ".html":  parse_html,
+    ".mhtml": parse_mhtml,
 }
 
 
