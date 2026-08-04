@@ -110,6 +110,67 @@ def parse_ofx(path: Path) -> list[dict]:
     return rows
 
 
+def _parse_bankintercard(path: Path, full_text: str) -> list[dict] | None:
+    """Detect and parse Bankintercard credit card statements."""
+    if "bankintercard" not in full_text.lower():
+        return None
+
+    # Extract end year/month from period header e.g. "2026/06/11 a 2026/07/10"
+    end_m = re.search(r"\d{4}/\d{2}/\d{2}\s+a\s+(\d{4})/(\d{2})/\d{2}", full_text)
+    if end_m:
+        end_year, end_month = int(end_m.group(1)), int(end_m.group(2))
+    else:
+        import datetime as _dt
+        _now = _dt.datetime.now()
+        end_year, end_month = _now.year, _now.month
+
+    rows = []
+    in_section = False
+
+    for line in full_text.split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+
+        if "resumo e detalhe das transaç" in line.lower():
+            in_section = True
+            continue
+        if not in_section:
+            continue
+        if re.search(r"o sinal \(-\)|pagamentos efetuados no período", line, re.IGNORECASE):
+            break
+
+        # Transaction rows: DD/MM  DD/MM  DESCRIPTION  VALUE
+        m = re.match(r"^(\d{2}/\d{2})\s+(\d{2}/\d{2})\s+(.+?)\s+([-\d.,]+)$", line)
+        if not m:
+            continue
+
+        date_dd_mm = m.group(2)  # Data Mov.
+        desc = m.group(3).strip()
+        val_raw = m.group(4)
+
+        # Infer year: if month > end_month, transaction is from end_year - 1
+        try:
+            month = int(date_dd_mm.split("/")[1])
+            year = end_year if month <= end_month else end_year - 1
+        except (ValueError, IndexError):
+            year = end_year
+
+        # Flip sign: statement shows expenses as positive; finance analyzer uses negative
+        if val_raw.startswith("-"):
+            val_raw = val_raw[1:]  # Refund/reimbursement → positive
+        else:
+            val_raw = f"-{val_raw}"  # Expense → negative
+
+        rows.append({
+            "date": f"{date_dd_mm}/{year}",
+            "description": desc,
+            "amount_raw": val_raw,
+        })
+
+    return rows if rows else None
+
+
 def parse_pdf(path: Path) -> list[dict]:
     import io
     import pdfplumber
@@ -122,8 +183,15 @@ def parse_pdf(path: Path) -> list[dict]:
     all_rows = []
     header = None
 
-    # Pass 1: try table extraction (works for most machine-generated PDFs)
     with pdfplumber.open(path) as pdf:
+        text = "\n".join(page.extract_text() or "" for page in pdf.pages)
+
+        # Bankintercard credit card statement
+        result = _parse_bankintercard(path, text)
+        if result is not None:
+            return result
+
+        # Pass 1: try table extraction (works for most machine-generated PDFs)
         for page in pdf.pages:
             for table in (page.extract_tables() or []):
                 if not table:
@@ -141,9 +209,6 @@ def parse_pdf(path: Path) -> list[dict]:
         return _extract_rows(df, path)
 
     # Pass 2: text extraction with fixed-width parsing
-    with pdfplumber.open(path) as pdf:
-        text = "\n".join(page.extract_text() or "" for page in pdf.pages)
-
     if not text.strip():
         raise ValueError(
             f"{path.name}: PDF sem texto extraível — pode ser um scan/imagem."
