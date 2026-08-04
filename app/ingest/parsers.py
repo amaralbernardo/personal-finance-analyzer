@@ -236,24 +236,16 @@ def parse_pdf(path: Path) -> list[dict]:
         raise ValueError(f"{path.name}: falha ao processar texto do PDF: {exc}")
 
 
-def parse_html(path: Path) -> list[dict]:
+def _parse_edenred_html(html_content: str, path: Path, cutoff=...) -> list[dict]:
+    """Parse MyEdenred HTML — shared by parse_html (with cutoff) and parse_mhtml (no cutoff)."""
     from bs4 import BeautifulSoup
     from datetime import datetime
 
-    # Extract cutoff date from filename (e.g. MyEdenred_20260601.html → 2026-06-01)
-    cutoff = None
-    m = re.search(r"(\d{4})(\d{2})(\d{2})", path.stem)
-    if m:
-        cutoff = datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    if cutoff is ...:
+        m = re.search(r"(\d{4})(\d{2})(\d{2})", path.stem)
+        cutoff = datetime(int(m.group(1)), int(m.group(2)), int(m.group(3))) if m else None
 
-    for encoding in ("utf-8", "utf-8-sig", "latin-1", "cp1252"):
-        try:
-            with open(path, "r", encoding=encoding) as f:
-                soup = BeautifulSoup(f, "html.parser")
-            break
-        except UnicodeDecodeError:
-            continue
-
+    soup = BeautifulSoup(html_content, "html.parser")
     table_body = soup.find("div", class_="table-body")
     if not table_body:
         raise ValueError(f"{path.name}: estrutura HTML não reconhecida (div.table-body não encontrada).")
@@ -272,10 +264,8 @@ def parse_html(path: Path) -> list[dict]:
         if not dm:
             continue
 
-        if cutoff:
-            row_date = datetime.strptime(dm.group(1), "%d/%m/%Y")
-            if row_date < cutoff:
-                continue
+        if cutoff and datetime.strptime(dm.group(1), "%d/%m/%Y") < cutoff:
+            continue
 
         rows.append({
             "date": dm.group(1),
@@ -287,6 +277,32 @@ def parse_html(path: Path) -> list[dict]:
         raise ValueError(f"{path.name}: nenhuma transação encontrada no HTML.")
 
     return rows
+
+
+def parse_html(path: Path) -> list[dict]:
+    for encoding in ("utf-8", "utf-8-sig", "latin-1", "cp1252"):
+        try:
+            with open(path, "r", encoding=encoding) as f:
+                return _parse_edenred_html(f.read(), path)
+        except UnicodeDecodeError:
+            continue
+    with open(path, "r", encoding="utf-8", errors="replace") as f:
+        return _parse_edenred_html(f.read(), path)
+
+
+def parse_mhtml(path: Path) -> list[dict]:
+    import email as _email
+
+    with open(path, "rb") as f:
+        msg = _email.message_from_binary_file(f)
+
+    for part in msg.walk():
+        if part.get_content_type() == "text/html":
+            charset = part.get_content_charset() or "utf-8"
+            html_content = part.get_payload(decode=True).decode(charset, errors="replace")
+            return _parse_edenred_html(html_content, path, cutoff=None)
+
+    raise ValueError(f"{path.name}: não foi possível extrair HTML do ficheiro MHTML.")
 
 
 def _extract_rows(df: pd.DataFrame, path: Path) -> list[dict]:
