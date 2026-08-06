@@ -81,9 +81,11 @@
     .cat-panel-close:hover { background: #f0f0f0; color: #333; }
     .cat-panel-body { padding: 14px 16px; overflow-y: auto; flex: 1; }
     .cat-group { margin-bottom: 16px; }
-    .cat-name { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #1a1a2e; margin-bottom: 5px; }
+    .cat-name { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #1a1a2e; margin-bottom: 5px; cursor: pointer; }
+    .cat-name:hover { color: #2d6df6; }
     .cat-subs { display: flex; flex-direction: column; gap: 3px; }
-    .cat-sub { font-size: 0.82rem; color: #555; padding: 2px 0 2px 10px; border-left: 2px solid #e8ecf4; }
+    .cat-sub { font-size: 0.82rem; color: #555; padding: 2px 0 2px 10px; border-left: 2px solid #e8ecf4; cursor: pointer; }
+    .cat-sub:hover { color: #2d6df6; border-left-color: #2d6df6; background: #f0f4ff; }
     .cat-panel-empty { font-size: 0.85rem; color: #bbb; text-align: center; padding: 20px 0; }
     .btn-cat-toggle { background: none; border: 1px solid #dde1ea; color: #777; border-radius: 6px; padding: 4px 10px; font-size: 0.78rem; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
     .btn-cat-toggle:hover { background: #f5f7fa; border-color: #bbb; }
@@ -211,10 +213,10 @@
         {% if cat_tree %}
           {% for cat, subs in cat_tree.items() %}
           <div class="cat-group">
-            <div class="cat-name">{{ cat }}</div>
+            <div class="cat-name" onclick="fillFromPanel({{ cat | tojson }}, '')">{{ cat }}</div>
             {% if subs %}
             <div class="cat-subs">
-              {% for sub in subs %}<span class="cat-sub">{{ sub }}</span>{% endfor %}
+              {% for sub in subs %}<span class="cat-sub" onclick="fillFromPanel({{ cat | tojson }}, {{ sub | tojson }})">{{ sub }}</span>{% endfor %}
             </div>
             {% endif %}
           </div>
@@ -249,6 +251,10 @@
     }
     function toggleCatPanel() {
       document.getElementById('cat-panel').classList.toggle('open');
+    }
+    function fillFromPanel(cat, sub) {
+      document.getElementById('category-input').value = cat;
+      document.getElementById('subcat-input').value = sub;
     }
     function confirmSkip() {
       if (confirm('Eliminar esta transação sem guardar?')) document.getElementById('skip-form').submit();
