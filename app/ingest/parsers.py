@@ -250,7 +250,6 @@ def _parse_trading212(path: Path, full_text: str) -> list[dict] | None:
             "amount": round(interest_by_month[month_key], 2),
             "category": "Rendimentos",
             "subcategory": "Interest on Cash",
-            "auto_verify": True,
         })
 
     for date_str, desc, amount in dividends:
@@ -260,7 +259,6 @@ def _parse_trading212(path: Path, full_text: str) -> list[dict] | None:
             "amount": amount,
             "category": "Rendimentos",
             "subcategory": "Dividendos",
-            "auto_verify": True,
         })
 
     for date_str, desc, amount in bonuses:
@@ -270,7 +268,6 @@ def _parse_trading212(path: Path, full_text: str) -> list[dict] | None:
             "amount": amount,
             "category": "Rendimentos",
             "subcategory": "Bonus Trading 212",
-            "auto_verify": True,
         })
 
     return rows if rows else None

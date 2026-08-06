@@ -34,11 +34,23 @@ def _insert(conn: sqlite3.Connection, transactions: list[dict], space: str) -> i
     regular = [tx for tx in transactions if not tx.get('auto_verify')]
     auto_verified = [tx for tx in transactions if tx.get('auto_verify')]
 
-    if regular:
+    plain    = [tx for tx in regular if 'category' not in tx]
+    pre_cat  = [tx for tx in regular if 'category' in tx]
+
+    if plain:
         conn.executemany(
             "INSERT INTO transactions (date, description, amount, source_file, space) "
             "VALUES (:date, :description, :amount, :source_file, :space)",
-            regular,
+            plain,
+        )
+    if pre_cat:
+        for tx in pre_cat:
+            tx.setdefault('subcategory', None)
+        conn.executemany(
+            "INSERT INTO transactions "
+            "(date, description, amount, source_file, space, category, subcategory) "
+            "VALUES (:date, :description, :amount, :source_file, :space, :category, :subcategory)",
+            pre_cat,
         )
     if auto_verified:
         for tx in auto_verified:
