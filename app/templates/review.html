@@ -213,10 +213,10 @@
         {% if cat_tree %}
           {% for cat, subs in cat_tree.items() %}
           <div class="cat-group">
-            <div class="cat-name" onclick="fillFromPanel({{ cat | tojson }}, '')">{{ cat }}</div>
+            <div class="cat-name" data-cat="{{ cat }}" onclick="fillFromPanel(this.dataset.cat, '')">{{ cat }}</div>
             {% if subs %}
             <div class="cat-subs">
-              {% for sub in subs %}<span class="cat-sub" onclick="fillFromPanel({{ cat | tojson }}, {{ sub | tojson }})">{{ sub }}</span>{% endfor %}
+              {% for sub in subs %}<span class="cat-sub" data-cat="{{ cat }}" data-sub="{{ sub }}" onclick="fillFromPanel(this.dataset.cat, this.dataset.sub)">{{ sub }}</span>{% endfor %}
             </div>
             {% endif %}
           </div>
