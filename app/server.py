@@ -674,10 +674,24 @@ def _review_handler(space: str, back_url: str):
     all_categories    = sorted({e["category"]    for v in mappings.values() for e in _iter_entries(v) if e.get("category")})
     all_subcategories = sorted({e["subcategory"] for v in mappings.values() for e in _iter_entries(v) if e.get("subcategory")})
 
+    used_combos = {
+        f"{r[0]}||{r[1] or ''}"
+        for r in conn.execute(
+            "SELECT DISTINCT category, COALESCE(subcategory, '') FROM transactions WHERE space = ? AND verified = 1",
+            (space,)
+        ).fetchall()
+    }
+
     patrimony = _get_patrimony(conn, space)
     conn.close()
 
-    pending_list_url = url_for("joint_pending_list") if space == "joint" else url_for("individual_pending_list")
+    if space == "joint":
+        pending_list_url      = url_for("joint_pending_list")
+        delete_mapping_url    = url_for("joint_delete_category_mapping")
+    else:
+        pending_list_url      = url_for("individual_pending_list")
+        delete_mapping_url    = url_for("individual_delete_category_mapping")
+
     return render_template(
         "review.html",
         txn=txn,
@@ -686,6 +700,8 @@ def _review_handler(space: str, back_url: str):
         all_categories=all_categories,
         all_subcategories=all_subcategories,
         cat_tree=_build_cat_tree(mappings),
+        used_combos=used_combos,
+        delete_mapping_url=delete_mapping_url,
         patrimony=patrimony,
         space=space,
         back_url=back_url,
@@ -749,6 +765,42 @@ def _pending_list_handler(space: str, review_url: str):
     ).fetchall()
     conn.close()
     return render_template("pending_list.html", rows=rows, space=space, review_url=review_url)
+
+
+def _delete_category_mapping_handler(space: str, redirect_url: str):
+    cat = request.form.get("category", "").strip()
+    sub = request.form.get("subcategory", "").strip() or None
+    if cat:
+        mappings = _load_mappings(MAPPINGS_PATH, space)
+        for desc in list(mappings.keys()):
+            val = mappings[desc]
+            if isinstance(val, str):
+                entries = [{"category": val, "subcategory": None}]
+            elif isinstance(val, dict):
+                entries = [val]
+            elif isinstance(val, list):
+                entries = [e for e in val if isinstance(e, dict)]
+            else:
+                entries = []
+            new_entries = [e for e in entries if not (e.get("category") == cat and e.get("subcategory") == sub)]
+            if not new_entries:
+                del mappings[desc]
+            else:
+                mappings[desc] = new_entries
+        _save_mappings(MAPPINGS_PATH, space, mappings)
+    return redirect(redirect_url)
+
+
+@app.route("/joint/delete-category-mapping", methods=["POST"])
+@admin_required
+def joint_delete_category_mapping():
+    return _delete_category_mapping_handler("joint", url_for("joint_review"))
+
+
+@app.route("/individual/delete-category-mapping", methods=["POST"])
+@login_required
+def individual_delete_category_mapping():
+    return _delete_category_mapping_handler(_ind_space(current_user.id), url_for("individual_review"))
 
 
 @app.route("/joint/review", methods=["GET", "POST"])

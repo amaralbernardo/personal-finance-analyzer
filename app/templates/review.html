@@ -89,6 +89,10 @@
     .cat-panel-empty { font-size: 0.85rem; color: #bbb; text-align: center; padding: 20px 0; }
     .btn-cat-toggle { background: none; border: 1px solid #dde1ea; color: #777; border-radius: 6px; padding: 4px 10px; font-size: 0.78rem; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
     .btn-cat-toggle:hover { background: #f5f7fa; border-color: #bbb; }
+    .cat-row { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+    .cat-row .cat-name, .cat-row .cat-sub { flex: 1; }
+    .btn-del-mapping { background: none; border: none; color: #ddd; cursor: pointer; font-size: 0.75rem; padding: 0 2px; line-height: 1; flex-shrink: 0; }
+    .btn-del-mapping:hover { color: #c0392b; }
   </style>
 </head>
 <body>
@@ -213,10 +217,26 @@
         {% if cat_tree %}
           {% for cat, subs in cat_tree.items() %}
           <div class="cat-group">
-            <div class="cat-name" data-cat="{{ cat }}" onclick="fillFromPanel(this.dataset.cat, '')">{{ cat }}</div>
+            <div class="cat-row">
+              <div class="cat-name" data-cat="{{ cat }}" onclick="fillFromPanel(this.dataset.cat, '')">{{ cat }}</div>
+              {% if (cat ~ '||') not in used_combos %}
+              <button type="button" class="btn-del-mapping" title="Eliminar mapeamento"
+                data-cat="{{ cat }}" data-sub=""
+                onclick="deleteMapping(this.dataset.cat, this.dataset.sub)">✕</button>
+              {% endif %}
+            </div>
             {% if subs %}
             <div class="cat-subs">
-              {% for sub in subs %}<span class="cat-sub" data-cat="{{ cat }}" data-sub="{{ sub }}" onclick="fillFromPanel(this.dataset.cat, this.dataset.sub)">{{ sub }}</span>{% endfor %}
+              {% for sub in subs %}
+              <div class="cat-row">
+                <span class="cat-sub" data-cat="{{ cat }}" data-sub="{{ sub }}" onclick="fillFromPanel(this.dataset.cat, this.dataset.sub)">{{ sub }}</span>
+                {% if (cat ~ '||' ~ sub) not in used_combos %}
+                <button type="button" class="btn-del-mapping" title="Eliminar mapeamento"
+                  data-cat="{{ cat }}" data-sub="{{ sub }}"
+                  onclick="deleteMapping(this.dataset.cat, this.dataset.sub)">✕</button>
+                {% endif %}
+              </div>
+              {% endfor %}
             </div>
             {% endif %}
           </div>
@@ -231,6 +251,12 @@
     <form method="post" id="skip-form" style="display:none">
       <input type="hidden" name="txn_id" value="{{ txn.id }}">
       <input type="hidden" name="action" value="skip">
+    </form>
+
+    <!-- Delete mapping form -->
+    <form method="post" id="delete-mapping-form" action="{{ delete_mapping_url }}" style="display:none">
+      <input type="hidden" id="del-cat" name="category">
+      <input type="hidden" id="del-sub" name="subcategory">
     </form>
   </div>
 
@@ -255,6 +281,13 @@
     function fillFromPanel(cat, sub) {
       document.getElementById('category-input').value = cat;
       document.getElementById('subcat-input').value = sub;
+    }
+    function deleteMapping(cat, sub) {
+      const label = sub ? `${cat} - ${sub}` : cat;
+      if (!confirm(`Eliminar mapeamento "${label}"?`)) return;
+      document.getElementById('del-cat').value = cat;
+      document.getElementById('del-sub').value = sub;
+      document.getElementById('delete-mapping-form').submit();
     }
     function confirmSkip() {
       if (confirm('Eliminar esta transação sem guardar?')) document.getElementById('skip-form').submit();
