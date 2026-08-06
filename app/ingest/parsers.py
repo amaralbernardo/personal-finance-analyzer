@@ -236,10 +236,10 @@ def _parse_trading212(path: Path, full_text: str) -> list[dict] | None:
     rows: list[dict] = []
 
     for date_str, desc, amount in deposits:
-        rows.append({"date": date_str, "description": f"Trading 212 - {desc}", "amount": amount})
+        rows.append({"date": date_str, "description": f"Trading 212 - {desc}", "amount": -amount})
 
     for date_str, desc, amount in payouts:
-        rows.append({"date": date_str, "description": f"Trading 212 - {desc}", "amount": amount})
+        rows.append({"date": date_str, "description": f"Trading 212 - {desc}", "amount": -amount})
 
     for month_key in sorted(interest_by_month):
         year, month = int(month_key[:4]), int(month_key[5:])

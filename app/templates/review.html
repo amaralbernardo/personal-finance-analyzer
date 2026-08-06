@@ -164,6 +164,18 @@
           <input type="text" id="subcat-input" name="subcategory" placeholder="Ex: Supermercado">
         </div>
 
+        {% if patrimony %}
+        <div class="form-group">
+          <label>Conta associada <span style="font-weight:400;color:#aaa;text-transform:none;letter-spacing:0">(opcional)</span></label>
+          <select name="patrimony_label" style="width:100%;padding:9px 12px;border:1px solid #dde1ea;border-radius:7px;font-size:0.9rem;color:#1a1a2e;background:white;outline:none">
+            <option value="">— Nenhuma —</option>
+            {% for p in patrimony %}
+            <option value="{{ p.label }}" {% if p.label == txn.patrimony_label %}selected{% endif %}>{{ p.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+
         <div class="form-group">
           <label>Notas <span style="font-weight:400;color:#aaa;text-transform:none;letter-spacing:0">(opcional)</span></label>
           <textarea name="notes" placeholder="Observações sobre esta transação..."
