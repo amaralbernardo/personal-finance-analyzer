@@ -129,6 +129,10 @@ def create_tables(conn):
     except Exception:
         pass
     try:
+        conn.execute("ALTER TABLE transactions ADD COLUMN deferred INTEGER NOT NULL DEFAULT 0")
+    except Exception:
+        pass
+    try:
         cols = [r[1] for r in conn.execute("PRAGMA table_info(patrimony_categories)").fetchall()]
         if "space" not in cols:
             conn.execute("""

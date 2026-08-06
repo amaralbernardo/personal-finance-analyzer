@@ -581,6 +581,12 @@ def _review_handler(space: str, back_url: str):
             conn.close()
             return redirect(request.url)
 
+        elif action == "defer":
+            conn.execute("UPDATE transactions SET deferred = 1 WHERE id = ? AND space = ?", (txn_id, space))
+            conn.commit()
+            conn.close()
+            return redirect(request.url)
+
         elif action == "add":
             category        = request.form.get("category", "").strip() or "Outros"
             subcategory     = request.form.get("subcategory", "").strip() or None
@@ -643,7 +649,7 @@ def _review_handler(space: str, back_url: str):
         """SELECT id, date, description, amount, category, subcategory, patrimony_label
            FROM transactions
            WHERE space = ? AND verified = 0 AND (excluded IS NULL OR excluded = 0)
-           ORDER BY date, id LIMIT 1""",
+           ORDER BY COALESCE(deferred, 0), date, id LIMIT 1""",
         (space,)
     ).fetchone()
 
@@ -759,10 +765,10 @@ def _pending_list_handler(space: str, review_url: str):
         return redirect(review_url)
 
     rows = conn.execute(
-        """SELECT id, date, description, amount, patrimony_label, category
+        """SELECT id, date, description, amount, patrimony_label, category, COALESCE(deferred,0) AS deferred
            FROM transactions
            WHERE space = ? AND verified = 0 AND (excluded IS NULL OR excluded = 0)
-           ORDER BY date, id""",
+           ORDER BY COALESCE(deferred, 0), date, id""",
         (space,)
     ).fetchall()
     conn.close()

@@ -32,6 +32,8 @@
     .btn-skip:hover { background: #fde8e8; }
     .btn-split { background: #f0f4ff; color: #2d6df6; border: 1px solid #c5d5fb; }
     .btn-split:hover { background: #e0eaff; }
+    .btn-defer { background: #fffbf0; color: #b7770d; border: 1px solid #f5e0a0; }
+    .btn-defer:hover { background: #fef3d0; }
     .section { background: white; border-radius: 10px; padding: 22px 26px; box-shadow: 0 1px 4px rgba(0,0,0,.08); display: none; }
     .section.active { display: block; }
     .section-title { font-weight: 600; margin-bottom: 16px; font-size: 0.95rem; }
@@ -126,6 +128,7 @@
     <div class="actions" id="main-actions">
       <button class="btn-action btn-add"   onclick="show('add-section')">Adicionar às contas</button>
       <button class="btn-action btn-split" onclick="show('split-section')">Dividir</button>
+      <button class="btn-action btn-defer" onclick="confirmDefer()">Deixar para o fim</button>
       <button class="btn-action btn-skip"  onclick="confirmSkip()">Não adicionar</button>
     </div>
 
@@ -265,6 +268,12 @@
       <input type="hidden" name="action" value="skip">
     </form>
 
+    <!-- Defer form -->
+    <form method="post" id="defer-form" style="display:none">
+      <input type="hidden" name="txn_id" value="{{ txn.id }}">
+      <input type="hidden" name="action" value="defer">
+    </form>
+
     <!-- Delete mapping form -->
     <form method="post" id="delete-mapping-form" action="{{ delete_mapping_url }}" style="display:none">
       <input type="hidden" id="del-cat" name="category">
@@ -303,6 +312,9 @@
     }
     function confirmSkip() {
       if (confirm('Eliminar esta transação sem guardar?')) document.getElementById('skip-form').submit();
+    }
+    function confirmDefer() {
+      document.getElementById('defer-form').submit();
     }
 
     /* ── split ── */
