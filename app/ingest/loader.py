@@ -30,13 +30,27 @@ def _already_loaded(conn: sqlite3.Connection, source_file: str, space: str) -> b
 def _insert(conn: sqlite3.Connection, transactions: list[dict], space: str) -> int:
     for tx in transactions:
         tx['space'] = space
-    conn.executemany(
-        """
-        INSERT INTO transactions (date, description, amount, source_file, space)
-        VALUES (:date, :description, :amount, :source_file, :space)
-        """,
-        transactions,
-    )
+
+    regular = [tx for tx in transactions if not tx.get('auto_verify')]
+    auto_verified = [tx for tx in transactions if tx.get('auto_verify')]
+
+    if regular:
+        conn.executemany(
+            "INSERT INTO transactions (date, description, amount, source_file, space) "
+            "VALUES (:date, :description, :amount, :source_file, :space)",
+            regular,
+        )
+    if auto_verified:
+        for tx in auto_verified:
+            tx.setdefault('category', 'Outros')
+            tx.setdefault('subcategory', None)
+        conn.executemany(
+            "INSERT INTO transactions "
+            "(date, description, amount, source_file, space, category, subcategory, verified) "
+            "VALUES (:date, :description, :amount, :source_file, :space, :category, :subcategory, 1)",
+            auto_verified,
+        )
+
     conn.commit()
     return len(transactions)
 

@@ -171,6 +171,111 @@ def _parse_bankintercard(path: Path, full_text: str) -> list[dict] | None:
     return rows if rows else None
 
 
+def _parse_trading212(path: Path, full_text: str) -> list[dict] | None:
+    """Detect and parse Trading 212 activity statements."""
+    if "trading 212" not in full_text.lower():
+        return None
+
+    import calendar
+    from collections import defaultdict
+
+    MONTH_PT = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
+
+    deposits = []
+    payouts = []
+    interest_by_month: dict[str, float] = defaultdict(float)
+    dividends = []
+    bonuses = []
+
+    # Parse dated transaction lines: YYYY-MM-DD HH:MM:SS Description €amount
+    tx_re = re.compile(
+        r"^(\d{4}-\d{2}-\d{2}) \d{2}:\d{2}:\d{2}\s+(.+?)\s+€(-?[\d,]+\.\d{2})$"
+    )
+    for line in full_text.split("\n"):
+        m = tx_re.match(line.strip())
+        if not m:
+            continue
+        date_str = m.group(1)
+        desc = m.group(2).strip()
+        amount = float(m.group(3).replace(",", ""))
+        dl = desc.lower()
+
+        if "deposit" in dl:
+            deposits.append((date_str, desc, -amount))
+        elif "payout" in dl:
+            payouts.append((date_str, desc, -amount))
+        elif "interest on cash" in dl:
+            interest_by_month[date_str[:7]] += amount
+        elif "free equity" in dl or "free share" in dl:
+            bonuses.append((date_str, desc, amount))
+
+    # Parse dividend table rows (different format):
+    # INSTRUMENT ISIN COUNTRY HOLDINGS DD.MM.YYYY HH:MM ... €net_amount
+    div_re = re.compile(
+        r"^(.+?)\s+([A-Z]{2}[A-Z0-9]{10})\s+\S+\s+[\d.]+\s+(\d{2}\.\d{2}\.\d{4})\s+\d{2}:\d{2}.+€([\d.]+)$"
+    )
+    seen_div_dates: set[str] = set()
+    for line in full_text.split("\n"):
+        m = div_re.match(line.strip())
+        if not m:
+            continue
+        instrument = m.group(1).strip()
+        isin = m.group(2)
+        try:
+            from datetime import datetime as _dt
+            date_str = _dt.strptime(m.group(3), "%d.%m.%Y").strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+        net_amount = float(m.group(4))
+        key = f"{date_str}_{isin}"
+        if key not in seen_div_dates:
+            seen_div_dates.add(key)
+            dividends.append((date_str, f"Dividendo - {instrument} ({isin})", net_amount))
+
+    rows: list[dict] = []
+
+    for date_str, desc, amount in deposits:
+        rows.append({"date": date_str, "description": f"Trading 212 - {desc}", "amount": amount})
+
+    for date_str, desc, amount in payouts:
+        rows.append({"date": date_str, "description": f"Trading 212 - {desc}", "amount": amount})
+
+    for month_key in sorted(interest_by_month):
+        year, month = int(month_key[:4]), int(month_key[5:])
+        last_day = calendar.monthrange(year, month)[1]
+        rows.append({
+            "date": f"{year}-{month:02d}-{last_day:02d}",
+            "description": f"Trading 212 - Interest on Cash ({MONTH_PT[month - 1]} {year})",
+            "amount": round(interest_by_month[month_key], 2),
+            "category": "Rendimentos",
+            "subcategory": "Interest on Cash",
+            "auto_verify": True,
+        })
+
+    for date_str, desc, amount in dividends:
+        rows.append({
+            "date": date_str,
+            "description": f"Trading 212 - {desc}",
+            "amount": amount,
+            "category": "Rendimentos",
+            "subcategory": "Dividendos",
+            "auto_verify": True,
+        })
+
+    for date_str, desc, amount in bonuses:
+        rows.append({
+            "date": date_str,
+            "description": f"Trading 212 - {desc}",
+            "amount": amount,
+            "category": "Rendimentos",
+            "subcategory": "Bonus Trading 212",
+            "auto_verify": True,
+        })
+
+    return rows if rows else None
+
+
 def parse_pdf(path: Path) -> list[dict]:
     import io
     import pdfplumber
@@ -188,6 +293,11 @@ def parse_pdf(path: Path) -> list[dict]:
 
         # Bankintercard credit card statement
         result = _parse_bankintercard(path, text)
+        if result is not None:
+            return result
+
+        # Trading 212 activity statement
+        result = _parse_trading212(path, text)
         if result is not None:
             return result
 

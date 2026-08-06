@@ -87,11 +87,15 @@ def normalize(rows: list[dict], source_file: str) -> tuple[list[dict], list[dict
             })
             continue
 
-        valid.append({
+        tx = {
             "date": date,
             "description": description_raw.strip(),
             "amount": amount,
             "source_file": source_file,
-        })
+        }
+        for _f in ("category", "subcategory", "auto_verify"):
+            if _f in row:
+                tx[_f] = row[_f]
+        valid.append(tx)
 
     return valid, skipped
