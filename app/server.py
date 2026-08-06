@@ -262,7 +262,8 @@ def _get_patrimony(conn, space: str) -> list:
         SELECT p.id, p.label, p.amount AS initial_amount, p.category, p.reference_date,
                p.amount + COALESCE(SUM(
                    CASE WHEN t.date >= p.reference_date THEN t.amount ELSE 0 END
-               ), 0) AS current_value
+               ), 0) AS current_value,
+               MAX(CASE WHEN t.verified = 1 THEN t.date END) AS last_tx_date
         FROM patrimony p
         LEFT JOIN transactions t ON t.patrimony_label = p.label AND t.space = p.space AND t.verified = 1
         WHERE p.space = ?

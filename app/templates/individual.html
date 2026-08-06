@@ -127,7 +127,7 @@
         {% for p in patrimony %}
         {% set total.val = total.val + p.current_value %}
         <tr>
-          <td>{{ p.label }}<br><span class="patrimony-cat">{{ p.category }} · ref. {{ p.reference_date | datefmt }}</span></td>
+          <td>{{ p.label }}<br><span class="patrimony-cat">{{ p.category }} · ref. {{ p.reference_date | datefmt }}{% if p.last_tx_date %} · último registo {{ p.last_tx_date | datefmt }}{% endif %}</span></td>
           <td class="patrimony-amount"{% if p.current_value < 0 %} style="color:#c0392b"{% endif %}>{{ "%.2f"|format(p.current_value) }} €</td>
         </tr>
         {% endfor %}
@@ -164,7 +164,7 @@
           <input type="file" id="file-input" name="files" multiple accept=".csv,.ofx,.qfx,.xlsx,.xls,.pdf,.html,.mhtml">
           <div class="upload-icon">📂</div>
           <div class="upload-label">Arrasta ficheiros ou <span>clica para selecionar</span></div>
-          <div class="upload-sub">CSV, OFX, XLSX, PDF — vários ficheiros em simultâneo</div>
+          <div class="upload-sub">CSV, OFX, XLSX, PDF, HTML — vários ficheiros em simultâneo</div>
         </div>
         <ul class="file-list" id="file-list"></ul>
         <button type="submit" class="btn" id="upload-btn" style="display:none">Carregar e processar</button>
