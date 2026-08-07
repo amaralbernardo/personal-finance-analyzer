@@ -8,7 +8,7 @@
     *, *::before, *::after { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f2f5; margin: 0; padding: 40px 20px; color: #1a1a2e; }
     .container { max-width: 1100px; margin: 0 auto; }
-    nav.topbar { background: white; border-bottom: 1px solid #eee; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; margin: -40px -20px 32px; }
+    nav.topbar { background: white; border-bottom: 1px solid #eee; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; margin: -40px -20px 32px; }
     .topbar-brand { font-weight: 700; font-size: 0.95rem; color: #1a1a2e; text-decoration: none; }
     .topbar-right { display: flex; align-items: center; gap: 20px; }
     .topbar-email { font-size: 0.85rem; color: #888; text-decoration: none; }
@@ -24,25 +24,14 @@
     .card { background: white; border-radius: 10px; padding: 0; box-shadow: 0 1px 4px rgba(0,0,0,.08); overflow: hidden; margin-bottom: 20px; }
     .section-header { padding: 14px 18px; background: #f8f9fb; border-bottom: 1px solid #eee; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
     .section-count { background: #e8edf8; color: #2d6df6; border-radius: 10px; padding: 1px 8px; font-size: 0.8rem; font-weight: 600; }
-    .section-header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-    /* filter panel */
-    .filter-panel { padding: 12px 18px 10px; border-bottom: 1px solid #eee; display: none; }
-    .filter-panel.open { display: block; }
-    .filter-group { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
-    .filter-group:last-child { margin-bottom: 0; }
-    .filter-label { font-size: 0.75rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; padding-top: 4px; min-width: 90px; }
-    .chip-row { display: flex; flex-wrap: wrap; gap: 5px; }
-    .chip { padding: 3px 10px; border: 1px solid #dde1ea; border-radius: 12px; font-size: 0.8rem; color: #555; background: white; cursor: pointer; transition: all .15s; }
-    .chip:hover { border-color: #2d6df6; color: #2d6df6; }
-    .chip.active { background: #2d6df6; border-color: #2d6df6; color: white; font-weight: 500; }
-    .btn-filter-toggle { background: none; border: 1px solid #dde1ea; color: #555; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 5px; }
-    .btn-filter-toggle:hover, .btn-filter-toggle.active { border-color: #2d6df6; color: #2d6df6; background: #eef2fd; }
-    .btn-clear { background: none; border: none; color: #c0392b; font-size: 0.8rem; cursor: pointer; padding: 0; text-decoration: underline; }
-    .btn-clear:hover { color: #96281b; }
+    .section-header-right { margin-left: auto; }
+    .btn-clear-all { background: none; border: none; color: #c0392b; font-size: 0.8rem; cursor: pointer; padding: 0; text-decoration: underline; }
+    .btn-clear-all:hover { color: #96281b; }
     /* table */
     table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
     thead { background: #f8f9fb; }
-    th { text-align: left; padding: 10px 14px; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #888; border-bottom: 1px solid #eee; }
+    th { text-align: left; padding: 10px 14px; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #888; border-bottom: 1px solid #eee; white-space: nowrap; }
+    th.filterable { position: relative; }
     td { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
     tr:last-child td { border-bottom: none; }
     tr:hover td { background: #fafbfc; }
@@ -56,12 +45,39 @@
     .btn-revalidate { background: none; border: 1px solid #dde1ea; color: #888; padding: 4px 10px; border-radius: 6px; font-size: 0.78rem; cursor: pointer; white-space: nowrap; }
     .btn-revalidate:hover { border-color: #e74c3c; color: #c0392b; background: #fff8f8; }
     .empty { color: #aaa; font-size: 0.875rem; padding: 18px; }
+    /* column filter button */
+    .col-filter-btn {
+      background: none; border: none; cursor: pointer;
+      color: #bbb; font-size: 0.7rem; padding: 0 0 0 4px;
+      vertical-align: middle; line-height: 1;
+    }
+    .col-filter-btn:hover, .col-filter-btn.active { color: #2d6df6; }
+    /* dropdown */
+    .col-dropdown {
+      display: none; position: absolute; top: 100%; left: 0; z-index: 200;
+      background: white; border: 1px solid #dde1ea; border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.12); min-width: 200px; max-width: 280px;
+      padding: 8px 0;
+    }
+    .col-dropdown.open { display: block; }
+    .col-dropdown-search {
+      display: block; width: calc(100% - 16px); margin: 0 8px 6px;
+      padding: 5px 8px; border: 1px solid #dde1ea; border-radius: 5px;
+      font-size: 0.82rem; color: #1a1a2e; outline: none;
+    }
+    .col-dropdown-search:focus { border-color: #2d6df6; }
+    .col-dropdown-list { max-height: 220px; overflow-y: auto; padding: 0 8px; }
+    .col-dropdown-item { display: flex; align-items: center; gap: 7px; padding: 5px 4px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; color: #333; }
+    .col-dropdown-item:hover { background: #f4f6fb; }
+    .col-dropdown-item input[type=checkbox] { margin: 0; accent-color: #2d6df6; cursor: pointer; }
+    .col-dropdown-footer { display: flex; justify-content: space-between; padding: 6px 12px 0; border-top: 1px solid #eee; margin-top: 6px; }
+    .col-dropdown-footer button { background: none; border: none; font-size: 0.8rem; cursor: pointer; color: #888; padding: 2px 0; }
+    .col-dropdown-footer button:hover { color: #2d6df6; }
     @media (max-width: 900px) {
       body { padding: 56px 14px 24px; }
       nav.topbar { margin: -56px -14px 24px; }
       .desc { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .notes-cell { display: none; }
-      .filter-label { min-width: 70px; }
     }
   </style>
 </head>
@@ -87,26 +103,7 @@
         Validados
         <span class="section-count" id="count-badge">{{ transactions | length }}</span>
         <div class="section-header-right">
-          <button id="clear-btn" class="btn-clear" onclick="clearFilters()" style="display:none">Limpar filtros</button>
-          <button class="btn-filter-toggle" id="filter-toggle" onclick="toggleFilterPanel()">
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 3h13a.5.5 0 010 1h-13a.5.5 0 010-1zm2 4h9a.5.5 0 010 1h-9a.5.5 0 010-1zm2 4h5a.5.5 0 010 1h-5a.5.5 0 010-1z"/></svg>
-            Filtrar
-          </button>
-        </div>
-      </div>
-
-      <div class="filter-panel" id="filter-panel">
-        <div class="filter-group">
-          <span class="filter-label">Categoria</span>
-          <div class="chip-row" id="chips-category"></div>
-        </div>
-        <div class="filter-group">
-          <span class="filter-label">Subcategoria</span>
-          <div class="chip-row" id="chips-subcategory"></div>
-        </div>
-        <div class="filter-group">
-          <span class="filter-label">Conta</span>
-          <div class="chip-row" id="chips-conta"></div>
+          <button class="btn-clear-all" id="clear-all-btn" onclick="clearAllFilters()" style="display:none">Limpar filtros</button>
         </div>
       </div>
 
@@ -118,9 +115,42 @@
             <th>Data</th>
             <th>Descrição</th>
             <th>Valor</th>
-            <th>Categoria</th>
-            <th>Subcategoria</th>
-            <th>Conta</th>
+            <th class="filterable" id="th-category">
+              Categoria
+              <button class="col-filter-btn" id="btn-category" onclick="toggleDropdown(event,'category')">▾</button>
+              <div class="col-dropdown" id="dd-category">
+                <input class="col-dropdown-search" type="text" placeholder="Pesquisar…" oninput="searchDropdown(this,'category')">
+                <div class="col-dropdown-list" id="list-category"></div>
+                <div class="col-dropdown-footer">
+                  <button onclick="selectAll('category')">Selecionar tudo</button>
+                  <button onclick="clearCol('category')">Limpar</button>
+                </div>
+              </div>
+            </th>
+            <th class="filterable" id="th-subcategory">
+              Subcategoria
+              <button class="col-filter-btn" id="btn-subcategory" onclick="toggleDropdown(event,'subcategory')">▾</button>
+              <div class="col-dropdown" id="dd-subcategory">
+                <input class="col-dropdown-search" type="text" placeholder="Pesquisar…" oninput="searchDropdown(this,'subcategory')">
+                <div class="col-dropdown-list" id="list-subcategory"></div>
+                <div class="col-dropdown-footer">
+                  <button onclick="selectAll('subcategory')">Selecionar tudo</button>
+                  <button onclick="clearCol('subcategory')">Limpar</button>
+                </div>
+              </div>
+            </th>
+            <th class="filterable" id="th-conta">
+              Conta
+              <button class="col-filter-btn" id="btn-conta" onclick="toggleDropdown(event,'conta')">▾</button>
+              <div class="col-dropdown" id="dd-conta">
+                <input class="col-dropdown-search" type="text" placeholder="Pesquisar…" oninput="searchDropdown(this,'conta')">
+                <div class="col-dropdown-list" id="list-conta"></div>
+                <div class="col-dropdown-footer">
+                  <button onclick="selectAll('conta')">Selecionar tudo</button>
+                  <button onclick="clearCol('conta')">Limpar</button>
+                </div>
+              </div>
+            </th>
             <th>Notas</th>
             <th></th>
           </tr>
@@ -157,49 +187,91 @@
 
   <script>
     const COLS = ['category', 'subcategory', 'conta'];
-    const active = { category: new Set(), subcategory: new Set(), conta: new Set() };
+    // active[col] = null means "no filter"; Set means filter to those values
+    const active = { category: null, subcategory: null, conta: null };
+    let openCol = null;
 
-    function buildChips() {
-      const values = { category: new Set(), subcategory: new Set(), conta: new Set() };
-      document.querySelectorAll('#records-table tbody tr').forEach(tr => {
-        COLS.forEach(col => {
-          const cell = tr.querySelector(`td[data-col="${col}"]`);
-          const val = cell ? cell.textContent.trim() : '';
-          if (val) values[col].add(val);
-        });
+    // Build unique sorted values per column from the table
+    function uniqueValues(col) {
+      const vals = new Set();
+      document.querySelectorAll(`#records-table tbody td[data-col="${col}"]`).forEach(td => {
+        const v = td.textContent.trim();
+        if (v) vals.add(v);
       });
+      return [...vals].sort((a, b) => a.localeCompare(b, 'pt'));
+    }
 
+    function buildDropdowns() {
       COLS.forEach(col => {
-        const container = document.getElementById(`chips-${col}`);
-        if (!container) return;
-        container.innerHTML = '';
-        [...values[col]].sort().forEach(val => {
-          const btn = document.createElement('button');
-          btn.className = 'chip';
-          btn.type = 'button';
-          btn.textContent = val;
-          btn.addEventListener('click', () => toggleChip(col, val, btn));
-          container.appendChild(btn);
+        const list = document.getElementById(`list-${col}`);
+        list.innerHTML = '';
+        uniqueValues(col).forEach(val => {
+          const item = document.createElement('label');
+          item.className = 'col-dropdown-item';
+          item.innerHTML = `<input type="checkbox" value="${escHtml(val)}" onchange="onCheck('${col}')"> ${escHtml(val)}`;
+          list.appendChild(item);
         });
       });
     }
 
-    function toggleChip(col, val, btn) {
-      if (active[col].has(val)) {
-        active[col].delete(val);
-        btn.classList.remove('active');
-      } else {
-        active[col].add(val);
-        btn.classList.add('active');
-      }
+    function escHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function toggleDropdown(e, col) {
+      e.stopPropagation();
+      if (openCol && openCol !== col) closeDropdown(openCol);
+      const dd = document.getElementById(`dd-${col}`);
+      const isOpen = dd.classList.contains('open');
+      if (isOpen) { closeDropdown(col); } else { openDropdown(col); }
+    }
+
+    function openDropdown(col) {
+      document.getElementById(`dd-${col}`).classList.add('open');
+      openCol = col;
+    }
+
+    function closeDropdown(col) {
+      document.getElementById(`dd-${col}`).classList.remove('open');
+      document.getElementById(`dd-${col}`).querySelector('.col-dropdown-search').value = '';
+      searchDropdown(document.getElementById(`dd-${col}`).querySelector('.col-dropdown-search'), col);
+      if (openCol === col) openCol = null;
+    }
+
+    function onCheck(col) {
+      const checked = [...document.querySelectorAll(`#list-${col} input[type=checkbox]:checked`)].map(cb => cb.value);
+      active[col] = checked.length ? new Set(checked) : null;
+      document.getElementById(`btn-${col}`).classList.toggle('active', active[col] !== null);
       applyFilters();
+    }
+
+    function selectAll(col) {
+      document.querySelectorAll(`#list-${col} input[type=checkbox]`).forEach(cb => cb.checked = true);
+      onCheck(col);
+    }
+
+    function clearCol(col) {
+      document.querySelectorAll(`#list-${col} input[type=checkbox]`).forEach(cb => cb.checked = false);
+      onCheck(col);
+    }
+
+    function clearAllFilters() {
+      COLS.forEach(col => clearCol(col));
+    }
+
+    function searchDropdown(input, col) {
+      const q = input.value.toLowerCase();
+      document.querySelectorAll(`#list-${col} .col-dropdown-item`).forEach(item => {
+        const label = item.querySelector('input').value.toLowerCase();
+        item.style.display = label.includes(q) ? '' : 'none';
+      });
     }
 
     function applyFilters() {
       let visible = 0;
       document.querySelectorAll('#records-table tbody tr').forEach(tr => {
         const show = COLS.every(col => {
-          if (active[col].size === 0) return true;
+          if (!active[col]) return true;
           const cell = tr.querySelector(`td[data-col="${col}"]`);
           return cell && active[col].has(cell.textContent.trim());
         });
@@ -207,24 +279,19 @@
         if (show) visible++;
       });
       document.getElementById('count-badge').textContent = visible;
-      const hasActive = COLS.some(col => active[col].size > 0);
-      document.getElementById('clear-btn').style.display = hasActive ? '' : 'none';
+      const hasActive = COLS.some(col => active[col] !== null);
+      document.getElementById('clear-all-btn').style.display = hasActive ? '' : 'none';
     }
 
-    function clearFilters() {
-      COLS.forEach(col => active[col].clear());
-      document.querySelectorAll('.chip.active').forEach(c => c.classList.remove('active'));
-      applyFilters();
-    }
+    // Close dropdown when clicking outside
+    document.addEventListener('click', e => {
+      if (openCol && !document.getElementById(`dd-${openCol}`).contains(e.target)
+                  && !document.getElementById(`btn-${openCol}`).contains(e.target)) {
+        closeDropdown(openCol);
+      }
+    });
 
-    function toggleFilterPanel() {
-      const panel = document.getElementById('filter-panel');
-      const btn = document.getElementById('filter-toggle');
-      panel.classList.toggle('open');
-      btn.classList.toggle('active');
-    }
-
-    buildChips();
+    buildDropdowns();
   </script>
 </body>
 </html>
