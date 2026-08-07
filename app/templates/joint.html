@@ -67,6 +67,19 @@
     .imported-item:last-child { border-bottom:none; }
     .imported-name { font-weight:500; word-break:break-all; }
     .imported-meta { color:#aaa; white-space:nowrap; margin-left:10px; text-align:right; }
+    .year-nav { display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:5px;border:1px solid #dde1ea;color:#555;text-decoration:none;font-size:1rem;line-height:1; }
+    .year-nav:hover { border-color:#2d6df6;color:#2d6df6; }
+    .year-nav-disabled { color:#ccc;border-color:#eee;pointer-events:none; }
+    .sal-table { width:100%;border-collapse:collapse;font-size:0.875rem; }
+    .sal-th { padding:6px 10px;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#888;border-bottom:1px solid #eee;text-align:right; }
+    .sal-th-label { text-align:left; }
+    .sal-th-user { min-width:110px; }
+    .sal-table td { padding:8px 10px;border-bottom:1px solid #f4f4f4; }
+    .sal-table tr:last-child td { border-bottom:none; }
+    .sal-label { color:#444;font-size:0.875rem; }
+    .sal-val { text-align:right;font-weight:600;color:#1a1a2e;white-space:nowrap; }
+    .sal-empty { color:#ccc;font-weight:400; }
+    .sal-section-sep { color:#aaa;font-size:0.75rem;text-transform:uppercase;letter-spacing:.05em;padding-top:12px;border-bottom:none; }
     @media (max-width: 640px) {
       nav.topbar { padding: 0 14px; }
       .topbar-email { display: none; }
@@ -146,6 +159,80 @@
       {% if current_user.role == 'admin' %}
       <a href="/patrimony/joint" class="setup-cta">Configurar patrimônio →</a>
       {% endif %}
+      {% endif %}
+    </div>
+
+    <!-- Remunerações -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <p class="card-title" style="margin:0">Remunerações</p>
+        <div style="display:flex;align-items:center;gap:6px">
+          {% if available_years %}
+          {% set prev_year = sel_year - 1 %}
+          {% set next_year = sel_year + 1 %}
+          <a href="/joint?year={{ prev_year }}" class="year-nav {% if prev_year not in available_years %}year-nav-disabled{% endif %}">&lsaquo;</a>
+          <span style="font-size:0.88rem;font-weight:600;color:#1a1a2e;min-width:36px;text-align:center">{{ sel_year }}</span>
+          <a href="/joint?year={{ next_year }}" class="year-nav {% if next_year not in available_years %}year-nav-disabled{% endif %}">&rsaquo;</a>
+          {% endif %}
+        </div>
+      </div>
+
+      {% set any_data = salary_data.values() | selectattr('__len__') | list %}
+      {% if any_data %}
+      <div style="overflow-x:auto">
+      <table class="sal-table">
+        <thead>
+          <tr>
+            <th class="sal-th sal-th-label"></th>
+            {% for u in users %}
+            <th class="sal-th sal-th-user">{{ u.email.split('@')[0] }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for desc in salary_descs %}
+          {% set has_any = namespace(v=false) %}
+          {% for u in users %}{% if salary_data[u.email].get(desc) %}{% set has_any.v = true %}{% endif %}{% endfor %}
+          {% if has_any.v %}
+          <tr>
+            <td class="sal-label">{{ desc }}</td>
+            {% for u in users %}
+            <td class="sal-val">
+              {% set v = salary_data[u.email].get(desc) %}
+              {% if v is not none %}{{ "%.2f"|format(v) }} €{% else %}<span class="sal-empty">—</span>{% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endif %}
+          {% endfor %}
+          {# Other patrimony-linked items not in the fixed list #}
+          {% set other_descs = [] %}
+          {% for u in users %}
+            {% for desc, val in salary_data[u.email].items() %}
+              {% if desc not in salary_descs and desc not in other_descs %}
+                {% set _ = other_descs.append(desc) %}
+              {% endif %}
+            {% endfor %}
+          {% endfor %}
+          {% if other_descs %}
+          <tr><td colspan="{{ users|length + 1 }}" class="sal-section-sep">Outros</td></tr>
+          {% for desc in other_descs | sort %}
+          <tr>
+            <td class="sal-label">{{ desc }}</td>
+            {% for u in users %}
+            <td class="sal-val">
+              {% set v = salary_data[u.email].get(desc) %}
+              {% if v is not none %}{{ "%.2f"|format(v) }} €{% else %}<span class="sal-empty">—</span>{% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+          {% endif %}
+        </tbody>
+      </table>
+      </div>
+      {% else %}
+      <p style="color:#888;font-size:.875rem;margin:0">Nenhum dado de remuneração encontrado para {{ sel_year }}.</p>
       {% endif %}
     </div>
 

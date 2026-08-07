@@ -491,12 +491,47 @@ def index():
 @app.route("/joint")
 @login_required
 def joint():
+    import datetime as _dt
     space = 'joint'
     conn  = get_connection()
     patrimony           = _get_patrimony(conn, space)
     unverified, skipped = _pending_counts(conn, space)
     total = conn.execute("SELECT COUNT(*) FROM transactions WHERE space = ?", (space,)).fetchone()[0]
     imported_files      = _imported_files(conn, space)
+
+    # --- salary section ---
+    current_year = _dt.date.today().year
+    try:
+        sel_year = int(request.args.get("year", current_year))
+    except ValueError:
+        sel_year = current_year
+
+    users = conn.execute(
+        "SELECT id, email FROM users WHERE active = 1 ORDER BY id"
+    ).fetchall()
+
+    SALARY_DESCS = ["Salário Bruto", "Salário Líquido", "Cartão Refeição", "Cartão Flexível", "Ações"]
+
+    # Per-user totals grouped by description for selected year
+    salary_data: dict[str, dict] = {}
+    available_years: set[int] = set()
+    for u in users:
+        ind_space = _ind_space(u["id"])
+        rows = conn.execute(
+            "SELECT description, SUM(amount) as total FROM transactions "
+            "WHERE space = ? AND verified = 1 AND strftime('%Y', date) = ? "
+            "GROUP BY description",
+            (ind_space, str(sel_year)),
+        ).fetchall()
+        salary_data[u["email"]] = {r["description"]: r["total"] for r in rows}
+        for r in conn.execute(
+            "SELECT DISTINCT strftime('%Y', date) yr FROM transactions "
+            "WHERE space = ? AND verified = 1 AND yr IS NOT NULL",
+            (ind_space,),
+        ).fetchall():
+            if r["yr"]:
+                available_years.add(int(r["yr"]))
+
     conn.close()
     return render_template(
         "joint.html",
@@ -506,6 +541,11 @@ def joint():
         total_transactions=total,
         last_report=_last_report(space),
         imported_files=imported_files,
+        salary_data=salary_data,
+        salary_descs=SALARY_DESCS,
+        sel_year=sel_year,
+        available_years=sorted(available_years),
+        users=users,
     )
 
 
