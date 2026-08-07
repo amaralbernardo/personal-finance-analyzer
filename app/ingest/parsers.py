@@ -391,6 +391,9 @@ def parse_pdf(path: Path) -> list[dict]:
 
     result = parse_payslip(path)
     if result is not None:
+        for row in result:
+            row['auto_verify'] = True
+            row.setdefault('category', 'Remunerações')
         return result
 
     all_rows = []
