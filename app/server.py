@@ -976,6 +976,15 @@ def _delete_file_handler(space: str, proc_dir: Path, back_url: str):
 def joint_assign_payslip():
     conn = get_connection()
     if request.method == "POST":
+        all_ids = [r["id"] for r in conn.execute(
+            "SELECT id FROM transactions WHERE space = 'joint' AND category = 'Remunerações'"
+        ).fetchall()]
+        for tx_id in all_ids:
+            if f"keep_{tx_id}" not in request.form:
+                conn.execute(
+                    "DELETE FROM transactions WHERE id = ? AND space = 'joint' AND category = 'Remunerações'",
+                    (tx_id,),
+                )
         for key, val in request.form.items():
             if key.startswith("person_") and val and val != "joint":
                 source_file = key[len("person_"):]
@@ -994,12 +1003,23 @@ def joint_assign_payslip():
             return redirect(url_for("joint_select_account"))
         return redirect(url_for("joint"))
 
-    payslips = conn.execute(
-        """SELECT source_file, COUNT(*) AS tx_count, MAX(date) AS latest_date
+    rows = conn.execute(
+        """SELECT id, source_file, description, amount, date
            FROM transactions
            WHERE space = 'joint' AND category = 'Remunerações'
-           GROUP BY source_file ORDER BY latest_date DESC"""
+           ORDER BY source_file, date, id"""
     ).fetchall()
+    payslips_map: dict = {}
+    for r in rows:
+        sf = r["source_file"]
+        if sf not in payslips_map:
+            payslips_map[sf] = {"source_file": sf, "transactions": []}
+        payslips_map[sf]["transactions"].append(r)
+    payslips = sorted(
+        payslips_map.values(),
+        key=lambda x: x["transactions"][-1]["date"] if x["transactions"] else "",
+        reverse=True,
+    )
     all_users = conn.execute(
         "SELECT id, email, display_name FROM users WHERE active = 1 ORDER BY id"
     ).fetchall()
