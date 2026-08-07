@@ -54,9 +54,9 @@
     .col-filter-btn:hover, .col-filter-btn.active { color: #2d6df6; }
     /* dropdown */
     .col-dropdown {
-      display: none; position: absolute; top: 100%; left: 0; z-index: 200;
+      display: none; position: fixed; z-index: 200;
       background: white; border: 1px solid #dde1ea; border-radius: 8px;
-      box-shadow: 0 4px 16px rgba(0,0,0,.12); min-width: 200px; max-width: 280px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.12); min-width: 220px; max-width: 300px;
       padding: 8px 0;
     }
     .col-dropdown.open { display: block; }
@@ -227,7 +227,19 @@
     }
 
     function openDropdown(col) {
-      document.getElementById(`dd-${col}`).classList.add('open');
+      const btn = document.getElementById(`btn-${col}`);
+      const dd  = document.getElementById(`dd-${col}`);
+      const rect = btn.getBoundingClientRect();
+
+      dd.style.top  = (rect.bottom + 4) + 'px';
+      dd.style.left = rect.left + 'px';
+      dd.classList.add('open');
+
+      // Prevent overflow on right edge
+      const ddRect = dd.getBoundingClientRect();
+      if (ddRect.right > window.innerWidth - 8) {
+        dd.style.left = (window.innerWidth - ddRect.width - 8) + 'px';
+      }
       openCol = col;
     }
 
@@ -282,6 +294,10 @@
       const hasActive = COLS.some(col => active[col] !== null);
       document.getElementById('clear-all-btn').style.display = hasActive ? '' : 'none';
     }
+
+    // Close on scroll or resize so the fixed dropdown doesn't float away
+    window.addEventListener('scroll', () => { if (openCol) closeDropdown(openCol); }, true);
+    window.addEventListener('resize', () => { if (openCol) closeDropdown(openCol); });
 
     // Close dropdown when clicking outside
     document.addEventListener('click', e => {
