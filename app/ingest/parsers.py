@@ -171,6 +171,117 @@ def _parse_bankintercard(path: Path, full_text: str) -> list[dict] | None:
     return rows if rows else None
 
 
+def _parse_trade_republic(path: Path, full_text: str) -> list[dict] | None:
+    """Detect and parse Trade Republic bank account statements (PDF).
+
+    pdfplumber scatters each transaction across 3 lines due to the multi-column
+    PDF layout, so we anchor on the line that ends with two € amounts
+    (transaction amount + running balance) and gather date/description from the
+    surrounding lines.
+    """
+    if "trade republic" not in full_text.lower():
+        return None
+
+    tx_start = re.search(r"ACCOUNT TRANSACTIONS", full_text)
+    if not tx_start:
+        return None
+
+    tx_text = full_text[tx_start.end():]
+    tx_end = re.search(r"BALANCE OVERVIEW|TRANSACTIONS OVERVIEW|NOTES ON THE", tx_text)
+    if tx_end:
+        tx_text = tx_text[:tx_end.start()]
+
+    _MONTHS = r"(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)"
+    day_month_re = re.compile(rf"^(\d{{1,2}} {_MONTHS})\s*(.*)$")
+    year_re = re.compile(r"^(\d{4})\s*(.*)$")
+    # A transaction line ends with exactly two € amounts: tx_amount + balance
+    amount_line_re = re.compile(r"^(.*?)\s+€([\d,]+\.\d{2})\s+€([\d,]+\.\d{2})\s*$")
+
+    _KNOWN_TYPES = ("Transfer", "Interest", "Fee", "Withdrawal", "Deposit", "Dividend")
+
+    from datetime import datetime as _dt
+
+    lines = [l.strip() for l in tx_text.split("\n") if l.strip()]
+    rows: list[dict] = []
+    i = 0
+
+    while i < len(lines):
+        am = amount_line_re.match(lines[i])
+        if not am:
+            i += 1
+            continue
+
+        leading = am.group(1).strip()
+        tx_amount_str = am.group(2).replace(",", "")
+        # am.group(3) is the running balance — ignored
+
+        # Day/month is on the previous line (may carry extra description text)
+        day_month = prev_extra = ""
+        if i > 0:
+            dm = day_month_re.match(lines[i - 1])
+            if dm:
+                day_month = dm.group(1)
+                prev_extra = dm.group(2).strip()
+
+        # Year is on the next line (may carry extra description text)
+        year = next_extra = ""
+        if i + 1 < len(lines):
+            ym = year_re.match(lines[i + 1])
+            if ym:
+                year = ym.group(1)
+                next_extra = ym.group(2).strip()
+
+        if not day_month or not year:
+            i += 1
+            continue
+
+        # Extract type and the description portion on the amount line
+        tx_type = desc_on_amount_line = ""
+        for known in _KNOWN_TYPES:
+            if leading.startswith(known):
+                tx_type = known
+                desc_on_amount_line = leading[len(known):].strip()
+                break
+        if not tx_type:
+            tx_type = leading.split()[0] if leading else "Transfer"
+            desc_on_amount_line = leading[len(tx_type):].strip()
+
+        # Reconstruct full description from all three line fragments
+        desc = " ".join(p for p in [prev_extra, desc_on_amount_line, next_extra] if p).strip()
+        if not desc:
+            desc = tx_type
+
+        try:
+            date = _dt.strptime(f"{day_month} {year}", "%d %b %Y").strftime("%Y-%m-%d")
+        except ValueError:
+            i += 1
+            continue
+
+        amount = float(tx_amount_str)
+        desc_lower = desc.lower()
+        tx_type_lower = tx_type.lower()
+
+        if "outgoing" in desc_lower or tx_type_lower in ("fee", "withdrawal"):
+            amount = -abs(amount)
+        else:
+            amount = abs(amount)
+
+        row: dict = {
+            "date": date,
+            "description": f"Trade Republic - {desc}",
+            "amount": round(amount, 2),
+        }
+
+        if tx_type_lower == "interest":
+            row["category"] = "Rendimentos"
+            row["subcategory"] = "Juros"
+
+        rows.append(row)
+        i += 2  # consume amount line + year line
+
+    return rows if rows else None
+
+
 def _parse_trading212(path: Path, full_text: str) -> list[dict] | None:
     """Detect and parse Trading 212 activity statements."""
     if "trading 212" not in full_text.lower():
@@ -295,6 +406,11 @@ def parse_pdf(path: Path) -> list[dict]:
 
         # Trading 212 activity statement
         result = _parse_trading212(path, text)
+        if result is not None:
+            return result
+
+        # Trade Republic bank account statement
+        result = _parse_trade_republic(path, text)
         if result is not None:
             return result
 
