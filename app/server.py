@@ -273,17 +273,18 @@ def _get_patrimony(conn, space: str) -> list:
     ).fetchall()
 
 
-def _save_uploaded_files(files, dest_dir: Path) -> int:
+def _save_uploaded_files(files, dest_dir: Path) -> list:
     dest_dir.mkdir(parents=True, exist_ok=True)
-    saved = 0
+    saved = []
     for f in files:
         if not f.filename:
             continue
         ext = Path(f.filename).suffix.lower()
         if ext not in _ALLOWED_EXTENSIONS:
             continue
-        f.save(dest_dir / secure_filename(f.filename))
-        saved += 1
+        name = secure_filename(f.filename)
+        f.save(dest_dir / name)
+        saved.append(name)
     return saved
 
 
@@ -575,6 +576,8 @@ def joint():
         salary_descs=SALARY_DESCS,
         sel_year=sel_year,
         available_years=sorted(available_years),
+        delete_file_url=url_for("joint_delete_file"),
+        assign_payslip_url=url_for("joint_assign_payslip"),
     )
 
 
@@ -586,8 +589,8 @@ def joint_upload():
     proc_dir  = PROCESSED_DIR / 'joint'
 
     files = request.files.getlist("files")
-    saved = _save_uploaded_files(files, input_dir)
-    if saved == 0:
+    saved_files = _save_uploaded_files(files, input_dir)
+    if not saved_files:
         return redirect(url_for("joint"))
 
     conn = get_connection()
@@ -599,8 +602,19 @@ def joint_upload():
             (account, filename, space)
         )
     conn.commit()
+
+    placeholders = ','.join('?' * len(saved_files))
+    payslip_rows = conn.execute(
+        f"SELECT DISTINCT source_file FROM transactions "
+        f"WHERE space = 'joint' AND category = 'Remunerações' AND source_file IN ({placeholders})",
+        saved_files,
+    ).fetchall()
+
     unknown = _unknown_source_files(conn, space)
     conn.close()
+
+    if payslip_rows:
+        return redirect(url_for("joint_assign_payslip"))
     if unknown:
         return redirect(url_for("joint_select_account"))
     return redirect(url_for("joint_review"))
@@ -940,6 +954,77 @@ def individual_delete_category_mapping():
     return _delete_category_mapping_handler(_ind_space(current_user.id), url_for("individual_review"))
 
 
+def _delete_file_handler(space: str, proc_dir: Path, back_url: str):
+    source_file = request.form.get("source_file", "").strip()
+    if source_file and source_file != "manual":
+        conn = get_connection()
+        conn.execute("DELETE FROM transactions WHERE source_file = ? AND space = ?", (source_file, space))
+        conn.execute("DELETE FROM skipped_rows WHERE source_file = ? AND space = ?", (source_file, space))
+        conn.commit()
+        conn.close()
+        file_path = proc_dir / source_file
+        file_path.unlink(missing_ok=True)
+        file_map = _load_file_account_map()
+        if space in file_map and source_file in file_map[space]:
+            del file_map[space][source_file]
+            _save_file_account_map(file_map)
+    return redirect(back_url)
+
+
+@app.route("/joint/assign-payslip", methods=["GET", "POST"])
+@admin_required
+def joint_assign_payslip():
+    conn = get_connection()
+    if request.method == "POST":
+        for key, val in request.form.items():
+            if key.startswith("person_") and val and val != "joint":
+                source_file = key[len("person_"):]
+                try:
+                    user_id = int(val)
+                except ValueError:
+                    continue
+                conn.execute(
+                    "UPDATE transactions SET space = ? WHERE source_file = ? AND space = 'joint' AND category = 'Remunerações'",
+                    (_ind_space(user_id), source_file),
+                )
+        conn.commit()
+        unknown = _unknown_source_files(conn, 'joint')
+        conn.close()
+        if unknown:
+            return redirect(url_for("joint_select_account"))
+        return redirect(url_for("joint"))
+
+    payslips = conn.execute(
+        """SELECT source_file, COUNT(*) AS tx_count, MAX(date) AS latest_date
+           FROM transactions
+           WHERE space = 'joint' AND category = 'Remunerações'
+           GROUP BY source_file ORDER BY latest_date DESC"""
+    ).fetchall()
+    all_users = conn.execute(
+        "SELECT id, email, display_name FROM users WHERE active = 1 ORDER BY id"
+    ).fetchall()
+    conn.close()
+    return render_template(
+        "assign_payslip.html",
+        payslips=payslips,
+        users=all_users,
+        back_url=url_for("joint"),
+    )
+
+
+@app.route("/joint/delete-file", methods=["POST"])
+@admin_required
+def joint_delete_file():
+    return _delete_file_handler('joint', PROCESSED_DIR / 'joint', url_for("joint"))
+
+
+@app.route("/individual/delete-file", methods=["POST"])
+@login_required
+def individual_delete_file():
+    space = _ind_space(current_user.id)
+    return _delete_file_handler(space, PROCESSED_DIR / 'individual' / space, url_for("individual"))
+
+
 @app.route("/joint/review", methods=["GET", "POST"])
 @admin_required
 def joint_review():
@@ -1010,6 +1095,7 @@ def individual():
         total_transactions=total,
         last_report=_last_report(space),
         imported_files=imported_files,
+        delete_file_url=url_for("individual_delete_file"),
     )
 
 
@@ -1022,7 +1108,7 @@ def individual_upload():
 
     files = request.files.getlist("files")
     saved = _save_uploaded_files(files, input_dir)
-    if saved == 0:
+    if not saved:
         return redirect(url_for("individual"))
 
     conn = get_connection()
