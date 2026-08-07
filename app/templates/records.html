@@ -28,20 +28,20 @@
     .btn-clear-all { background: none; border: none; color: #c0392b; font-size: 0.8rem; cursor: pointer; padding: 0; text-decoration: underline; }
     .btn-clear-all:hover { color: #96281b; }
     /* table */
-    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; table-layout: fixed; }
     thead { background: #f8f9fb; }
-    th { text-align: left; padding: 10px 14px; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #888; border-bottom: 1px solid #eee; white-space: nowrap; }
+    th { text-align: left; padding: 10px 14px; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #888; border-bottom: 1px solid #eee; white-space: nowrap; overflow: hidden; }
     th.filterable { position: relative; }
-    td { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+    td { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     tr:last-child td { border-bottom: none; }
     tr:hover td { background: #fafbfc; }
-    .date { color: #888; font-size: 0.82rem; white-space: nowrap; }
-    .desc { font-weight: 500; max-width: 240px; }
-    .amount { font-weight: 600; white-space: nowrap; }
+    .date { color: #888; font-size: 0.82rem; }
+    .desc { font-weight: 500; }
+    .amount { font-weight: 600; }
     .amount-neg { color: #c0392b; }
     .amount-pos { color: #1e8449; }
     .cat-cell { color: #555; font-size: 0.82rem; }
-    .notes-cell { color: #888; font-size: 0.82rem; max-width: 180px; }
+    .notes-cell { color: #888; font-size: 0.82rem; }
     .btn-revalidate { background: none; border: 1px solid #dde1ea; color: #888; padding: 4px 10px; border-radius: 6px; font-size: 0.78rem; cursor: pointer; white-space: nowrap; }
     .btn-revalidate:hover { border-color: #e74c3c; color: #c0392b; background: #fff8f8; }
     .empty { color: #aaa; font-size: 0.875rem; padding: 18px; }
@@ -110,6 +110,16 @@
       {% if transactions %}
       <div style="overflow-x:auto">
       <table id="records-table">
+        <colgroup>
+          <col style="width:8%">   <!-- Data -->
+          <col style="width:24%">  <!-- Descrição -->
+          <col style="width:9%">   <!-- Valor -->
+          <col style="width:13%">  <!-- Categoria -->
+          <col style="width:14%">  <!-- Subcategoria -->
+          <col style="width:12%">  <!-- Conta -->
+          <col style="width:13%">  <!-- Notas -->
+          <col style="width:7%">   <!-- Ação -->
+        </colgroup>
         <thead>
           <tr>
             <th>Data</th>
