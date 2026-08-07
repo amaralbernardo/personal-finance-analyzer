@@ -500,22 +500,24 @@ def joint():
     imported_files      = _imported_files(conn, space)
 
     # --- salary section ---
+    from pathlib import Path as _Path
     current_year = _dt.date.today().year
     try:
         sel_year = int(request.args.get("year", current_year))
     except ValueError:
         sel_year = current_year
 
-    users = conn.execute(
+    all_users = conn.execute(
         "SELECT id, email, display_name FROM users WHERE active = 1 ORDER BY id"
     ).fetchall()
 
     SALARY_DESCS = ["Salário Bruto", "Salário Líquido", "Cartão Refeição", "Cartão Flexível", "Ações"]
-
-    # Per-user totals grouped by description for selected year
-    salary_data: dict[str, dict] = {}
+    salary_placeholders = ",".join("?" * len(SALARY_DESCS))
     available_years: set[int] = set()
-    for u in users:
+    salary_columns: list[dict] = []
+
+    # One column per active user (individual space)
+    for u in all_users:
         ind_space = _ind_space(u["id"])
         rows = conn.execute(
             "SELECT description, SUM(amount) as total FROM transactions "
@@ -523,7 +525,10 @@ def joint():
             "GROUP BY description",
             (ind_space, str(sel_year)),
         ).fetchall()
-        salary_data[u["email"]] = {r["description"]: r["total"] for r in rows}
+        salary_columns.append({
+            "label": u["display_name"] or u["email"].split("@")[0],
+            "data": {r["description"]: r["total"] for r in rows},
+        })
         for r in conn.execute(
             "SELECT DISTINCT strftime('%Y', date) yr FROM transactions "
             "WHERE space = ? AND verified = 1 AND yr IS NOT NULL",
@@ -531,6 +536,31 @@ def joint():
         ).fetchall():
             if r["yr"]:
                 available_years.add(int(r["yr"]))
+
+    # Additional columns from joint space payslips (grouped by source file)
+    joint_rows = conn.execute(
+        f"SELECT source_file, description, SUM(amount) as total FROM transactions "
+        f"WHERE space = 'joint' AND verified = 1 AND strftime('%Y', date) = ? "
+        f"AND description IN ({salary_placeholders}) "
+        f"GROUP BY source_file, description",
+        [str(sel_year)] + SALARY_DESCS,
+    ).fetchall()
+    joint_by_source: dict[str, dict] = {}
+    for r in joint_rows:
+        label = _Path(r["source_file"]).stem if r["source_file"] else "Desconhecido"
+        joint_by_source.setdefault(label, {})[r["description"]] = r["total"]
+    for label, data in joint_by_source.items():
+        salary_columns.append({"label": label, "data": data})
+
+    # Include joint-space years in the year selector
+    for r in conn.execute(
+        f"SELECT DISTINCT strftime('%Y', date) yr FROM transactions "
+        f"WHERE space = 'joint' AND verified = 1 AND yr IS NOT NULL "
+        f"AND description IN ({salary_placeholders})",
+        SALARY_DESCS,
+    ).fetchall():
+        if r["yr"]:
+            available_years.add(int(r["yr"]))
 
     conn.close()
     return render_template(
@@ -541,11 +571,10 @@ def joint():
         total_transactions=total,
         last_report=_last_report(space),
         imported_files=imported_files,
-        salary_data=salary_data,
+        salary_columns=salary_columns,
         salary_descs=SALARY_DESCS,
         sel_year=sel_year,
         available_years=sorted(available_years),
-        users=users,
     )
 
 

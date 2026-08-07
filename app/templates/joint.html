@@ -177,51 +177,51 @@
         </div>
       </div>
 
-      {% set any_data = salary_data.values() | selectattr('__len__') | list %}
+      {% set any_data = salary_columns | selectattr('data') | list %}
       {% if any_data %}
       <div style="overflow-x:auto">
       <table class="sal-table">
         <thead>
           <tr>
             <th class="sal-th sal-th-label"></th>
-            {% for u in users %}
-            <th class="sal-th sal-th-user">{{ u.display_name or u.email.split('@')[0] }}</th>
+            {% for col in salary_columns %}
+            <th class="sal-th sal-th-user">{{ col.label }}</th>
             {% endfor %}
           </tr>
         </thead>
         <tbody>
           {% for desc in salary_descs %}
           {% set has_any = namespace(v=false) %}
-          {% for u in users %}{% if salary_data[u.email].get(desc) %}{% set has_any.v = true %}{% endif %}{% endfor %}
+          {% for col in salary_columns %}{% if col.data.get(desc) %}{% set has_any.v = true %}{% endif %}{% endfor %}
           {% if has_any.v %}
           <tr>
             <td class="sal-label">{{ desc }}</td>
-            {% for u in users %}
+            {% for col in salary_columns %}
             <td class="sal-val">
-              {% set v = salary_data[u.email].get(desc) %}
+              {% set v = col.data.get(desc) %}
               {% if v is not none %}{{ "%.2f"|format(v) }} €{% else %}<span class="sal-empty">—</span>{% endif %}
             </td>
             {% endfor %}
           </tr>
           {% endif %}
           {% endfor %}
-          {# Other patrimony-linked items not in the fixed list #}
+          {# Other items not in the fixed list #}
           {% set other_descs = [] %}
-          {% for u in users %}
-            {% for desc, val in salary_data[u.email].items() %}
+          {% for col in salary_columns %}
+            {% for desc in col.data.keys() %}
               {% if desc not in salary_descs and desc not in other_descs %}
                 {% set _ = other_descs.append(desc) %}
               {% endif %}
             {% endfor %}
           {% endfor %}
           {% if other_descs %}
-          <tr><td colspan="{{ users|length + 1 }}" class="sal-section-sep">Outros</td></tr>
+          <tr><td colspan="{{ salary_columns|length + 1 }}" class="sal-section-sep">Outros</td></tr>
           {% for desc in other_descs | sort %}
           <tr>
             <td class="sal-label">{{ desc }}</td>
-            {% for u in users %}
+            {% for col in salary_columns %}
             <td class="sal-val">
-              {% set v = salary_data[u.email].get(desc) %}
+              {% set v = col.data.get(desc) %}
               {% if v is not none %}{{ "%.2f"|format(v) }} €{% else %}<span class="sal-empty">—</span>{% endif %}
             </td>
             {% endfor %}
