@@ -19,7 +19,15 @@
     .back { color: #888; text-decoration: none; font-size: 0.875rem; display: inline-block; margin-bottom: 20px; }
     .back:hover { color: #444; }
     h1 { font-size: 1.5rem; margin: 0 0 6px; }
-    .subtitle { color: #666; margin: 0 0 24px; font-size: 0.9rem; }
+    .subtitle { color: #666; margin: 0 0 20px; font-size: 0.9rem; }
+    /* filter bar */
+    .filter-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 20px; }
+    .filter-bar select { padding: 6px 10px; border: 1px solid #dde1ea; border-radius: 6px; font-size: 0.85rem; color: #1a1a2e; background: white; cursor: pointer; }
+    .filter-bar select:focus { outline: none; border-color: #2d6df6; }
+    .filter-bar select.active { border-color: #2d6df6; background: #eef2fd; color: #2d6df6; font-weight: 600; }
+    .filter-clear { font-size: 0.82rem; color: #888; text-decoration: none; padding: 6px 10px; border: 1px solid #dde1ea; border-radius: 6px; background: white; white-space: nowrap; }
+    .filter-clear:hover { color: #c0392b; border-color: #e74c3c; background: #fff8f8; }
+    /* table */
     .card { background: white; border-radius: 10px; padding: 0; box-shadow: 0 1px 4px rgba(0,0,0,.08); overflow: hidden; margin-bottom: 20px; }
     .section-header { padding: 14px 18px; background: #f8f9fb; border-bottom: 1px solid #eee; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
     .section-count { background: #e8edf8; color: #2d6df6; border-radius: 10px; padding: 1px 8px; font-size: 0.8rem; font-weight: 600; }
@@ -44,6 +52,8 @@
       nav.topbar { margin: -56px -14px 24px; }
       .desc { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .notes-cell { display: none; }
+      .filter-bar { gap: 6px; }
+      .filter-bar select { font-size: 0.8rem; }
     }
   </style>
 </head>
@@ -62,7 +72,35 @@
   <div class="container">
     <a href="{{ back_url }}" class="back">← Voltar</a>
     <h1>Registos Validados</h1>
-    <p class="subtitle">{{ transactions | length }} registo(s) validado(s).</p>
+    {% if f_category or f_subcategory or f_conta %}
+    <p class="subtitle">{{ transactions | length }} de {{ total_count }} registo(s) — filtro ativo.</p>
+    {% else %}
+    <p class="subtitle">{{ total_count }} registo(s) validado(s).</p>
+    {% endif %}
+
+    <form method="get" class="filter-bar">
+      <select name="category" onchange="this.form.submit()" class="{{ 'active' if f_category else '' }}">
+        <option value="">Todas as categorias</option>
+        {% for cat in categories %}
+        <option value="{{ cat }}" {% if f_category == cat %}selected{% endif %}>{{ cat }}</option>
+        {% endfor %}
+      </select>
+      <select name="subcategory" onchange="this.form.submit()" class="{{ 'active' if f_subcategory else '' }}">
+        <option value="">Todas as subcategorias</option>
+        {% for sub in subcategories %}
+        <option value="{{ sub }}" {% if f_subcategory == sub %}selected{% endif %}>{{ sub }}</option>
+        {% endfor %}
+      </select>
+      <select name="conta" onchange="this.form.submit()" class="{{ 'active' if f_conta else '' }}">
+        <option value="">Todas as contas</option>
+        {% for conta in contas %}
+        <option value="{{ conta }}" {% if f_conta == conta %}selected{% endif %}>{{ conta }}</option>
+        {% endfor %}
+      </select>
+      {% if f_category or f_subcategory or f_conta %}
+      <a href="{{ request.path }}" class="filter-clear">✕ Limpar filtros</a>
+      {% endif %}
+    </form>
 
     <div class="card">
       <div class="section-header">
@@ -109,7 +147,7 @@
       </table>
       </div>
       {% else %}
-      <p class="empty">Nenhum registo validado ainda.</p>
+      <p class="empty">Nenhum registo encontrado{% if f_category or f_subcategory or f_conta %} para os filtros selecionados{% endif %}.</p>
       {% endif %}
     </div>
   </div>

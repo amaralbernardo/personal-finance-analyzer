@@ -1008,9 +1008,44 @@ def _records_handler(space: str, back_url: str, review_url: str):
         conn.close()
         return redirect(review_url)
 
+    f_category    = request.args.get("category", "")
+    f_subcategory = request.args.get("subcategory", "")
+    f_conta       = request.args.get("conta", "")
+
+    base_params = (space,)
+    categories = [r[0] for r in conn.execute(
+        "SELECT DISTINCT category FROM transactions WHERE space = ? AND verified = 1 "
+        "AND category IS NOT NULL AND category != '' ORDER BY category", base_params
+    ).fetchall()]
+    subcategories = [r[0] for r in conn.execute(
+        "SELECT DISTINCT subcategory FROM transactions WHERE space = ? AND verified = 1 "
+        "AND subcategory IS NOT NULL AND subcategory != '' ORDER BY subcategory", base_params
+    ).fetchall()]
+    contas = [r[0] for r in conn.execute(
+        "SELECT DISTINCT patrimony_label FROM transactions WHERE space = ? AND verified = 1 "
+        "AND patrimony_label IS NOT NULL AND patrimony_label != '' ORDER BY patrimony_label", base_params
+    ).fetchall()]
+
+    total_count = conn.execute(
+        "SELECT COUNT(*) FROM transactions WHERE space = ? AND verified = 1", base_params
+    ).fetchone()[0]
+
+    conditions = ["space = ?", "verified = 1"]
+    params: list = [space]
+    if f_category:
+        conditions.append("category = ?")
+        params.append(f_category)
+    if f_subcategory:
+        conditions.append("subcategory = ?")
+        params.append(f_subcategory)
+    if f_conta:
+        conditions.append("patrimony_label = ?")
+        params.append(f_conta)
+
     rows = conn.execute(
         "SELECT id, date, description, amount, category, subcategory, patrimony_label, notes "
-        "FROM transactions WHERE space = ? AND verified = 1 ORDER BY date DESC, id DESC", (space,)
+        f"FROM transactions WHERE {' AND '.join(conditions)} ORDER BY date DESC, id DESC",
+        params
     ).fetchall()
     conn.close()
 
@@ -1019,6 +1054,13 @@ def _records_handler(space: str, back_url: str, review_url: str):
         transactions=rows,
         back_url=back_url,
         space=space,
+        categories=categories,
+        subcategories=subcategories,
+        contas=contas,
+        total_count=total_count,
+        f_category=f_category,
+        f_subcategory=f_subcategory,
+        f_conta=f_conta,
     )
 
 
