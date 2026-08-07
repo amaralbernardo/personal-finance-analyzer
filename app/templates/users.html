@@ -103,6 +103,11 @@
     }
     .field input:focus, .field select:focus { outline: none; border-color: #2d6df6; box-shadow: 0 0 0 3px rgba(45,109,246,.1); }
     .self-badge { font-size: 0.75rem; color: #aaa; margin-left: 4px; }
+    .rename-form { display:flex;gap:5px;align-items:center; }
+    .rename-input { padding:4px 8px;border:1px solid #ddd;border-radius:5px;font-size:0.85rem;color:#222;width:140px; }
+    .rename-input:focus { outline:none;border-color:#2d6df6; }
+    .btn-rename { padding:4px 9px;border-radius:5px;font-size:0.8rem;background:#f0f4ff;color:#2d6df6;border:1px solid #c5d5fb;cursor:pointer; }
+    .btn-rename:hover { background:#e0eaff; }
     @media (max-width: 640px) {
       nav.topbar { padding: 0 14px; }
       .topbar-email { display: none; }
@@ -134,6 +139,7 @@
         <thead>
           <tr>
             <th>Email</th>
+            <th>Nome de exibição</th>
             <th>Papel</th>
             <th>Estado</th>
             <th class="col-date">Criado em</th>
@@ -148,6 +154,15 @@
               {% if u.id == current_user.id %}
               <span class="self-badge">(tu)</span>
               {% endif %}
+            </td>
+            <td>
+              <form action="/users/rename" method="post" class="rename-form">
+                <input type="hidden" name="id" value="{{ u.id }}">
+                <input type="text" name="display_name" class="rename-input"
+                       value="{{ u.display_name or '' }}"
+                       placeholder="{{ u.email.split('@')[0] }}">
+                <button type="submit" class="btn-rename">✓</button>
+              </form>
             </td>
             <td>
               <span class="badge {{ 'badge-admin' if u.role == 'admin' else 'badge-viewer' }}">

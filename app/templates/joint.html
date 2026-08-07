@@ -185,7 +185,7 @@
           <tr>
             <th class="sal-th sal-th-label"></th>
             {% for u in users %}
-            <th class="sal-th sal-th-user">{{ u.email.split('@')[0] }}</th>
+            <th class="sal-th sal-th-user">{{ u.display_name or u.email.split('@')[0] }}</th>
             {% endfor %}
           </tr>
         </thead>

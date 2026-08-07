@@ -507,7 +507,7 @@ def joint():
         sel_year = current_year
 
     users = conn.execute(
-        "SELECT id, email FROM users WHERE active = 1 ORDER BY id"
+        "SELECT id, email, display_name FROM users WHERE active = 1 ORDER BY id"
     ).fetchall()
 
     SALARY_DESCS = ["Salário Bruto", "Salário Líquido", "Cartão Refeição", "Cartão Flexível", "Ações"]
@@ -1348,7 +1348,7 @@ def patrimony_categories_delete_unused():
 def users():
     conn = get_connection()
     all_users = conn.execute(
-        "SELECT id, email, role, active, created_at FROM users ORDER BY created_at"
+        "SELECT id, email, display_name, role, active, created_at FROM users ORDER BY created_at"
     ).fetchall()
     conn.close()
     return render_template("users.html", users=all_users)
@@ -1387,6 +1387,20 @@ def users_toggle():
             conn.execute("UPDATE users SET active = ? WHERE id = ?",
                          (0 if row["active"] else 1, user_id))
             conn.commit()
+        conn.close()
+    return redirect(url_for("users"))
+
+
+@app.route("/users/rename", methods=["POST"])
+@admin_required
+def users_rename():
+    user_id      = request.form.get("id")
+    display_name = request.form.get("display_name", "").strip()
+    if user_id:
+        conn = get_connection()
+        conn.execute("UPDATE users SET display_name = ? WHERE id = ?",
+                     (display_name or None, user_id))
+        conn.commit()
         conn.close()
     return redirect(url_for("users"))
 
