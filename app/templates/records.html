@@ -32,16 +32,17 @@
     thead { background: #f8f9fb; }
     th { text-align: left; padding: 10px 14px; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #888; border-bottom: 1px solid #eee; white-space: nowrap; overflow: hidden; }
     th.filterable { position: relative; }
-    td { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    td { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; vertical-align: top; word-break: break-word; }
     tr:last-child td { border-bottom: none; }
     tr:hover td { background: #fafbfc; }
-    .date { color: #888; font-size: 0.82rem; }
+    .date { color: #888; font-size: 0.82rem; white-space: nowrap; vertical-align: middle; }
     .desc { font-weight: 500; }
-    .amount { font-weight: 600; }
+    .amount { font-weight: 600; white-space: nowrap; vertical-align: middle; }
     .amount-neg { color: #c0392b; }
     .amount-pos { color: #1e8449; }
     .cat-cell { color: #555; font-size: 0.82rem; }
     .notes-cell { color: #888; font-size: 0.82rem; }
+    .action-cell { white-space: nowrap; vertical-align: middle; }
     .btn-revalidate { background: none; border: 1px solid #dde1ea; color: #888; padding: 4px 10px; border-radius: 6px; font-size: 0.78rem; cursor: pointer; white-space: nowrap; }
     .btn-revalidate:hover { border-color: #e74c3c; color: #c0392b; background: #fff8f8; }
     .empty { color: #aaa; font-size: 0.875rem; padding: 18px; }
@@ -112,13 +113,13 @@
       <table id="records-table">
         <colgroup>
           <col style="width:8%">   <!-- Data -->
-          <col style="width:24%">  <!-- Descrição -->
-          <col style="width:9%">   <!-- Valor -->
+          <col style="width:22%">  <!-- Descrição -->
+          <col style="width:8%">   <!-- Valor -->
           <col style="width:13%">  <!-- Categoria -->
-          <col style="width:14%">  <!-- Subcategoria -->
+          <col style="width:13%">  <!-- Subcategoria -->
           <col style="width:12%">  <!-- Conta -->
-          <col style="width:13%">  <!-- Notas -->
-          <col style="width:7%">   <!-- Ação -->
+          <col style="width:14%">  <!-- Notas -->
+          <col style="width:10%">  <!-- Ação -->
         </colgroup>
         <thead>
           <tr>
@@ -177,7 +178,7 @@
             <td class="cat-cell" data-col="subcategory">{{ txn.subcategory or '' }}</td>
             <td class="cat-cell" data-col="conta">{{ txn.patrimony_label or '' }}</td>
             <td class="notes-cell">{{ txn.notes or '' }}</td>
-            <td>
+            <td class="action-cell">
               <form method="post" style="margin:0">
                 <input type="hidden" name="action" value="unverify">
                 <input type="hidden" name="txn_id" value="{{ txn.id }}">
