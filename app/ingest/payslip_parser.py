@@ -122,14 +122,19 @@ def _parse_accenture(text: str, source: str) -> list[dict]:
     return rows
 
 
-def parse_payslip(path: Path):
-    """Detect payslip format and extract transactions. Returns None if not a payslip."""
+def parse_payslip(path: Path, force: bool = False):
+    """Detect payslip format and extract transactions. Returns None if not a payslip.
+
+    force=True bypasses the is_payslip() heuristic check.
+    """
     import pdfplumber
 
     with pdfplumber.open(path) as pdf:
         text = '\n'.join(page.extract_text() or '' for page in pdf.pages)
 
-    if not text.strip() or not is_payslip(text):
+    if not text.strip():
+        return None
+    if not force and not is_payslip(text):
         return None
 
     if 'RECIBO MENSAL' in text:
@@ -137,4 +142,4 @@ def parse_payslip(path: Path):
     if 'REMUNERAT. STATEMENT' in text or 'TOTALS EUR' in text:
         return _parse_accenture(text, path.name)
 
-    raise ValueError(f"{path.name}: formato de recibo não reconhecido.")
+    raise ValueError(f"{path.name}: formato de recibo não reconhecido (force=True).")

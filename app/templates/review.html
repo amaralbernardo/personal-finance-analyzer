@@ -34,6 +34,9 @@
     .btn-split:hover { background: #e0eaff; }
     .btn-defer { background: #fffbf0; color: #b7770d; border: 1px solid #f5e0a0; }
     .btn-defer:hover { background: #fef3d0; }
+    .btn-payslip { background: #f0fff4; color: #1e8449; border: 1px solid #b7e4c7; width: 100%; margin-top: 4px; }
+    .btn-payslip:hover { background: #e0f8ec; }
+    .payslip-hint { font-size: 0.78rem; color: #888; margin-top: 4px; text-align: center; }
     .section { background: white; border-radius: 10px; padding: 22px 26px; box-shadow: 0 1px 4px rgba(0,0,0,.08); display: none; }
     .section.active { display: block; }
     .section-title { font-weight: 600; margin-bottom: 16px; font-size: 0.95rem; }
@@ -131,6 +134,16 @@
       <button class="btn-action btn-defer" onclick="confirmDefer()">Deixar para o fim</button>
       <button class="btn-action btn-skip"  onclick="confirmSkip()">Não adicionar</button>
     </div>
+
+    {% if payslip_file_exists %}
+    <form action="{{ payslip_reprocess_url }}" method="post" id="payslip-form">
+      <input type="hidden" name="source_file" value="{{ txn.source_file }}">
+      <button type="button" class="btn-action btn-payslip" onclick="confirmPayslip()">
+        Tratar como folha de ordenado
+      </button>
+      <p class="payslip-hint">{{ txn.source_file }}</p>
+    </form>
+    {% endif %}
 
     <!-- Add section -->
     <div class="section" id="add-section">
@@ -315,6 +328,12 @@
     }
     function confirmDefer() {
       document.getElementById('defer-form').submit();
+    }
+    function confirmPayslip() {
+      const name = {{ txn.source_file | tojson }};
+      if (confirm('Reprocessar "' + name + '" como folha de ordenado?\n\nAs transações não validadas deste ficheiro serão substituídas pelos dados do recibo.')) {
+        document.getElementById('payslip-form').submit();
+      }
     }
 
     /* ── split ── */

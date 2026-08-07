@@ -715,7 +715,7 @@ def _review_handler(space: str, back_url: str):
         return redirect(request.url)
 
     txn = conn.execute(
-        """SELECT id, date, description, amount, category, subcategory, patrimony_label
+        """SELECT id, date, description, amount, category, subcategory, patrimony_label, source_file
            FROM transactions
            WHERE space = ? AND verified = 0 AND (excluded IS NULL OR excluded = 0)
            ORDER BY COALESCE(deferred, 0), date, id LIMIT 1""",
@@ -765,9 +765,20 @@ def _review_handler(space: str, back_url: str):
     if space == "joint":
         pending_list_url      = url_for("joint_pending_list")
         delete_mapping_url    = url_for("joint_delete_category_mapping")
+        payslip_reprocess_url = url_for("joint_reprocess_payslip")
+        proc_dir              = PROCESSED_DIR / 'joint'
     else:
         pending_list_url      = url_for("individual_pending_list")
         delete_mapping_url    = url_for("individual_delete_category_mapping")
+        payslip_reprocess_url = url_for("individual_reprocess_payslip")
+        proc_dir              = PROCESSED_DIR / 'individual' / space
+
+    source_file_name = txn["source_file"] if txn else None
+    payslip_file_exists = bool(
+        source_file_name
+        and source_file_name.lower().endswith('.pdf')
+        and (proc_dir / source_file_name).exists()
+    )
 
     return render_template(
         "review.html",
@@ -783,7 +794,56 @@ def _review_handler(space: str, back_url: str):
         space=space,
         back_url=back_url,
         pending_list_url=pending_list_url,
+        payslip_reprocess_url=payslip_reprocess_url,
+        payslip_file_exists=payslip_file_exists,
     )
+
+
+def _reprocess_as_payslip_handler(space: str):
+    from app.ingest.payslip_parser import parse_payslip as _parse_payslip
+    from app.ingest.normalizer import normalize as _normalize
+
+    if space == 'joint':
+        proc_dir   = PROCESSED_DIR / 'joint'
+        review_url = url_for("joint_review")
+    else:
+        proc_dir   = PROCESSED_DIR / 'individual' / space
+        review_url = url_for("individual_review")
+
+    source_file = request.form.get("source_file", "").strip()
+    if not source_file:
+        return redirect(review_url)
+
+    payslip_path = proc_dir / source_file
+    if not payslip_path.exists():
+        return redirect(review_url)
+
+    conn = get_connection()
+    conn.execute(
+        "DELETE FROM transactions WHERE source_file = ? AND space = ? AND verified = 0",
+        (source_file, space)
+    )
+    conn.commit()
+
+    try:
+        raw_rows = _parse_payslip(payslip_path, force=True)
+        if raw_rows:
+            valid, _ = _normalize(raw_rows, source_file)
+            if valid:
+                for tx in valid:
+                    tx['space'] = space
+                conn.executemany(
+                    "INSERT INTO transactions "
+                    "(date, description, amount, source_file, space, category, verified) "
+                    "VALUES (:date, :description, :amount, :source_file, :space, 'Remunerações', 1)",
+                    valid,
+                )
+                conn.commit()
+    except Exception as exc:
+        print(f"  [erro reprocess payslip] {source_file}: {exc}")
+
+    conn.close()
+    return redirect(review_url)
 
 
 def _cancel_import_handler(space: str, back_url: str):
@@ -890,6 +950,12 @@ def joint_review():
 @admin_required
 def joint_pending_list():
     return _pending_list_handler('joint', url_for("joint_review"))
+
+
+@app.route("/joint/reprocess-payslip", methods=["POST"])
+@admin_required
+def joint_reprocess_payslip():
+    return _reprocess_as_payslip_handler('joint')
 
 
 @app.route("/joint/generate-report", methods=["POST"])
@@ -1001,6 +1067,12 @@ def individual_review():
 def individual_pending_list():
     space = _ind_space(current_user.id)
     return _pending_list_handler(space, url_for("individual_review"))
+
+
+@app.route("/individual/reprocess-payslip", methods=["POST"])
+@login_required
+def individual_reprocess_payslip():
+    return _reprocess_as_payslip_handler(_ind_space(current_user.id))
 
 
 @app.route("/individual/generate-report", methods=["POST"])

@@ -121,7 +121,11 @@ def load_file(path: Path, conn: sqlite3.Connection,
 
     count = _insert(conn, valid, space) if valid else 0
 
-    path.unlink()
+    processed_dir.mkdir(parents=True, exist_ok=True)
+    dest = processed_dir / path.name
+    if dest.exists():
+        dest.unlink()
+    path.rename(dest)
     print(f"  [ok] {source_file}: {count} transações importadas.")
     return count
 
