@@ -2,6 +2,28 @@
 import sqlite3
 
 
+def _exclusion_where(conn: sqlite3.Connection, space: str) -> tuple[str, list]:
+    rows = conn.execute(
+        "SELECT category, subcategory FROM category_exclusions WHERE space = ?", (space,)
+    ).fetchall()
+    if not rows:
+        return "", []
+
+    cat_only = [r["category"] for r in rows if r["subcategory"] is None]
+    cat_sub  = [(r["category"], r["subcategory"]) for r in rows if r["subcategory"] is not None]
+
+    clauses, params = [], []
+    if cat_only:
+        ph = ",".join("?" * len(cat_only))
+        clauses.append(f"category NOT IN ({ph})")
+        params.extend(cat_only)
+    for cat, sub in cat_sub:
+        clauses.append("NOT (category = ? AND subcategory = ?)")
+        params.extend([cat, sub])
+
+    return " AND " + " AND ".join(clauses), params
+
+
 def total_balance(conn: sqlite3.Connection, space: str = 'joint') -> float:
     row = conn.execute(
         "SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE space = ?", (space,)
@@ -10,30 +32,36 @@ def total_balance(conn: sqlite3.Connection, space: str = 'joint') -> float:
 
 
 def total_expenses(conn: sqlite3.Connection, space: str = 'joint') -> float:
+    excl_sql, excl_params = _exclusion_where(conn, space)
     row = conn.execute(
-        "SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE amount < 0 AND space = ?", (space,)
+        f"SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE amount < 0 AND space = ?{excl_sql}",
+        [space] + excl_params
     ).fetchone()
     return round(abs(row[0]), 2)
 
 
 def total_income(conn: sqlite3.Connection, space: str = 'joint') -> float:
+    excl_sql, excl_params = _exclusion_where(conn, space)
     row = conn.execute(
-        "SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE amount > 0 AND space = ?", (space,)
+        f"SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE amount > 0 AND space = ?{excl_sql}",
+        [space] + excl_params
     ).fetchone()
     return round(row[0], 2)
 
 
 def by_category(conn: sqlite3.Connection, space: str = 'joint') -> list[dict]:
+    excl_sql, excl_params = _exclusion_where(conn, space)
     rows = conn.execute(
-        """
+        f"""
         SELECT category,
                ROUND(SUM(amount), 2)  AS total,
                COUNT(*)               AS count
         FROM   transactions
-        WHERE  amount < 0 AND space = ?
+        WHERE  amount < 0 AND space = ?{excl_sql}
         GROUP  BY category
         ORDER  BY total ASC
-        """, (space,)
+        """,
+        [space] + excl_params
     ).fetchall()
     return [
         {"category": r["category"], "total": abs(r["total"]), "count": r["count"]}
@@ -42,30 +70,34 @@ def by_category(conn: sqlite3.Connection, space: str = 'joint') -> list[dict]:
 
 
 def by_month(conn: sqlite3.Connection, space: str = 'joint') -> list[dict]:
+    excl_sql, excl_params = _exclusion_where(conn, space)
     rows = conn.execute(
-        """
+        f"""
         SELECT SUBSTR(date, 1, 7)                                               AS month,
                ROUND(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 2)      AS income,
                ROUND(SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END), 2) AS expenses,
                ROUND(SUM(amount), 2)                                            AS net
         FROM   transactions
-        WHERE  space = ?
+        WHERE  space = ?{excl_sql}
         GROUP  BY month
         ORDER  BY month
-        """, (space,)
+        """,
+        [space] + excl_params
     ).fetchall()
     return [dict(r) for r in rows]
 
 
 def top_expenses(conn: sqlite3.Connection, space: str = 'joint', n: int = 10) -> list[dict]:
+    excl_sql, excl_params = _exclusion_where(conn, space)
     rows = conn.execute(
-        """
+        f"""
         SELECT date, description, amount, category
         FROM   transactions
-        WHERE  amount < 0 AND space = ?
+        WHERE  amount < 0 AND space = ?{excl_sql}
         ORDER  BY amount ASC
         LIMIT  ?
-        """, (space, n)
+        """,
+        [space] + excl_params + [n]
     ).fetchall()
     return [
         {"date": r["date"], "description": r["description"],
@@ -175,10 +207,12 @@ def monthly_by_account(conn: sqlite3.Connection, space: str = 'joint') -> dict:
 
 
 def transactions_by_account(conn: sqlite3.Connection, space: str = 'joint') -> dict:
-    rows = conn.execute("""
-        SELECT date, description, notes, amount, category, patrimony_label
-        FROM transactions WHERE space = ? ORDER BY date DESC
-    """, (space,)).fetchall()
+    excl_sql, excl_params = _exclusion_where(conn, space)
+    rows = conn.execute(
+        f"SELECT date, description, notes, amount, category, patrimony_label "
+        f"FROM transactions WHERE space = ?{excl_sql} ORDER BY date DESC",
+        [space] + excl_params
+    ).fetchall()
 
     result: dict = {}
     for r in rows:
@@ -190,7 +224,9 @@ def transactions_by_account(conn: sqlite3.Connection, space: str = 'joint') -> d
 
 
 def transactions_all(conn: sqlite3.Connection, space: str = 'joint') -> list[dict]:
-    return [dict(r) for r in conn.execute("""
-        SELECT date, description, notes, amount, category, patrimony_label
-        FROM transactions WHERE space = ? ORDER BY date DESC
-    """, (space,)).fetchall()]
+    excl_sql, excl_params = _exclusion_where(conn, space)
+    return [dict(r) for r in conn.execute(
+        f"SELECT date, description, notes, amount, category, patrimony_label "
+        f"FROM transactions WHERE space = ?{excl_sql} ORDER BY date DESC",
+        [space] + excl_params
+    ).fetchall()]

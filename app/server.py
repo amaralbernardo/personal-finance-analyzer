@@ -192,6 +192,79 @@ def _list_reports(space: str) -> list:
     return result
 
 
+def _category_settings_handler(space: str, back_url: str, settings_url: str):
+    import json as _json
+    conn = get_connection()
+
+    rules_path = BASE_DIR / "app" / "categorize" / "rules.json"
+    try:
+        rules = _json.loads(rules_path.read_text(encoding="utf-8"))
+        known_cats = list(rules.keys())
+    except Exception:
+        known_cats = []
+
+    db_cats = [r[0] for r in conn.execute(
+        "SELECT DISTINCT category FROM transactions WHERE space = ? ORDER BY category", (space,)
+    ).fetchall()]
+    all_cats = list(dict.fromkeys(known_cats + db_cats + ["Outros"]))
+
+    subcats: dict = {}
+    for cat in all_cats:
+        rows = conn.execute(
+            "SELECT DISTINCT subcategory FROM transactions "
+            "WHERE space = ? AND category = ? AND subcategory IS NOT NULL ORDER BY subcategory",
+            (space, cat)
+        ).fetchall()
+        if rows:
+            subcats[cat] = [r[0] for r in rows]
+
+    excl_rows = conn.execute(
+        "SELECT category, subcategory FROM category_exclusions WHERE space = ?", (space,)
+    ).fetchall()
+    excluded_cats = {r["category"] for r in excl_rows if r["subcategory"] is None}
+    excluded_subs = {(r["category"], r["subcategory"]) for r in excl_rows if r["subcategory"] is not None}
+
+    if request.method == "POST":
+        included_cats = set(request.form.getlist("cats"))
+        included_subs_raw = set(request.form.getlist("subs"))
+        included_subs = set()
+        for val in included_subs_raw:
+            parts = val.split("||", 1)
+            if len(parts) == 2:
+                included_subs.add(tuple(parts))
+
+        conn.execute("DELETE FROM category_exclusions WHERE space = ?", (space,))
+        for cat in all_cats:
+            if cat not in included_cats:
+                conn.execute(
+                    "INSERT OR IGNORE INTO category_exclusions (space, category, subcategory) VALUES (?, ?, NULL)",
+                    (space, cat)
+                )
+            else:
+                for sub in subcats.get(cat, []):
+                    if (cat, sub) not in included_subs:
+                        conn.execute(
+                            "INSERT OR IGNORE INTO category_exclusions (space, category, subcategory) VALUES (?, ?, ?)",
+                            (space, cat, sub)
+                        )
+        conn.commit()
+        conn.close()
+        return redirect(settings_url + "?saved=1")
+
+    conn.close()
+    return render_template(
+        "category_settings.html",
+        all_cats=all_cats,
+        subcats=subcats,
+        excluded_cats=excluded_cats,
+        excluded_subs=excluded_subs,
+        back_url=back_url,
+        settings_url=settings_url,
+        saved=request.args.get("saved") == "1",
+        space=space,
+    )
+
+
 def _delete_reports_handler(space: str):
     report_dir = REPORTS_DIR / space
     if not report_dir.exists():
@@ -1095,6 +1168,16 @@ def joint_reports_delete():
     return redirect(url_for("joint_reports"))
 
 
+@app.route("/joint/settings/categories", methods=["GET", "POST"])
+@admin_required
+def joint_category_settings():
+    return _category_settings_handler(
+        space='joint',
+        back_url=url_for("joint"),
+        settings_url=url_for("joint_category_settings"),
+    )
+
+
 # ── individual space ──────────────────────────────────────────────────────────
 
 @app.route("/individual")
@@ -1215,6 +1298,17 @@ def individual_reports_delete():
     space = _ind_space(current_user.id)
     _delete_reports_handler(space)
     return redirect(url_for("individual_reports"))
+
+
+@app.route("/individual/settings/categories", methods=["GET", "POST"])
+@login_required
+def individual_category_settings():
+    space = _ind_space(current_user.id)
+    return _category_settings_handler(
+        space=space,
+        back_url=url_for("individual"),
+        settings_url=url_for("individual_category_settings"),
+    )
 
 
 # ── records (view/validate all transactions) ─────────────────────────────────

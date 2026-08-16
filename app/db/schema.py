@@ -75,12 +75,22 @@ CREATE TABLE IF NOT EXISTS patrimony_categories (
 )
 """
 
+CREATE_CATEGORY_EXCLUSIONS = """
+CREATE TABLE IF NOT EXISTS category_exclusions (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    space       TEXT NOT NULL,
+    category    TEXT NOT NULL,
+    subcategory TEXT
+)
+"""
+
 
 def create_tables(conn):
     conn.execute(CREATE_TRANSACTIONS)
     conn.execute(CREATE_SKIPPED_ROWS)
     conn.execute(CREATE_USERS)
     conn.execute(CREATE_PATRIMONY)
+    conn.execute(CREATE_CATEGORY_EXCLUSIONS)
     patrimony_cat_existed = conn.execute(
         "SELECT 1 FROM sqlite_master WHERE type='table' AND name='patrimony_categories'"
     ).fetchone() is not None
@@ -160,6 +170,14 @@ def create_tables(conn):
             )
         """)
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_patrimony_space_category ON patrimony(space, category)")
+    except Exception:
+        pass
+    conn.execute(CREATE_CATEGORY_EXCLUSIONS)
+    try:
+        conn.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_cat_excl_unique
+            ON category_exclusions(space, category, COALESCE(subcategory, ''))
+        """)
     except Exception:
         pass
     for idx in CREATE_INDEXES:

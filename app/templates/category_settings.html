@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Categorias na Análise</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f2f5; margin: 0; padding: 0; color: #1a1a2e; }
+    nav.topbar { background: white; border-bottom: 1px solid #eee; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .topbar-brand { font-weight: 700; font-size: 0.95rem; color: #1a1a2e; text-decoration: none; }
+    .topbar-right { display: flex; align-items: center; gap: 20px; }
+    .topbar-email { font-size: 0.85rem; color: #888; text-decoration: none; }
+    .topbar-link { font-size: 0.85rem; color: #2d6df6; text-decoration: none; }
+    .topbar-link:hover { text-decoration: underline; }
+    .topbar-logout { font-size: 0.85rem; color: #888; text-decoration: none; }
+    .topbar-logout:hover { color: #c0392b; }
+    .page { max-width: 720px; margin: 0 auto; padding: 40px 20px; }
+    .back { color: #888; text-decoration: none; font-size: 0.875rem; display: inline-block; margin-bottom: 20px; }
+    .back:hover { color: #444; }
+    .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    h1 { font-size: 1.5rem; margin: 0; }
+    .page-sub { color: #666; font-size: 0.9rem; margin: 0 0 28px; }
+    .card { background: white; border-radius: 10px; padding: 22px 26px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .card-title { font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: .05em; color: #888; margin: 0 0 14px; }
+    .cat-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 2px; }
+    .cat-item { border-radius: 7px; transition: background .1s; }
+    .cat-item:hover { background: #f8f9fb; }
+    .cat-label { display: flex; align-items: center; gap: 10px; padding: 9px 10px; cursor: pointer; user-select: none; }
+    .cat-label input[type=checkbox] { width: 16px; height: 16px; accent-color: #2d6df6; cursor: pointer; flex-shrink: 0; }
+    .cat-name { font-size: 0.9rem; font-weight: 500; color: #1a1a2e; flex: 1; }
+    .cat-excluded { color: #aaa; text-decoration: line-through; }
+    .sub-list { list-style: none; padding: 0 0 6px 36px; margin: 0; display: flex; flex-direction: column; gap: 1px; }
+    .sub-item { border-radius: 5px; }
+    .sub-item:hover { background: #f4f6fa; }
+    .sub-label { display: flex; align-items: center; gap: 8px; padding: 6px 8px; cursor: pointer; user-select: none; }
+    .sub-label input[type=checkbox] { width: 14px; height: 14px; accent-color: #2d6df6; cursor: pointer; flex-shrink: 0; }
+    .sub-name { font-size: 0.85rem; color: #444; }
+    .sub-excluded { color: #bbb; text-decoration: line-through; }
+    .divider { border: none; border-top: 1px solid #f0f0f0; margin: 4px 0; }
+    .actions { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+    .btn { display: inline-block; background: #2d6df6; color: white; border: none; padding: 11px 28px; border-radius: 7px; font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: background .15s; }
+    .btn:hover { background: #1a56d6; }
+    .btn-ghost { background: #f8f9fb; color: #444; border: 1px solid #e8e8e8; text-decoration: none; padding: 10px 20px; border-radius: 7px; font-size: 0.875rem; font-weight: 500; transition: background .15s; }
+    .btn-ghost:hover { background: #f0f0f0; }
+    .saved-banner { background: #f0fff4; border: 1px solid #b7e4c7; color: #1e8449; border-radius: 7px; padding: 10px 16px; font-size: 0.875rem; margin-bottom: 16px; }
+    .select-all-row { display: flex; gap: 10px; margin-bottom: 10px; }
+    .link-sm { font-size: 0.8rem; color: #2d6df6; cursor: pointer; background: none; border: none; padding: 0; text-decoration: underline; }
+    .link-sm:hover { color: #1a56d6; }
+    @media (max-width: 640px) {
+      nav.topbar { padding: 0 14px; }
+      .topbar-email { display: none; }
+      .page { padding: 24px 14px; }
+      .card { padding: 16px 18px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="topbar">
+    <a href="/" class="topbar-brand">Finanças Pessoais</a>
+    <div class="topbar-right">
+      <a href="/change-password" class="topbar-email">{{ current_user.email }}</a>
+      {% if current_user.role == 'admin' %}
+      <a href="/users" class="topbar-link">Utilizadores</a>
+      {% endif %}
+      <a href="/logout" class="topbar-logout">Sair</a>
+    </div>
+  </nav>
+
+  <div class="page">
+    <a href="{{ back_url }}" class="back">← Voltar</a>
+    <div class="page-header">
+      <h1>Categorias na Análise</h1>
+    </div>
+    <p class="page-sub">Seleciona as categorias a incluir nos relatórios e totais. As categorias desmarcadas são ignoradas em toda a análise.</p>
+
+    {% if saved %}
+    <div class="saved-banner">Configurações guardadas com sucesso.</div>
+    {% endif %}
+
+    <form method="post" action="{{ settings_url }}">
+      <div class="card">
+        <p class="card-title">Categorias</p>
+        <div class="select-all-row">
+          <button type="button" class="link-sm" onclick="setAll(true)">Selecionar todas</button>
+          <button type="button" class="link-sm" onclick="setAll(false)">Desmarcar todas</button>
+        </div>
+        <ul class="cat-list">
+          {% for cat in all_cats %}
+          {% set is_excluded = cat in excluded_cats %}
+          <li class="cat-item">
+            <label class="cat-label" id="label-cat-{{ loop.index }}">
+              <input type="checkbox" name="cats" value="{{ cat }}"
+                     {% if not is_excluded %}checked{% endif %}
+                     onchange="toggleSubs(this, {{ loop.index }})"
+                     id="cb-cat-{{ loop.index }}">
+              <span class="cat-name {% if is_excluded %}cat-excluded{% endif %}" id="catname-{{ loop.index }}">{{ cat }}</span>
+            </label>
+            {% if cat in subcats %}
+            <ul class="sub-list" id="subs-{{ loop.index }}" {% if is_excluded %}style="opacity:.4;pointer-events:none"{% endif %}>
+              {% for sub in subcats[cat] %}
+              {% set sub_excluded = (cat, sub) in excluded_subs %}
+              <li class="sub-item">
+                <label class="sub-label">
+                  <input type="checkbox" name="subs" value="{{ cat }}||{{ sub }}"
+                         {% if not sub_excluded and not is_excluded %}checked{% endif %}>
+                  <span class="sub-name {% if sub_excluded %}sub-excluded{% endif %}">{{ sub }}</span>
+                </label>
+              </li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+          </li>
+          {% if not loop.last %}<hr class="divider">{% endif %}
+          {% endfor %}
+        </ul>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn">Guardar</button>
+        <a href="{{ back_url }}" class="btn-ghost">Cancelar</a>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    function toggleSubs(cb, idx) {
+      const nameEl = document.getElementById('catname-' + idx);
+      const subsEl = document.getElementById('subs-' + idx);
+      if (cb.checked) {
+        nameEl.classList.remove('cat-excluded');
+        if (subsEl) { subsEl.style.opacity = ''; subsEl.style.pointerEvents = ''; }
+      } else {
+        nameEl.classList.add('cat-excluded');
+        if (subsEl) { subsEl.style.opacity = '.4'; subsEl.style.pointerEvents = 'none'; }
+      }
+    }
+
+    function setAll(checked) {
+      document.querySelectorAll('input[name="cats"]').forEach(cb => {
+        cb.checked = checked;
+        const match = cb.id.match(/cb-cat-(\d+)/);
+        if (match) toggleSubs(cb, match[1]);
+      });
+      document.querySelectorAll('input[name="subs"]').forEach(cb => { cb.checked = checked; });
+    }
+  </script>
+</body>
+</html>
