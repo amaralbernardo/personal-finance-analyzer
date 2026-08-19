@@ -1342,12 +1342,21 @@ def _process_records_form(conn, req, space: str):
 def _records_handler(space: str, back_url: str, review_url: str):
     conn = get_connection()
 
-    if request.method == "POST" and request.form.get("action") == "unverify":
-        txn_id = int(request.form.get("txn_id"))
-        conn.execute("UPDATE transactions SET verified = 0 WHERE id = ? AND space = ?", (txn_id, space))
-        conn.commit()
-        conn.close()
-        return redirect(review_url)
+    if request.method == "POST":
+        action = request.form.get("action")
+        if action == "unverify":
+            txn_id = int(request.form.get("txn_id"))
+            conn.execute("UPDATE transactions SET verified = 0 WHERE id = ? AND space = ?", (txn_id, space))
+            conn.commit()
+            conn.close()
+            return redirect(review_url)
+        if action == "unverify_bulk":
+            ids = [int(x) for x in request.form.getlist("bulk_ids") if x.strip()]
+            for txn_id in ids:
+                conn.execute("UPDATE transactions SET verified = 0 WHERE id = ? AND space = ?", (txn_id, space))
+            conn.commit()
+            conn.close()
+            return redirect(review_url)
 
     rows = conn.execute(
         "SELECT id, date, description, amount, category, subcategory, patrimony_label, notes "

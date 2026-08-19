@@ -46,6 +46,16 @@
     .btn-revalidate { background: none; border: 1px solid #dde1ea; color: #888; padding: 4px 10px; border-radius: 6px; font-size: 0.78rem; cursor: pointer; white-space: nowrap; }
     .btn-revalidate:hover { border-color: #e74c3c; color: #c0392b; background: #fff8f8; }
     .empty { color: #aaa; font-size: 0.875rem; padding: 18px; }
+    /* bulk action bar */
+    .bulk-bar { display: none; position: sticky; bottom: 20px; z-index: 50; margin: 0 0 8px; }
+    .bulk-bar-inner { background: #1a1a2e; color: white; border-radius: 10px; padding: 12px 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 20px rgba(0,0,0,.25); }
+    .bulk-count { font-size: 0.875rem; font-weight: 500; flex: 1; }
+    .btn-bulk-revalidate { background: #e74c3c; color: white; border: none; padding: 8px 18px; border-radius: 7px; font-size: 0.875rem; font-weight: 500; cursor: pointer; white-space: nowrap; }
+    .btn-bulk-revalidate:hover { background: #c0392b; }
+    .btn-bulk-cancel { background: none; border: 1px solid rgba(255,255,255,.3); color: rgba(255,255,255,.8); padding: 7px 14px; border-radius: 7px; font-size: 0.875rem; cursor: pointer; }
+    .btn-bulk-cancel:hover { background: rgba(255,255,255,.1); }
+    td.cb-cell, th.cb-cell { width: 36px; padding: 10px 8px 10px 14px; }
+    input.row-cb { width: 15px; height: 15px; accent-color: #2d6df6; cursor: pointer; }
     /* column filter button */
     .col-filter-btn {
       background: none; border: none; cursor: pointer;
@@ -99,6 +109,17 @@
     <h1>Registos Validados</h1>
     <p class="subtitle">{{ transactions | length }} registo(s) validado(s).</p>
 
+    <!-- bulk action bar -->
+    <form method="post" id="bulk-form">
+      <input type="hidden" name="action" value="unverify_bulk">
+      <div class="bulk-bar" id="bulk-bar">
+        <div class="bulk-bar-inner">
+          <span class="bulk-count" id="bulk-count">0 selecionados</span>
+          <button type="button" class="btn-bulk-cancel" onclick="clearSelection()">Cancelar</button>
+          <button type="submit" class="btn-bulk-revalidate">Revalidar selecionados</button>
+        </div>
+      </div>
+
     <div class="card">
       <div class="section-header">
         Validados
@@ -112,6 +133,7 @@
       <div style="overflow-x:auto">
       <table id="records-table">
         <colgroup>
+          <col>                     <!-- Checkbox -->
           <col style="width:8%">   <!-- Data -->
           <col style="width:22%">  <!-- Descrição -->
           <col style="width:8%">   <!-- Valor -->
@@ -123,6 +145,7 @@
         </colgroup>
         <thead>
           <tr>
+            <th class="cb-cell"><input type="checkbox" id="select-all-cb" class="row-cb" title="Selecionar todos" onchange="toggleAll(this)"></th>
             <th>Data</th>
             <th>Descrição</th>
             <th>Valor</th>
