@@ -110,7 +110,7 @@
     <p class="subtitle">{{ transactions | length }} registo(s) validado(s).</p>
 
     <!-- bulk action bar -->
-    <form method="post" id="bulk-form">
+    <form method="post" id="bulk-form" onsubmit="injectBulkIds()">
       <input type="hidden" name="action" value="unverify_bulk">
       <div class="bulk-bar" id="bulk-bar">
         <div class="bulk-bar-inner">
@@ -119,6 +119,7 @@
           <button type="submit" class="btn-bulk-revalidate">Revalidar selecionados</button>
         </div>
       </div>
+    </form>
 
     <div class="card">
       <div class="section-header">
@@ -192,6 +193,7 @@
         <tbody>
           {% for txn in transactions %}
           <tr>
+            <td class="cb-cell"><input type="checkbox" class="row-cb" value="{{ txn.id }}" onchange="updateBulkBar()"></td>
             <td class="date">{{ txn.date | datefmt }}</td>
             <td class="desc">{{ txn.description }}</td>
             <td class="amount {% if txn.amount < 0 %}amount-neg{% else %}amount-pos{% endif %}">
@@ -340,6 +342,38 @@
         closeDropdown(openCol);
       }
     });
+
+    function toggleAll(masterCb) {
+      document.querySelectorAll('#records-table tbody .row-cb').forEach(cb => {
+        const tr = cb.closest('tr');
+        if (!tr || tr.style.display !== 'none') cb.checked = masterCb.checked;
+      });
+      updateBulkBar();
+    }
+
+    function updateBulkBar() {
+      const checked = document.querySelectorAll('#records-table tbody .row-cb:checked');
+      document.getElementById('bulk-bar').style.display = checked.length ? '' : 'none';
+      document.getElementById('bulk-count').textContent = checked.length + ' selecionado' + (checked.length !== 1 ? 's' : '');
+    }
+
+    function clearSelection() {
+      document.querySelectorAll('.row-cb').forEach(cb => cb.checked = false);
+      const allCb = document.getElementById('select-all-cb');
+      if (allCb) allCb.checked = false;
+      updateBulkBar();
+    }
+
+    function injectBulkIds() {
+      const form = document.getElementById('bulk-form');
+      document.querySelectorAll('#records-table tbody .row-cb:checked').forEach(cb => {
+        const inp = document.createElement('input');
+        inp.type = 'hidden';
+        inp.name = 'bulk_ids';
+        inp.value = cb.value;
+        form.appendChild(inp);
+      });
+    }
 
     buildDropdowns();
   </script>
