@@ -832,8 +832,8 @@ def _review_handler(space: str, back_url: str):
                 elif isinstance(item, str):
                     yield {"category": item, "subcategory": None}
 
-    raw = mappings.get(txn["description"])
-    desc_mappings = list(_iter_entries(raw)) if raw else []
+    raw = mappings.get(txn["description"] if txn else "")
+    _mapping_entries = list(_iter_entries(raw)) if raw else []
 
     all_categories    = sorted({e["category"]    for v in mappings.values() for e in _iter_entries(v) if e.get("category")})
     all_subcategories = sorted({e["subcategory"] for v in mappings.values() for e in _iter_entries(v) if e.get("subcategory")})
@@ -854,6 +854,25 @@ def _review_handler(space: str, back_url: str):
         if sub:
             _cat_tree_raw[cat].add(sub)
     cat_tree = {cat: sorted(subs) for cat, subs in sorted(_cat_tree_raw.items())}
+
+    _db_desc_rows = conn.execute(
+        "SELECT DISTINCT category, subcategory FROM transactions "
+        "WHERE space = ? AND verified = 1 AND description = ? AND category IS NOT NULL "
+        "ORDER BY category, subcategory",
+        (space, txn["description"] if txn else "")
+    ).fetchall()
+    _seen: set = set()
+    desc_mappings: list = []
+    for r in _db_desc_rows:
+        key = (r[0], r[1])
+        if key not in _seen:
+            _seen.add(key)
+            desc_mappings.append({"category": r[0], "subcategory": r[1]})
+    for e in _mapping_entries:
+        key = (e.get("category"), e.get("subcategory"))
+        if key not in _seen:
+            _seen.add(key)
+            desc_mappings.append(e)
 
     patrimony = _get_patrimony(conn, space)
     conn.close()
