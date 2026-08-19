@@ -838,13 +838,22 @@ def _review_handler(space: str, back_url: str):
     all_categories    = sorted({e["category"]    for v in mappings.values() for e in _iter_entries(v) if e.get("category")})
     all_subcategories = sorted({e["subcategory"] for v in mappings.values() for e in _iter_entries(v) if e.get("subcategory")})
 
-    used_combos = {
-        f"{r[0]}||{r[1] or ''}"
-        for r in conn.execute(
-            "SELECT DISTINCT category, COALESCE(subcategory, '') FROM transactions WHERE space = ? AND verified = 1",
-            (space,)
-        ).fetchall()
-    }
+    _verified_cats = conn.execute(
+        "SELECT DISTINCT category, subcategory FROM transactions "
+        "WHERE space = ? AND verified = 1 AND category IS NOT NULL "
+        "ORDER BY category, subcategory",
+        (space,)
+    ).fetchall()
+
+    used_combos = {f"{r[0]}||{r[1] or ''}" for r in _verified_cats}
+
+    _cat_tree_raw: dict = {}
+    for r in _verified_cats:
+        cat, sub = r[0], r[1]
+        _cat_tree_raw.setdefault(cat, set())
+        if sub:
+            _cat_tree_raw[cat].add(sub)
+    cat_tree = {cat: sorted(subs) for cat, subs in sorted(_cat_tree_raw.items())}
 
     patrimony = _get_patrimony(conn, space)
     conn.close()
@@ -874,7 +883,7 @@ def _review_handler(space: str, back_url: str):
         desc_mappings=desc_mappings,
         all_categories=all_categories,
         all_subcategories=all_subcategories,
-        cat_tree=_build_cat_tree(mappings),
+        cat_tree=cat_tree,
         used_combos=used_combos,
         delete_mapping_url=delete_mapping_url,
         patrimony=patrimony,
