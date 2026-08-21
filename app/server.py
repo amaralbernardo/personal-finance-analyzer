@@ -1,4 +1,5 @@
 """Flask web server for the Personal Finance Analyzer."""
+import io
 import os
 import sys
 import json
@@ -1367,7 +1368,7 @@ def _process_records_form(conn, req, space: str):
     _save_mappings(MAPPINGS_PATH, space, mappings)
 
 
-def _records_handler(space: str, back_url: str, review_url: str):
+def _records_handler(space: str, back_url: str, review_url: str, export_url: str = ""):
     conn = get_connection()
 
     if request.method == "POST":
@@ -1397,20 +1398,91 @@ def _records_handler(space: str, back_url: str, review_url: str):
         transactions=rows,
         back_url=back_url,
         space=space,
+        export_url=export_url,
     )
 
 
 @app.route("/joint/records", methods=["GET", "POST"])
 @admin_required
 def joint_records():
-    return _records_handler('joint', url_for("joint"), url_for("joint_review"))
+    return _records_handler('joint', url_for("joint"), url_for("joint_review"), url_for("joint_records_export"))
 
 
 @app.route("/individual/records", methods=["GET", "POST"])
 @login_required
 def individual_records():
     space = _ind_space(current_user.id)
-    return _records_handler(space, url_for("individual"), url_for("individual_review"))
+    return _records_handler(space, url_for("individual"), url_for("individual_review"), url_for("individual_records_export"))
+
+
+def _export_records_excel(space: str, filename: str):
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT date, description, amount, category, subcategory, patrimony_label, notes "
+        "FROM transactions WHERE space = ? AND verified = 1 ORDER BY date DESC, id DESC", (space,)
+    ).fetchall()
+    conn.close()
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Registos Validados"
+
+    headers = ["Data", "Descrição", "Valor (€)", "Categoria", "Subcategoria", "Conta", "Notas"]
+    header_fill = PatternFill("solid", fgColor="1a1a2e")
+    header_font = Font(bold=True, color="FFFFFF", size=10)
+
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center")
+
+    for row in rows:
+        date_val = _parse_date(row["date"]) if isinstance(row["date"], str) else row["date"]
+        ws.append([
+            date_val,
+            row["description"],
+            row["amount"],
+            row["category"] or "",
+            row["subcategory"] or "",
+            row["patrimony_label"] or "",
+            row["notes"] or "",
+        ])
+
+    ws.column_dimensions["A"].width = 12
+    ws.column_dimensions["B"].width = 40
+    ws.column_dimensions["C"].width = 12
+    ws.column_dimensions["D"].width = 18
+    ws.column_dimensions["E"].width = 18
+    ws.column_dimensions["F"].width = 18
+    ws.column_dimensions["G"].width = 30
+
+    # format date column and amount column
+    for row_idx in range(2, ws.max_row + 1):
+        ws.cell(row=row_idx, column=1).number_format = "DD/MM/YYYY"
+        ws.cell(row=row_idx, column=3).number_format = '#,##0.00'
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return send_file(buf, as_attachment=True, download_name=filename,
+                     mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+
+@app.route("/joint/records/export")
+@admin_required
+def joint_records_export():
+    return _export_records_excel('joint', 'registos_validados_joint.xlsx')
+
+
+@app.route("/individual/records/export")
+@login_required
+def individual_records_export():
+    space = _ind_space(current_user.id)
+    return _export_records_excel(space, 'registos_validados.xlsx')
 
 
 # ── add transaction ───────────────────────────────────────────────────────────

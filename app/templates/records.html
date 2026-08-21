@@ -27,6 +27,8 @@
     .section-header-right { margin-left: auto; }
     .btn-clear-all { background: none; border: none; color: #c0392b; font-size: 0.8rem; cursor: pointer; padding: 0; text-decoration: underline; }
     .btn-clear-all:hover { color: #96281b; }
+    .btn-export { background: none; border: 1px solid #dde1ea; color: #555; padding: 3px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; text-decoration: none; white-space: nowrap; }
+    .btn-export:hover { border-color: #2d6df6; color: #2d6df6; }
     /* table */
     table { width: 100%; border-collapse: collapse; font-size: 0.875rem; table-layout: fixed; }
     thead { background: #f8f9fb; }
@@ -122,6 +124,7 @@
             </form>
           </div>
           <button class="btn-clear-all" id="clear-all-btn" onclick="clearAllFilters()" style="display:none">Limpar filtros</button>
+          {% if export_url %}<a href="{{ export_url }}" class="btn-export">Exportar Excel</a>{% endif %}
         </div>
       </div>
 
