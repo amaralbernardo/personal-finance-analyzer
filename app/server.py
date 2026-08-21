@@ -1431,8 +1431,8 @@ def _export_records_excel(space: str, filename: str):
     ws.title = "Registos Validados"
 
     headers = ["Data", "Descrição", "Valor (€)", "Categoria", "Subcategoria", "Conta", "Notas"]
-    header_fill = PatternFill("solid", fgColor="1a1a2e")
-    header_font = Font(bold=True, color="FFFFFF", size=10)
+    header_fill = PatternFill(fill_type="solid", fgColor="FF1A1A2E")
+    header_font = Font(bold=True, color="FFFFFFFF", size=10)
 
     for col, header in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col, value=header)
@@ -1441,7 +1441,11 @@ def _export_records_excel(space: str, filename: str):
         cell.alignment = Alignment(horizontal="center")
 
     for row in rows:
-        date_val = _parse_date(row["date"]) if isinstance(row["date"], str) else row["date"]
+        raw_date = row["date"]
+        try:
+            date_val = _dt.strptime(raw_date, "%Y-%m-%d").date() if raw_date else None
+        except (ValueError, TypeError):
+            date_val = raw_date
         ws.append([
             date_val,
             row["description"],
@@ -1460,7 +1464,6 @@ def _export_records_excel(space: str, filename: str):
     ws.column_dimensions["F"].width = 18
     ws.column_dimensions["G"].width = 30
 
-    # format date column and amount column
     for row_idx in range(2, ws.max_row + 1):
         ws.cell(row=row_idx, column=1).number_format = "DD/MM/YYYY"
         ws.cell(row=row_idx, column=3).number_format = '#,##0.00'
