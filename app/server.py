@@ -9,7 +9,7 @@ from datetime import date as _today_date, datetime as _dt
 from pathlib import Path
 from functools import wraps
 
-from flask import Flask, render_template, redirect, url_for, request, send_file, abort
+from flask import Flask, render_template, redirect, url_for, request, send_file, make_response, abort
 from werkzeug.utils import secure_filename
 from flask_login import (
     LoginManager, UserMixin,
@@ -1470,9 +1470,12 @@ def _export_records_excel(space: str, filename: str):
 
     buf = io.BytesIO()
     wb.save(buf)
-    buf.seek(0)
-    return send_file(buf, as_attachment=True, download_name=filename,
-                     mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    data = buf.getvalue()
+
+    response = make_response(data)
+    response.headers["Content-Type"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    response.headers["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
 
 
 @app.route("/joint/records/export")
