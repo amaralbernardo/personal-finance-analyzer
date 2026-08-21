@@ -353,7 +353,7 @@
 
     function updateBulkBar() {
       const checked = document.querySelectorAll('#records-table tbody .row-cb:checked');
-      document.getElementById('bulk-bar').style.display = checked.length ? '' : 'none';
+      document.getElementById('bulk-bar').style.display = checked.length ? 'block' : 'none';
       document.getElementById('bulk-count').textContent = checked.length + ' selecionado' + (checked.length !== 1 ? 's' : '');
     }
 
