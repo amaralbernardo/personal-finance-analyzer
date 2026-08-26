@@ -225,27 +225,38 @@
     const active = { category: null, subcategory: null, conta: null };
     let openCol = null;
 
-    // Build unique sorted values per column from the table
-    function uniqueValues(col) {
+    // Values of col present in rows that pass ALL OTHER active filters (cascading)
+    function visibleValuesFor(col) {
+      const otherCols = COLS.filter(c => c !== col);
       const vals = new Set();
-      document.querySelectorAll(`#records-table tbody td[data-col="${col}"]`).forEach(td => {
-        const v = td.textContent.trim();
-        if (v) vals.add(v);
+      document.querySelectorAll('#records-table tbody tr').forEach(tr => {
+        const passOthers = otherCols.every(c => {
+          if (!active[c]) return true;
+          const cell = tr.querySelector(`td[data-col="${c}"]`);
+          return cell && active[c].has(cell.textContent.trim());
+        });
+        if (passOthers) {
+          const cell = tr.querySelector(`td[data-col="${col}"]`);
+          if (cell) { const v = cell.textContent.trim(); if (v) vals.add(v); }
+        }
       });
       return [...vals].sort((a, b) => a.localeCompare(b, 'pt'));
     }
 
-    function buildDropdowns() {
-      COLS.forEach(col => {
-        const list = document.getElementById(`list-${col}`);
-        list.innerHTML = '';
-        uniqueValues(col).forEach(val => {
-          const item = document.createElement('label');
-          item.className = 'col-dropdown-item';
-          item.innerHTML = `<input type="checkbox" value="${escHtml(val)}" onchange="onCheck('${col}')"> ${escHtml(val)}`;
-          list.appendChild(item);
-        });
+    function buildDropdown(col) {
+      const list = document.getElementById(`list-${col}`);
+      const prevChecked = active[col] || new Set();
+      list.innerHTML = '';
+      visibleValuesFor(col).forEach(val => {
+        const item = document.createElement('label');
+        item.className = 'col-dropdown-item';
+        item.innerHTML = `<input type="checkbox" value="${escHtml(val)}" ${prevChecked.has(val) ? 'checked' : ''} onchange="onCheck('${col}')"> ${escHtml(val)}`;
+        list.appendChild(item);
       });
+    }
+
+    function buildDropdowns() {
+      COLS.forEach(col => buildDropdown(col));
     }
 
     function escHtml(s) {
@@ -261,6 +272,7 @@
     }
 
     function openDropdown(col) {
+      buildDropdown(col);
       const btn = document.getElementById(`btn-${col}`);
       const dd  = document.getElementById(`dd-${col}`);
       const rect = btn.getBoundingClientRect();
@@ -288,6 +300,14 @@
       const checked = [...document.querySelectorAll(`#list-${col} input[type=checkbox]:checked`)].map(cb => cb.value);
       active[col] = checked.length ? new Set(checked) : null;
       document.getElementById(`btn-${col}`).classList.toggle('active', active[col] !== null);
+      // Remove stale selections from other cols (values no longer present given new filter)
+      COLS.filter(c => c !== col).forEach(c => {
+        if (!active[c]) return;
+        const available = new Set(visibleValuesFor(c));
+        const stillValid = [...active[c]].filter(v => available.has(v));
+        active[c] = stillValid.length ? new Set(stillValid) : null;
+        document.getElementById(`btn-${c}`).classList.toggle('active', active[c] !== null);
+      });
       applyFilters();
     }
 
