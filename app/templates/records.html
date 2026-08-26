@@ -330,7 +330,13 @@
     }
 
     // Close on scroll or resize so the fixed dropdown doesn't float away
-    window.addEventListener('scroll', () => { if (openCol) closeDropdown(openCol); }, true);
+    // but ignore scroll events that originate inside the open dropdown itself
+    window.addEventListener('scroll', e => {
+      if (!openCol) return;
+      const dd = document.getElementById(`dd-${openCol}`);
+      if (dd && dd.contains(e.target)) return;
+      closeDropdown(openCol);
+    }, true);
     window.addEventListener('resize', () => { if (openCol) closeDropdown(openCol); });
 
     // Close dropdown when clicking outside
