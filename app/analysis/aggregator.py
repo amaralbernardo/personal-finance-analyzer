@@ -185,15 +185,19 @@ def patrimony_evolution(conn: sqlite3.Connection, space: str = 'joint') -> dict:
 
 
 def monthly_by_account(conn: sqlite3.Connection, space: str = 'joint') -> dict:
-    rows = conn.execute("""
+    excl_sql, excl_params = _exclusion_where(conn, space)
+    rows = conn.execute(
+        f"""
         SELECT SUBSTR(date, 1, 7) AS month,
                patrimony_label AS account,
                ROUND(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 2) AS income,
                ROUND(SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END), 2) AS expenses
         FROM transactions
-        WHERE space = ? AND patrimony_label IS NOT NULL
+        WHERE space = ? AND patrimony_label IS NOT NULL{excl_sql}
         GROUP BY month, account ORDER BY month
-    """, (space,)).fetchall()
+        """,
+        [space] + excl_params
+    ).fetchall()
 
     result: dict = {}
     for r in rows:
