@@ -158,6 +158,23 @@ def _build_cat_tree(mappings: dict) -> dict:
     return {cat: sorted(subs) for cat, subs in sorted(tree.items())}
 
 
+def _build_cat_tree_from_db(conn, space: str) -> dict:
+    """Build {category: [subcategory, ...]} from verified transactions in the DB."""
+    rows = conn.execute(
+        "SELECT DISTINCT category, subcategory FROM transactions "
+        "WHERE space = ? AND verified = 1 AND category IS NOT NULL "
+        "ORDER BY category, subcategory",
+        (space,)
+    ).fetchall()
+    tree: dict = {}
+    for r in rows:
+        cat, sub = r[0], r[1]
+        tree.setdefault(cat, set())
+        if sub:
+            tree[cat].add(sub)
+    return {cat: sorted(subs) for cat, subs in sorted(tree.items())}
+
+
 def _pending_counts(conn, space: str):
     unverified = conn.execute(
         "SELECT COUNT(*) as n FROM transactions WHERE verified = 0 AND (excluded IS NULL OR excluded = 0) AND space = ?",
@@ -1552,11 +1569,12 @@ def _add_transaction_handler(space: str, back_url: str):
             error = str(exc)
 
         mappings = _load_mappings(MAPPINGS_PATH, space)
+        cat_tree = _build_cat_tree_from_db(conn, space)
         conn.close()
         return render_template(
             "add_transaction.html",
             mappings_json=_desc_map(mappings),
-            cat_tree=_build_cat_tree(mappings),
+            cat_tree=cat_tree,
             patrimony=patrimony,
             space=space,
             back_url=back_url,
@@ -1565,11 +1583,12 @@ def _add_transaction_handler(space: str, back_url: str):
         )
 
     mappings = _load_mappings(MAPPINGS_PATH, space)
+    cat_tree = _build_cat_tree_from_db(conn, space)
     conn.close()
     return render_template(
         "add_transaction.html",
         mappings_json=_desc_map(mappings),
-        cat_tree=_build_cat_tree(mappings),
+        cat_tree=cat_tree,
         patrimony=patrimony,
         space=space,
         back_url=back_url,
