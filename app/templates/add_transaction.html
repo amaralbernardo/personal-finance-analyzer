@@ -192,10 +192,10 @@
       {% if cat_tree %}
         {% for cat, subs in cat_tree.items() %}
         <div class="cat-group">
-          <div class="cat-name" onclick="pickCat({{ cat | tojson }}, '')">{{ cat }}</div>
+          <div class="cat-name" data-cat="{{ cat }}" data-sub="" onclick="pickCatEl(this)">{{ cat }}</div>
           {% if subs %}
           <div class="cat-subs">
-            {% for sub in subs %}<span class="cat-sub" onclick="pickCat({{ cat | tojson }}, {{ sub | tojson }})">{{ sub }}</span>{% endfor %}
+            {% for sub in subs %}<span class="cat-sub" data-cat="{{ cat }}" data-sub="{{ sub }}" onclick="pickCatEl(this)">{{ sub }}</span>{% endfor %}
           </div>
           {% endif %}
         </div>
@@ -213,9 +213,9 @@
       document.getElementById('cat-panel').classList.toggle('open');
     }
 
-    function pickCat(cat, sub) {
-      document.getElementById('category').value    = cat;
-      document.getElementById('subcategory').value = sub;
+    function pickCatEl(el) {
+      document.getElementById('category').value    = el.dataset.cat;
+      document.getElementById('subcategory').value = el.dataset.sub;
       toggleCatPanel();
     }
 
