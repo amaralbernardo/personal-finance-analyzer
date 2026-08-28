@@ -63,10 +63,65 @@ def parse_csv(path: Path) -> list[dict]:
     return _extract_rows(df, path)
 
 
+def _parse_accenture_espp(path: Path, df: pd.DataFrame) -> list[dict] | None:
+    """Detect and parse Accenture ESPP share purchase reports (XLSX)."""
+    cols_lower = {c.strip().lower() for c in df.columns}
+    if "offering period" not in cols_lower or "total contributions (loc)" not in cols_lower:
+        return None
+
+    _MONTHS = {"jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
+               "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12}
+
+    col_map = {c.strip().lower(): c for c in df.columns}
+
+    def _parse_eur(val: str) -> float:
+        s = str(val).replace("EUR", "").replace(",", "").strip()
+        try:
+            return float(s)
+        except ValueError:
+            return 0.0
+
+    from datetime import datetime as _dt
+    rows = []
+    for _, row in df.iterrows():
+        period = str(row[col_map["offering period"]]).strip()
+        if not period or period.lower() == "nan":
+            continue
+
+        parts = period.split(" - ")
+        if len(parts) != 2:
+            continue
+
+        m = re.match(r"(\w{3})\s+\d+,\s+(\d{4})", parts[1].strip())
+        if not m:
+            continue
+        month = _MONTHS.get(m.group(1).lower())
+        if not month:
+            continue
+        date_iso = f"{int(m.group(2))}-{month:02d}-01"
+
+        contrib = _parse_eur(row[col_map["total contributions (loc)"]])
+        refund_col = col_map.get("value of fractional shares sold for refund (loc)", "")
+        refund = _parse_eur(row[refund_col]) if refund_col else 0.0
+
+        rows.append({
+            "date": date_iso,
+            "description": "Accenture ESPP - Compra de Ações",
+            "amount": round(contrib - refund, 2),
+            "category": "Investimentos",
+            "subcategory": "ESPP",
+        })
+
+    return rows if rows else None
+
+
 def parse_xlsx(path: Path) -> list[dict]:
     engine = "xlrd" if path.suffix.lower() == ".xls" else "openpyxl"
     try:
         df = pd.read_excel(path, dtype=str, engine=engine)
+        result = _parse_accenture_espp(path, df)
+        if result is not None:
+            return result
         return _extract_rows(df, path)
     except Exception:
         pass
