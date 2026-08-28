@@ -413,7 +413,6 @@ def _parse_igcp_certificados(path: Path, full_text: str) -> list[dict] | None:
             "amount": float(units),
             "category": "Poupanças",
             "subcategory": "Certificados de Aforro",
-            "auto_verify": True,
         })
 
     return rows if rows else None
