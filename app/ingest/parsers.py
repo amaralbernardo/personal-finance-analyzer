@@ -384,6 +384,41 @@ def _parse_trading212(path: Path, full_text: str) -> list[dict] | None:
     return rows if rows else None
 
 
+def _parse_igcp_certificados(path: Path, full_text: str) -> list[dict] | None:
+    """Detect and parse IGCP Extrato de Conta Aforro (Certificados de Aforro)."""
+    text_lower = full_text.lower()
+    if "certificados de aforro" not in text_lower and "conta aforro" not in text_lower:
+        return None
+
+    series_m = re.search(r"\bSérie\s+([A-Z])(?=\s|$)", full_text, re.MULTILINE)
+    series = f" Série {series_m.group(1).upper()}" if series_m else ""
+
+    # Rows: DD-MM-YYYY  SubscrNr  UnitValue  Units  TotalValue
+    row_re = re.compile(
+        r"^(\d{2}-\d{2}-\d{4})\s+\d+\s+[\d,]+\s+([\d.]+)\s+[\d.,]+$",
+        re.MULTILINE,
+    )
+
+    from datetime import datetime as _dt
+    rows = []
+    for m in row_re.finditer(full_text):
+        try:
+            date_iso = _dt.strptime(m.group(1), "%d-%m-%Y").strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+        units = int(m.group(2).replace(".", "").replace(",", ""))
+        rows.append({
+            "date": date_iso,
+            "description": f"IGCP - Certificados de Aforro{series}",
+            "amount": float(units),
+            "category": "Poupanças",
+            "subcategory": "Certificados de Aforro",
+            "auto_verify": True,
+        })
+
+    return rows if rows else None
+
+
 def parse_pdf(path: Path) -> list[dict]:
     import io
     import pdfplumber
@@ -414,6 +449,11 @@ def parse_pdf(path: Path) -> list[dict]:
 
         # Trade Republic bank account statement
         result = _parse_trade_republic(path, text)
+        if result is not None:
+            return result
+
+        # IGCP Certificados de Aforro
+        result = _parse_igcp_certificados(path, text)
         if result is not None:
             return result
 
