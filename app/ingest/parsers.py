@@ -115,6 +115,18 @@ def _parse_accenture_espp(path: Path, df: pd.DataFrame) -> list[dict] | None:
     return rows if rows else None
 
 
+def _find_df_header_row(df: pd.DataFrame) -> int | None:
+    """Scan a DataFrame's rows to find the one that contains 2+ known column aliases."""
+    for idx, row in df.iterrows():
+        matches = sum(
+            1 for cell in row.dropna()
+            if str(cell).strip().lower() in _ALL_KNOWN
+        )
+        if matches >= 2:
+            return int(idx)
+    return None
+
+
 def parse_xlsx(path: Path) -> list[dict]:
     engine = "xlrd" if path.suffix.lower() == ".xls" else "openpyxl"
     try:
@@ -122,7 +134,16 @@ def parse_xlsx(path: Path) -> list[dict]:
         result = _parse_accenture_espp(path, df)
         if result is not None:
             return result
-        return _extract_rows(df, path)
+        try:
+            return _extract_rows(df, path)
+        except ValueError:
+            pass
+        # Metadata rows before the real header (e.g. Bankinter XLS)
+        # df index N → file row N+1 (file row 0 was consumed as default header)
+        header_idx = _find_df_header_row(df)
+        if header_idx is not None:
+            df2 = pd.read_excel(path, dtype=str, engine=engine, header=header_idx + 1)
+            return _extract_rows(df2, path)
     except Exception:
         pass
 
