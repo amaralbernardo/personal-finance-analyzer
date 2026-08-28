@@ -127,6 +127,64 @@ def _find_df_header_row(df: pd.DataFrame) -> int | None:
     return None
 
 
+def _parse_bankinter_credit_html(path: Path) -> list[dict] | None:
+    """Parse Bankinter credit card HTML exports saved as .xls."""
+    html = None
+    for enc in ("latin-1", "cp1252", "utf-8"):
+        try:
+            with open(path, encoding=enc) as f:
+                html = f.read()
+            break
+        except (UnicodeDecodeError, OSError):
+            continue
+    if not html:
+        return None
+
+    html_lower = html.lower()
+    if "bankinter" not in html_lower or "descritivo" not in html_lower:
+        return None
+
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(html, "html.parser")
+
+    rows = []
+    for table in soup.find_all("table"):
+        header_cells = table.find_all("td", class_="conteudo_bold_nopadding")
+        if not header_cells:
+            continue
+        headers = [td.get_text(strip=True).lower() for td in header_cells]
+        if "data de movimento" not in headers or "descritivo" not in headers:
+            continue
+
+        date_idx = headers.index("data de movimento")
+        desc_idx = headers.index("descritivo")
+        amt_idx  = headers.index("montante") if "montante" in headers else None
+
+        for tr in table.find_all("tr"):
+            cells = tr.find_all("td", class_="conteudo_normal_white")
+            if not cells or len(cells) <= max(date_idx, desc_idx):
+                continue
+            date = cells[date_idx].get_text(strip=True)
+            desc = cells[desc_idx].get_text(strip=True)
+            if not date or not desc:
+                continue
+            amt_raw = cells[amt_idx].get_text(strip=True) if amt_idx is not None and len(cells) > amt_idx else ""
+            # Credit card: expenses are positive in source → negate
+            if amt_raw and not amt_raw.startswith("-"):
+                amt_raw = f"-{amt_raw}"
+            rows.append({"date": date, "description": desc, "amount_raw": amt_raw})
+
+    # Deduplicate (HTML may contain repeated tables)
+    seen: set[tuple] = set()
+    unique: list[dict] = []
+    for r in rows:
+        key = (r["date"], r["description"], r.get("amount_raw", ""))
+        if key not in seen:
+            seen.add(key)
+            unique.append(r)
+    return unique if unique else None
+
+
 def parse_xlsx(path: Path) -> list[dict]:
     engine = "xlrd" if path.suffix.lower() == ".xls" else "openpyxl"
     try:
@@ -158,7 +216,12 @@ def parse_xlsx(path: Path) -> list[dict]:
         except Exception:
             continue
 
-    # Fallback 2: HTML table saved as .xls
+    # Fallback 2: Bankinter credit card HTML saved as .xls
+    result = _parse_bankinter_credit_html(path)
+    if result is not None:
+        return result
+
+    # Fallback 3: generic HTML table saved as .xls
     try:
         tables = pd.read_html(path, encoding="utf-8")
         if tables:
