@@ -523,6 +523,146 @@ def _parse_trading212(path: Path, full_text: str) -> list[dict] | None:
     return rows if rows else None
 
 
+def _parse_trading212_pymupdf(path: Path) -> list[dict] | None:
+    """Parse Trading 212 PDFs with broken font encoding via pymupdf (MuPDF engine)."""
+    try:
+        import pymupdf as _pymupdf
+    except ImportError:
+        return None
+
+    doc = _pymupdf.open(str(path))
+    text = "\n".join(page.get_text() for page in doc)
+    doc.close()
+
+    if "trading 212" not in text.lower():
+        return None
+
+    import calendar
+    from collections import defaultdict
+
+    MONTH_PT = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
+
+    lines = [l.strip() for l in text.split("\n") if l.strip()]
+
+    # Locate "transactions and dividends" and "Dividends" sections
+    tx_section = None
+    dividends_section = None
+    for i, line in enumerate(lines):
+        if "transactions and dividends" in line.lower() and tx_section is None:
+            tx_section = i
+        if tx_section is not None and line == "Dividends" and dividends_section is None:
+            dividends_section = i
+            break
+
+    if tx_section is None:
+        return None
+
+    _PAGE_TOKENS = {"CUSTOMER ID", "CUSTOMER NAME", "TIME", "TYPE", "AMOUNT",
+                    "Transactions", "Note:"}
+    _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$")
+    _AMT_RE  = re.compile(r"^-?€[\d,]+\.\d{2}$")
+    _PAGE_MARKER_RE = re.compile(r"^\d+/\d+$")
+
+    def _is_skip(ln: str) -> bool:
+        return ln in _PAGE_TOKENS or bool(_PAGE_MARKER_RE.match(ln))
+
+    deposits = []
+    payouts = []
+    interest_by_month: dict[str, float] = defaultdict(float)
+    bonuses = []
+
+    tx_end = dividends_section if dividends_section else len(lines)
+    i = tx_section + 1
+
+    while i < tx_end:
+        line = lines[i]
+        if _is_skip(line):
+            i += 1
+            continue
+        if _DATE_RE.match(line) and i + 2 < tx_end and _AMT_RE.match(lines[i + 2]):
+            date_str = line[:10]
+            desc = lines[i + 1]
+            try:
+                amount = float(lines[i + 2].replace("€", "").replace(",", ""))
+            except ValueError:
+                i += 1
+                continue
+            dl = desc.lower()
+            if "deposit" in dl:
+                deposits.append((date_str, desc, -amount))
+            elif "payout" in dl:
+                payouts.append((date_str, desc, -amount))
+            elif "interest on cash" in dl:
+                interest_by_month[date_str[:7]] += amount
+            elif "free equity" in dl or "free share" in dl or "bonus" in dl:
+                bonuses.append((date_str, desc, amount))
+            i += 3
+            continue
+        i += 1
+
+    # Parse dividends: each entry is 11 consecutive lines anchored by ISIN
+    dividends = []
+    if dividends_section:
+        _ISIN_RE = re.compile(r"^[A-Z]{2}[A-Z0-9]{10}$")
+        seen: set[str] = set()
+        j = dividends_section + 1
+        while j < len(lines):
+            if _ISIN_RE.match(lines[j]) and j > 0 and j + 9 < len(lines):
+                instrument = lines[j - 1]
+                isin = lines[j]
+                try:
+                    from datetime import datetime as _dt
+                    date_str = _dt.strptime(lines[j + 3].split()[0], "%d.%m.%Y").strftime("%Y-%m-%d")
+                    net_amount = float(lines[j + 9].replace("€", "").replace(",", ""))
+                    key = f"{date_str}_{isin}"
+                    if key not in seen:
+                        seen.add(key)
+                        dividends.append((date_str, f"Dividendo - {instrument} ({isin})", net_amount))
+                except (ValueError, IndexError):
+                    pass
+            j += 1
+
+    rows: list[dict] = []
+
+    for date_str, desc, amount in deposits:
+        rows.append({"date": date_str, "description": f"Trading 212 - {desc}", "amount": -amount})
+
+    for date_str, desc, amount in payouts:
+        rows.append({"date": date_str, "description": f"Trading 212 - {desc}", "amount": -amount})
+
+    for month_key in sorted(interest_by_month):
+        year, month = int(month_key[:4]), int(month_key[5:])
+        last_day = calendar.monthrange(year, month)[1]
+        rows.append({
+            "date": f"{year}-{month:02d}-{last_day:02d}",
+            "description": f"Trading 212 - Interest on Cash ({MONTH_PT[month - 1]} {year})",
+            "amount": round(interest_by_month[month_key], 2),
+            "category": "Rendimentos",
+            "subcategory": "Interest on Cash",
+        })
+
+    for date_str, desc, amount in dividends:
+        rows.append({
+            "date": date_str,
+            "description": f"Trading 212 - {desc}",
+            "amount": amount,
+            "category": "Rendimentos",
+            "subcategory": "Dividendos",
+        })
+
+    for date_str, desc, amount in bonuses:
+        rows.append({
+            "date": date_str,
+            "description": f"Trading 212 - {desc}",
+            "amount": amount,
+            "category": "Rendimentos",
+            "subcategory": "Bonus Trading 212",
+        })
+
+    return rows if rows else None
+
+
 def _parse_igcp_certificados(path: Path, full_text: str) -> list[dict] | None:
     """Detect and parse IGCP Extrato de Conta Aforro (Certificados de Aforro)."""
     text_lower = full_text.lower()
@@ -580,8 +720,12 @@ def parse_pdf(path: Path) -> list[dict]:
         if result is not None:
             return result
 
-        # Trading 212 activity statement
+        # Trading 212 activity statement — pdfplumber first, pymupdf fallback for
+        # PDFs with broken font encoding where pdfplumber extracts garbled text
         result = _parse_trading212(path, text)
+        if result is not None:
+            return result
+        result = _parse_trading212_pymupdf(path)
         if result is not None:
             return result
 
