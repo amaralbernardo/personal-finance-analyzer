@@ -39,10 +39,6 @@
     </div>
     <p class="page-sub">Seleciona as categorias a incluir nos relatórios e totais. As categorias desmarcadas são ignoradas em toda a análise.</p>
 
-    {% if saved %}
-    <div class="alert alert-success">Configurações guardadas com sucesso.</div>
-    {% endif %}
-
     <form method="post" action="{{ settings_url }}">
       <div class="card">
         <p class="card-title">Categorias</p>

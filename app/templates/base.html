@@ -19,6 +19,40 @@
     </div>
   </nav>
   {% block content %}{% endblock %}
+
+  <div id="toast-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="toast toast-{{ category }}">
+          <span class="toast-dot"></span>
+          <span class="toast-msg">{{ message }}</span>
+        </div>
+      {% endfor %}
+    {% endwith %}
+  </div>
+
+  <script>
+    (function () {
+      var container = document.getElementById('toast-container');
+      function dismiss(el) {
+        el.classList.add('toast-out');
+        setTimeout(function () { el.remove(); }, 210);
+      }
+      container.querySelectorAll('.toast').forEach(function (t) {
+        t.addEventListener('click', function () { dismiss(t); });
+        setTimeout(function () { dismiss(t); }, 3500);
+      });
+      window.showToast = function (msg, type) {
+        var t = document.createElement('div');
+        t.className = 'toast toast-' + (type || 'info');
+        t.innerHTML = '<span class="toast-dot"></span><span class="toast-msg">' + msg + '</span>';
+        t.addEventListener('click', function () { dismiss(t); });
+        container.appendChild(t);
+        setTimeout(function () { dismiss(t); }, 3500);
+      };
+    })();
+  </script>
+
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       var targets = document.querySelectorAll('.card, .space-card');

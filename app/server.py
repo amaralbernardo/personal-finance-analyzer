@@ -9,7 +9,7 @@ from datetime import date as _today_date, datetime as _dt
 from pathlib import Path
 from functools import wraps
 
-from flask import Flask, render_template, redirect, url_for, request, send_file, make_response, abort
+from flask import Flask, render_template, redirect, url_for, request, send_file, make_response, abort, flash
 from werkzeug.utils import secure_filename
 from flask_login import (
     LoginManager, UserMixin,
@@ -267,7 +267,8 @@ def _category_settings_handler(space: str, back_url: str, settings_url: str):
                         )
         conn.commit()
         conn.close()
-        return redirect(settings_url + "?saved=1")
+        flash("Regras guardadas", "success")
+        return redirect(settings_url)
 
     conn.close()
     return render_template(
@@ -753,12 +754,14 @@ def _review_handler(space: str, back_url: str):
             conn.execute("DELETE FROM transactions WHERE id = ? AND space = ?", (txn_id, space))
             conn.commit()
             conn.close()
+            flash("Transação ignorada", "warning")
             return redirect(request.url)
 
         elif action == "defer":
             conn.execute("UPDATE transactions SET deferred = 1 WHERE id = ? AND space = ?", (txn_id, space))
             conn.commit()
             conn.close()
+            flash("Transação adiada", "info")
             return redirect(request.url)
 
         elif action == "add":
@@ -788,6 +791,7 @@ def _review_handler(space: str, back_url: str):
                 mappings[txn_row["description"]] = existing
                 _save_mappings(MAPPINGS_PATH, space, mappings)
             conn.close()
+            flash("Transação verificada", "success")
             return redirect(request.url)
 
         elif action == "split":
@@ -1564,6 +1568,7 @@ def _add_transaction_handler(space: str, back_url: str):
                     existing.append(new_entry)
                 mappings[desc_val] = existing
                 _save_mappings(MAPPINGS_PATH, space, mappings)
+            flash("Transação adicionada", "success")
             return redirect(back_url)
         except ValueError as exc:
             error = str(exc)
