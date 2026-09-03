@@ -15,8 +15,9 @@
     .btn-export { background: none; border: 1px solid var(--border-strong); color: var(--text-muted); padding: 3px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; text-decoration: none; white-space: nowrap; font-family: inherit; }
     .btn-export:hover { border-color: var(--accent); color: var(--accent); }
     .cat-cell { color: var(--text-muted); font-size: 0.82rem; }
-    .notes-cell { color: var(--text-muted); font-size: 0.82rem; }
-    .action-cell { white-space: nowrap; }
+    .conta-cell { color: var(--text-muted); font-size: 0.82rem; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .notes-cell { color: var(--text-muted); font-size: 0.82rem; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .action-cell { white-space: nowrap; min-width: 90px; }
     .btn-revalidate { background: none; border: 1px solid var(--border-strong); color: var(--text-muted); padding: 4px 10px; border-radius: 6px; font-size: 0.78rem; cursor: pointer; white-space: nowrap; font-family: inherit; }
     .btn-revalidate:hover { border-color: var(--danger-border); color: var(--danger); background: var(--danger-bg); }
     .empty { color: var(--text-muted); font-size: 0.875rem; padding: 18px; }
@@ -76,13 +77,10 @@
     <p class="subtitle">{{ transactions | length }} registo(s) validado(s).</p>
 
     <div class="card">
-      <div class="section-header" style="flex-wrap:wrap;gap:8px;">
+      <div class="section-header">
         Validados
         <span class="section-count" id="count-badge">{{ transactions | length }}</span>
-        <input id="search-desc" type="text" placeholder="Pesquisar descrição…"
-               oninput="applyFilters()"
-               style="margin-left:auto;width:220px;padding:4px 10px;font-size:0.82rem;border-radius:5px;border:1px solid var(--border-strong);background:var(--surface-2);color:var(--text);outline:none;font-family:inherit">
-        <div class="section-header-right" style="margin-left:0">
+        <div class="section-header-right">
           <div id="bulk-actions" style="display:none">
             <span class="bulk-count" id="bulk-count">0 selecionados</span>
             <button type="button" class="btn-bulk-cancel" onclick="clearSelection()">Cancelar</button>
@@ -94,6 +92,11 @@
           <button class="btn-clear-all" id="clear-all-btn" onclick="clearAllFilters()" style="display:none">Limpar filtros</button>
           {% if export_url %}<a href="{{ export_url }}" class="btn-export">Exportar Excel</a>{% endif %}
         </div>
+      </div>
+      <div style="padding:8px 14px;border-bottom:1px solid var(--border);background:var(--surface);">
+        <input id="search-desc" type="text" placeholder="Pesquisar descrição…"
+               oninput="applyFilters()"
+               style="width:100%;max-width:340px;padding:5px 10px;font-size:0.82rem;border-radius:5px;border:1px solid var(--border-strong);background:var(--surface-2);color:var(--text);outline:none;font-family:inherit">
       </div>
 
       {% if transactions %}
@@ -167,7 +170,7 @@
             </td>
             <td class="cat-cell" data-col="category">{{ txn.category or '' }}</td>
             <td class="cat-cell" data-col="subcategory">{{ txn.subcategory or '' }}</td>
-            <td class="cat-cell" data-col="conta">{{ txn.patrimony_label or '' }}</td>
+            <td class="conta-cell" data-col="conta" title="{{ txn.patrimony_label or '' }}">{{ txn.patrimony_label or '' }}</td>
             <td class="notes-cell">{{ txn.notes or '' }}</td>
             <td class="action-cell">
               <form method="post" style="margin:0">
