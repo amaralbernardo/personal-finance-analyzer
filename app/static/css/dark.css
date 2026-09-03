@@ -239,14 +239,16 @@ input[type="checkbox"] {
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background .15s;
+  transition: background .15s, transform .1s, box-shadow .15s;
   text-decoration: none;
   text-align: center;
   font-family: inherit;
+  user-select: none;
 }
-.btn:hover { background: var(--accent-hover); }
+.btn:hover { background: var(--accent-hover); box-shadow: 0 4px 12px rgba(99,102,241,0.25); }
+.btn:active { transform: scale(0.97); box-shadow: none; }
 .btn-purple { background: var(--purple); }
-.btn-purple:hover { background: var(--purple-hover); }
+.btn-purple:hover { background: var(--purple-hover); box-shadow: 0 4px 12px rgba(139,92,246,0.25); }
 
 .btn-secondary {
   background: var(--surface-2);
@@ -259,8 +261,11 @@ input[type="checkbox"] {
   cursor: pointer;
   font-family: inherit;
   text-decoration: none;
+  transition: background .15s, transform .1s;
+  user-select: none;
 }
 .btn-secondary:hover { background: var(--surface-3); }
+.btn-secondary:active { transform: scale(0.97); }
 
 .btn-danger {
   background: var(--danger-bg);
@@ -272,8 +277,11 @@ input[type="checkbox"] {
   font-weight: 500;
   cursor: pointer;
   font-family: inherit;
+  transition: background .15s, transform .1s;
+  user-select: none;
 }
 .btn-danger:hover { background: rgba(239,68,68,0.2); }
+.btn-danger:active { transform: scale(0.97); }
 
 .btn-ghost {
   background: transparent;
@@ -286,8 +294,11 @@ input[type="checkbox"] {
   cursor: pointer;
   font-family: inherit;
   text-decoration: none;
+  transition: background .15s, color .15s, transform .1s;
+  user-select: none;
 }
 .btn-ghost:hover { background: var(--surface-2); color: var(--text); }
+.btn-ghost:active { transform: scale(0.97); }
 
 /* Small buttons */
 .btn-sm {
@@ -298,7 +309,10 @@ input[type="checkbox"] {
   cursor: pointer;
   border: none;
   font-family: inherit;
+  transition: background .15s, transform .1s;
+  user-select: none;
 }
+.btn-sm:active { transform: scale(0.95); }
 .btn-sm-accent { background: var(--accent); color: white; }
 .btn-sm-accent:hover { background: var(--accent-hover); }
 .btn-sm-ghost { background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border); }
