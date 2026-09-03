@@ -405,3 +405,18 @@ a.link-muted:hover { color: var(--text); }
 /* ── details/summary ── */
 details summary { cursor: pointer; font-size: 0.82rem; color: var(--text-muted); user-select: none; }
 details summary:hover { color: var(--text); }
+
+/* ── Scroll-reveal ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 260ms ease-out, transform 260ms ease-out;
+  transition-delay: calc(min(var(--reveal-i, 0), 4) * 55ms);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+}
