@@ -91,10 +91,9 @@
                     {{ 'Desativar' if u.active else 'Ativar' }}
                   </button>
                 </form>
-                <form action="/users/delete" method="post" style="display:inline"
-                      onsubmit="return confirm('Eliminar {{ u.email }}?')">
+                <form action="/users/delete" method="post" style="display:inline">
                   <input type="hidden" name="id" value="{{ u.id }}">
-                  <button type="submit" class="btn-sm btn-sm-danger">Eliminar</button>
+                  <button type="submit" class="btn-sm btn-sm-danger" data-confirm>Eliminar</button>
                 </form>
               </div>
               {% else %}

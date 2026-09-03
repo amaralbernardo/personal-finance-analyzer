@@ -215,10 +215,9 @@
           <li class="imported-item">
             <span class="imported-name">{{ f.source_file }}</span>
             <span class="imported-meta">{{ f.tx_count }} transações · {{ f.imported_at[:10] | datefmt }}</span>
-            <form action="{{ delete_file_url }}" method="post" style="margin:0"
-                  onsubmit="return confirm('Eliminar \'{{ f.source_file }}\' e todos os registos associados (incluindo já validados)?')">
+            <form action="{{ delete_file_url }}" method="post" style="margin:0">
               <input type="hidden" name="source_file" value="{{ f.source_file }}">
-              <button type="submit" class="btn-del-file" title="Eliminar ficheiro">✕</button>
+              <button type="submit" class="btn-del-file" data-confirm title="Eliminar ficheiro">✕</button>
             </form>
           </li>
           {% endfor %}

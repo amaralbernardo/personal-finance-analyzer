@@ -54,6 +54,53 @@
   </script>
 
   <script>
+    /* ── Double-confirm ── */
+    document.addEventListener('DOMContentLoaded', function () {
+      document.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-confirm]');
+        if (!btn) return;
+        if (!btn._confirming) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          var orig = btn.textContent;
+          btn._confirming = true;
+          btn.classList.add('btn-confirming');
+          btn.textContent = 'Tens a certeza?';
+          var t = setTimeout(function () {
+            btn._confirming = false;
+            btn.classList.remove('btn-confirming');
+            btn.textContent = orig;
+          }, 3000);
+          btn._confirmTimer = t;
+        } else {
+          clearTimeout(btn._confirmTimer);
+          btn._confirming = false;
+          btn.classList.remove('btn-confirming');
+        }
+      }, true);
+
+      document.querySelectorAll('form[data-confirm-form]').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+          var btn = form.querySelector('[type=submit]');
+          if (btn && !btn._confirming) {
+            e.preventDefault();
+            if (btn) {
+              var orig = btn.textContent;
+              btn._confirming = true;
+              btn.classList.add('btn-confirming');
+              btn.textContent = 'Tens a certeza?';
+              var t = setTimeout(function () {
+                btn._confirming = false;
+                btn.classList.remove('btn-confirming');
+                btn.textContent = orig;
+              }, 3000);
+              btn._confirmTimer = t;
+            }
+          }
+        });
+      });
+    });
+
     document.addEventListener('DOMContentLoaded', function () {
       var targets = document.querySelectorAll('.card, .space-card');
       targets.forEach(function (el, i) {

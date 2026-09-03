@@ -410,6 +410,15 @@ a.link-muted:hover { color: var(--text); }
 details summary { cursor: pointer; font-size: 0.82rem; color: var(--text-muted); user-select: none; }
 details summary:hover { color: var(--text); }
 
+/* ── Double-confirm buttons ── */
+.btn-confirming {
+  background: var(--danger) !important;
+  color: white !important;
+  border-color: var(--danger) !important;
+  animation: confirm-pulse 0.2s ease-out;
+}
+@keyframes confirm-pulse { from { transform: scale(0.97); } to { transform: scale(1); } }
+
 /* ── Toasts ── */
 #toast-container {
   position: fixed;

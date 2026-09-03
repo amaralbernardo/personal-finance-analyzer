@@ -50,12 +50,11 @@
         </table>
 
         <div class="actions">
-          <button type="submit" name="action" value="selected" class="btn-danger" id="btn-delete-selected" disabled>
+          <button type="submit" name="action" value="selected" class="btn-danger" id="btn-delete-selected" disabled data-confirm>
             Eliminar selecionados
           </button>
           {% if reports | length > 1 %}
-          <button type="submit" name="action" value="keep_latest" class="btn-ghost"
-                  onclick="return confirm('Eliminar todos os relatórios exceto o último?')">
+          <button type="submit" name="action" value="keep_latest" class="btn-ghost" data-confirm>
             Eliminar todos exceto o último
           </button>
           {% endif %}

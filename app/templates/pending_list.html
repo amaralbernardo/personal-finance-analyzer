@@ -43,11 +43,10 @@
           <input type="checkbox" id="select-all" onchange="toggleAll(this)"> Selecionar todos
         </label>
         <button type="submit" name="action" value="delete_selected" class="btn btn-danger" id="btn-del-sel"
-                disabled onclick="return confirm('Eliminar os registos selecionados?')">
+                disabled data-confirm>
           Eliminar selecionados
         </button>
-        <button type="submit" name="action" value="delete_all" class="btn btn-delete-all"
-                onclick="return confirm('Eliminar todos os {{ rows | length }} registos pendentes?')">
+        <button type="submit" name="action" value="delete_all" class="btn btn-delete-all" data-confirm>
           Eliminar todos
         </button>
       </div>
