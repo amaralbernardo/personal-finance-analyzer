@@ -76,10 +76,13 @@
     <p class="subtitle">{{ transactions | length }} registo(s) validado(s).</p>
 
     <div class="card">
-      <div class="section-header">
+      <div class="section-header" style="flex-wrap:wrap;gap:8px;">
         Validados
         <span class="section-count" id="count-badge">{{ transactions | length }}</span>
-        <div class="section-header-right">
+        <input id="search-desc" type="text" placeholder="Pesquisar descrição…"
+               oninput="applyFilters()"
+               style="margin-left:auto;width:220px;padding:4px 10px;font-size:0.82rem;border-radius:5px;border:1px solid var(--border-strong);background:var(--surface-2);color:var(--text);outline:none;font-family:inherit">
+        <div class="section-header-right" style="margin-left:0">
           <div id="bulk-actions" style="display:none">
             <span class="bulk-count" id="bulk-count">0 selecionados</span>
             <button type="button" class="btn-bulk-cancel" onclick="clearSelection()">Cancelar</button>
@@ -267,7 +270,7 @@
 
     function selectAll(col) { document.querySelectorAll(`#list-${col} input[type=checkbox]`).forEach(cb => cb.checked = true); onCheck(col); }
     function clearCol(col) { document.querySelectorAll(`#list-${col} input[type=checkbox]`).forEach(cb => cb.checked = false); onCheck(col); }
-    function clearAllFilters() { COLS.forEach(col => clearCol(col)); }
+    function clearAllFilters() { COLS.forEach(col => clearCol(col)); document.getElementById('search-desc').value = ''; applyFilters(); }
 
     function searchDropdown(input, col) {
       const q = input.value.toLowerCase();
@@ -277,18 +280,23 @@
     }
 
     function applyFilters() {
+      const q = (document.getElementById('search-desc').value || '').toLowerCase();
       let visible = 0;
       document.querySelectorAll('#records-table tbody tr').forEach(tr => {
-        const show = COLS.every(col => {
+        const colMatch = COLS.every(col => {
           if (!active[col]) return true;
           const cell = tr.querySelector(`td[data-col="${col}"]`);
           return cell && active[col].has(cell.textContent.trim());
         });
+        const descCell = tr.querySelector('.desc-cell');
+        const descMatch = !q || (descCell && descCell.textContent.toLowerCase().includes(q));
+        const show = colMatch && descMatch;
         tr.style.display = show ? '' : 'none';
         if (show) visible++;
       });
       document.getElementById('count-badge').textContent = visible;
-      document.getElementById('clear-all-btn').style.display = COLS.some(col => active[col] !== null) ? '' : 'none';
+      const hasFilter = COLS.some(col => active[col] !== null) || q.length > 0;
+      document.getElementById('clear-all-btn').style.display = hasFilter ? '' : 'none';
     }
 
     window.addEventListener('scroll', e => {
