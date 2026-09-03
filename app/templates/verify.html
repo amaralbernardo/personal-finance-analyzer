@@ -4,9 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Verificar Transações</title>
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
   <link rel="stylesheet" href="/static/css/dark.css">
   <style>
-    body { padding: 40px 20px; }
+    body { padding: 72px 20px 24px; }
     .container { max-width: 1000px; margin: 0 auto; }
     .card { padding: 0; overflow: hidden; }
     select { background: var(--surface-2); min-width: 160px; width: auto; }
@@ -68,6 +69,17 @@
   </style>
 </head>
 <body>
+  <nav class="topbar">
+    <a href="/" class="topbar-brand">Finanças Pessoais</a>
+    <div class="topbar-right">
+      <a href="/change-password" class="topbar-email">{{ current_user.email }}</a>
+      {% if current_user.role == 'admin' %}
+      <a href="/users" class="topbar-link">Utilizadores</a>
+      {% endif %}
+      <a href="/logout" class="topbar-logout">Sair</a>
+      <button id="theme-toggle" class="topbar-theme-btn" title="Alternar tema" aria-label="Alternar tema claro/escuro"></button>
+    </div>
+  </nav>
   <div class="container">
     <a href="{{ back_url }}" class="back">← Voltar</a>
     <h1>Rever Transações</h1>
@@ -269,6 +281,25 @@
         btn.style.display = 'none';
       }
     }
+
+    document.addEventListener('mousedown', function(e) {
+      var btn = e.target.closest('button, .btn, [type=submit]');
+      if (!btn) return;
+      btn.classList.add('btn-pressed');
+      setTimeout(function() { btn.classList.remove('btn-pressed'); }, 180);
+    });
+    (function() {
+      var ICONS = { dark: '☀', light: '☾' };
+      var btn = document.getElementById('theme-toggle');
+      var current = localStorage.getItem('theme') || 'dark';
+      if (btn) { btn.textContent = ICONS[current]; }
+      if (btn) btn.addEventListener('click', function() {
+        current = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', current);
+        localStorage.setItem('theme', current);
+        btn.textContent = ICONS[current];
+      });
+    })();
   </script>
 </body>
 </html>
