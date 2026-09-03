@@ -54,6 +54,34 @@
   </script>
 
   <script>
+    /* ── Page transitions ── */
+    (function () {
+      function fadeOut(cb) {
+        document.body.style.transition = 'opacity 160ms ease-in, transform 160ms ease-in';
+        document.body.style.opacity = '0';
+        document.body.style.transform = 'translateY(-6px)';
+        setTimeout(cb, 170);
+      }
+
+      document.addEventListener('click', function (e) {
+        var link = e.target.closest('a[href]');
+        if (!link) return;
+        var href = link.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('mailto:') ||
+            link.target === '_blank' || e.ctrlKey || e.metaKey || e.shiftKey) return;
+        if (href.startsWith('http') && !href.startsWith(location.origin)) return;
+        e.preventDefault();
+        fadeOut(function () { window.location.href = href; });
+      });
+
+      document.addEventListener('submit', function (e) {
+        var form = e.target;
+        if (form.dataset.noTransition) return;
+        document.body.style.transition = 'opacity 160ms ease-in';
+        document.body.style.opacity = '0';
+      });
+    })();
+
     /* ── Double-confirm ── */
     document.addEventListener('DOMContentLoaded', function () {
       document.addEventListener('click', function (e) {
