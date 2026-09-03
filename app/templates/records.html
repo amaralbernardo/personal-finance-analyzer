@@ -14,10 +14,11 @@
     .btn-clear-all:hover { color: #c0392b; }
     .btn-export { background: none; border: 1px solid var(--border-strong); color: var(--text-muted); padding: 3px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; text-decoration: none; white-space: nowrap; font-family: inherit; }
     .btn-export:hover { border-color: var(--accent); color: var(--accent); }
-    .cat-cell { color: var(--text-muted); font-size: 0.82rem; }
-    .conta-cell { color: var(--text-muted); font-size: 0.82rem; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .notes-cell { color: var(--text-muted); font-size: 0.82rem; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .action-cell { white-space: nowrap; min-width: 90px; }
+    .cat-cell { color: var(--text-muted); font-size: 0.82rem; white-space: nowrap; }
+    .conta-cell { color: var(--text-muted); font-size: 0.82rem; max-width: 130px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .notes-cell { color: var(--text-muted); font-size: 0.82rem; max-width: 130px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .action-cell { white-space: nowrap; width: 1px; }
+    .desc-cell { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .btn-revalidate { background: none; border: 1px solid var(--border-strong); color: var(--text-muted); padding: 4px 10px; border-radius: 6px; font-size: 0.78rem; cursor: pointer; white-space: nowrap; font-family: inherit; }
     .btn-revalidate:hover { border-color: var(--danger-border); color: var(--danger); background: var(--danger-bg); }
     .empty { color: var(--text-muted); font-size: 0.875rem; padding: 18px; }
@@ -80,6 +81,9 @@
       <div class="section-header">
         Validados
         <span class="section-count" id="count-badge">{{ transactions | length }}</span>
+        <input id="search-desc" type="text" placeholder="Pesquisar…"
+               oninput="applyFilters()"
+               style="flex:1;min-width:80px;max-width:240px;margin-left:12px;padding:3px 9px;font-size:0.82rem;border-radius:5px;border:1px solid var(--border-strong);background:var(--surface-2);color:var(--text);outline:none;font-family:inherit">
         <div class="section-header-right">
           <div id="bulk-actions" style="display:none">
             <span class="bulk-count" id="bulk-count">0 selecionados</span>
@@ -93,26 +97,10 @@
           {% if export_url %}<a href="{{ export_url }}" class="btn-export">Exportar Excel</a>{% endif %}
         </div>
       </div>
-      <div style="padding:8px 14px;border-bottom:1px solid var(--border);background:var(--surface);">
-        <input id="search-desc" type="text" placeholder="Pesquisar descrição…"
-               oninput="applyFilters()"
-               style="width:100%;max-width:340px;padding:5px 10px;font-size:0.82rem;border-radius:5px;border:1px solid var(--border-strong);background:var(--surface-2);color:var(--text);outline:none;font-family:inherit">
-      </div>
 
       {% if transactions %}
-      <div style="overflow-x:auto">
-      <table id="records-table" style="min-width:860px">
-        <colgroup>
-          <col>
-          <col style="width:8%">
-          <col style="width:22%">
-          <col style="width:8%">
-          <col style="width:13%">
-          <col style="width:13%">
-          <col style="width:12%">
-          <col style="width:14%">
-          <col style="width:10%">
-        </colgroup>
+      <div>
+      <table id="records-table">
         <thead>
           <tr>
             <th class="cb-cell"><input type="checkbox" id="select-all-cb" class="row-cb" title="Selecionar todos" onchange="toggleAll(this)"></th>
