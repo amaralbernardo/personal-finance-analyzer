@@ -182,7 +182,11 @@
       </table>
       </div>
       {% else %}
-      <p class="empty">Nenhum registo validado ainda.</p>
+      <div style="text-align:center;padding:48px 24px">
+        <div style="font-size:2rem;margin-bottom:12px;opacity:0.3">📋</div>
+        <p style="color:var(--text-muted);margin:0 0 16px;font-size:0.95rem">Nenhum registo validado ainda.</p>
+        <a href="{{ back_url }}" class="btn" style="display:inline-block;padding:8px 20px;font-size:0.875rem">Ir para verificação →</a>
+      </div>
       {% endif %}
     </div>
   </div>
