@@ -86,14 +86,14 @@
         <div class="section-header-right">
           <div id="bulk-actions" style="display:none">
             <span class="bulk-count" id="bulk-count">0 selecionados</span>
-            <button type="button" class="btn-bulk-cancel" onclick="clearSelection()">Cancelar</button>
+            <button type="button" class="btn-bulk-cancel" onclick="clearSelection()" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>Cancelar</button>
             <form id="bulk-form" method="post" onsubmit="injectBulkIds()" style="display:inline">
               <input type="hidden" name="action" value="unverify_bulk">
-              <button type="submit" class="btn-bulk-revalidate">Revalidar selecionados</button>
+              <button type="submit" class="btn-bulk-revalidate" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-3.17"></path></svg>Revalidar selecionados</button>
             </form>
           </div>
           <button class="btn-clear-all" id="clear-all-btn" onclick="clearAllFilters()" style="display:none">Limpar filtros</button>
-          {% if export_url %}<a href="{{ export_url }}" class="btn-export">Exportar Excel</a>{% endif %}
+          {% if export_url %}<a href="{{ export_url }}" class="btn-export" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>Exportar Excel</a>{% endif %}
         </div>
       </div>
 

@@ -92,11 +92,11 @@
               <option value="{{ p.label }}">{{ p.label }}</option>
               {% endfor %}
             </select>
-            <button type="button" class="btn-bulk" onclick="applyBulkAccount()">Aplicar</button>
+            <button type="button" class="btn-bulk" onclick="applyBulkAccount()" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 13 9 18 20 6"></polyline></svg>Aplicar</button>
           </div>
           {% endif %}
           <div class="bulk-item">
-            <button type="button" class="btn-bulk" onclick="validateAll()">✓ Validar todos</button>
+            <button type="button" class="btn-bulk" onclick="validateAll()" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>Validar todos</button>
           </div>
         </div>
         <div style="overflow-x:auto">
@@ -213,9 +213,9 @@
       {% endif %}
 
       <div class="actions">
-        <button type="submit" name="action" value="save" class="btn btn-save">Guardar</button>
-        <button type="submit" name="action" value="report" class="btn btn-report">Guardar e gerar relatório</button>
-        <button type="submit" name="action" value="delete" id="btn-delete" class="btn btn-danger" style="display:none">Eliminar selecionados (<span id="delete-count">0</span>)</button>
+        <button type="submit" name="action" value="save" class="btn btn-save" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>Guardar</button>
+        <button type="submit" name="action" value="report" class="btn btn-report" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>Guardar e gerar relatório</button>
+        <button type="submit" name="action" value="delete" id="btn-delete" class="btn btn-danger" style="display:none;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>Eliminar selecionados (<span id="delete-count">0</span>)</button>
         <span class="count-info">
           {% if transactions %}{{ transactions|length }} transaç{{ 'ão' if transactions|length == 1 else 'ões' }}{% endif %}
           {% if transactions and skipped_rows %} · {% endif %}
@@ -264,7 +264,7 @@
       var btn = document.getElementById('btn-delete');
       if (checked.length > 0) {
         document.getElementById('delete-count').textContent = checked.length;
-        btn.style.display = '';
+        btn.style.display = 'inline-flex';
       } else {
         btn.style.display = 'none';
       }

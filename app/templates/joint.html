@@ -63,13 +63,13 @@
       {% if current_user.role == 'admin' %}
       <div class="action-group">
         {% if unverified > 0 %}
-        <a href="/joint/review" class="action-btn action-btn-primary">Rever novos</a>
+        <a href="/joint/review" class="action-btn action-btn-primary" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>Rever novos</a>
         {% endif %}
-        <a href="/joint/add-transaction" class="action-btn action-btn-secondary">+ Adicionar registo</a>
+        <a href="/joint/add-transaction" class="action-btn action-btn-secondary" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>Adicionar registo</a>
       </div>
       {% if total_transactions > 0 %}
       <div class="action-group action-group-sep">
-        <a href="/joint/records" class="action-btn action-btn-ghost">Ver registos validados</a>
+        <a href="/joint/records" class="action-btn action-btn-ghost" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>Ver registos validados</a>
       </div>
       {% endif %}
       {% endif %}
@@ -188,7 +188,7 @@
       <a href="/joint/settings/categories" class="report-link" style="font-size:0.85rem;display:block;margin-bottom:14px">Categorias na análise →</a>
       {% if current_user.role == 'admin' %}
       <form action="/joint/generate-report" method="post">
-        <button type="submit" class="btn">Gerar novo relatório</button>
+        <button type="submit" class="btn" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>Gerar novo relatório</button>
       </form>
       {% endif %}
     </div>
@@ -205,7 +205,7 @@
           <div class="upload-sub">CSV, OFX, XLSX, PDF, HTML — vários ficheiros em simultâneo</div>
         </div>
         <ul class="file-list" id="file-list"></ul>
-        <button type="submit" class="btn" id="upload-btn" style="display:none">Carregar e processar</button>
+        <button type="submit" class="btn" id="upload-btn" style="display:none;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>Carregar e processar</button>
       </form>
       {% if imported_files %}
       <details style="margin-top:16px">
@@ -244,7 +244,7 @@
           li.innerHTML = `<span>${f.name}</span><button type="button" class="file-remove" data-i="${i}">✕</button>`;
           list.appendChild(li);
         });
-        btn.style.display = sel.files.length ? 'inline-block' : 'none';
+        btn.style.display = sel.files.length ? 'inline-flex' : 'none';
         input.files = sel.files;
       }
       input.addEventListener('change', () => { [...input.files].forEach(f => sel.items.add(f)); render(); });

@@ -68,7 +68,7 @@
                 <input type="text" name="display_name" class="rename-input"
                        value="{{ u.display_name or '' }}"
                        placeholder="{{ u.email.split('@')[0] }}">
-                <button type="submit" class="btn-rename">✓</button>
+                <button type="submit" class="btn-rename" style="display:inline-flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 13 9 18 20 6"></polyline></svg></button>
               </form>
             </td>
             <td>
@@ -87,13 +87,11 @@
               <div class="actions-cell">
                 <form action="/users/toggle" method="post" style="display:inline">
                   <input type="hidden" name="id" value="{{ u.id }}">
-                  <button type="submit" class="btn-sm btn-toggle">
-                    {{ 'Desativar' if u.active else 'Ativar' }}
-                  </button>
+                  <button type="submit" class="btn-sm btn-toggle" style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>{{ 'Desativar' if u.active else 'Ativar' }}</button>
                 </form>
                 <form action="/users/delete" method="post" style="display:inline">
                   <input type="hidden" name="id" value="{{ u.id }}">
-                  <button type="submit" class="btn-sm btn-sm-danger" data-confirm>Eliminar</button>
+                  <button type="submit" class="btn-sm btn-sm-danger" data-confirm style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>Eliminar</button>
                 </form>
               </div>
               {% else %}
@@ -125,8 +123,7 @@
               <option value="admin">Administrador</option>
             </select>
           </div>
-          <button type="submit" class="btn-sm btn-sm-accent" style="padding:8px 18px;align-self:flex-end">
-            Adicionar
+          <button type="submit" class="btn-sm btn-sm-accent" style="padding:8px 18px;align-self:flex-end;display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>Adicionar
           </button>
         </div>
       </form>
