@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Finanças Pessoais{% endblock %}</title>
+  <script>
+    (function () {
+      var t = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
   <link rel="stylesheet" href="/static/css/dark.css">
   {% block head %}{% endblock %}
 </head>
@@ -16,6 +22,7 @@
       <a href="/users" class="topbar-link">Utilizadores</a>
       {% endif %}
       <a href="/logout" class="topbar-logout">Sair</a>
+      <button id="theme-toggle" class="topbar-theme-btn" title="Alternar tema" aria-label="Alternar tema claro/escuro"></button>
     </div>
   </nav>
   {% block content %}{% endblock %}
@@ -30,6 +37,22 @@
       {% endfor %}
     {% endwith %}
   </div>
+
+  <script>
+    /* ── Theme toggle ── */
+    (function () {
+      var ICONS = { dark: '☀', light: '☾' };
+      var btn = document.getElementById('theme-toggle');
+      var current = localStorage.getItem('theme') || 'dark';
+      btn.textContent = ICONS[current];
+      btn.addEventListener('click', function () {
+        current = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', current);
+        localStorage.setItem('theme', current);
+        btn.textContent = ICONS[current];
+      });
+    })();
+  </script>
 
   <script>
     (function () {

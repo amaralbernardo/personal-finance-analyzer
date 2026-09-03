@@ -28,6 +28,31 @@
   --warning-border: rgba(245,158,11,0.25);
 }
 
+/* ── Light theme overrides ── */
+[data-theme="light"] {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --surface-2: #eef0f4;
+  --surface-3: #e2e4ea;
+  --border: rgba(0,0,0,0.07);
+  --border-strong: rgba(0,0,0,0.13);
+  --text: #111827;
+  --text-muted: #6b7280;
+  --text-dim: #9ca3af;
+  --accent-glow: rgba(99,102,241,0.1);
+  --purple-glow: rgba(139,92,246,0.1);
+  --success-bg: rgba(16,185,129,0.1);
+  --danger-bg: rgba(239,68,68,0.1);
+  --warning-bg: rgba(245,158,11,0.1);
+}
+[data-theme="light"] { scrollbar-color: var(--surface-3) var(--surface-2); }
+[data-theme="light"] ::-webkit-scrollbar-track { background: var(--surface-2); }
+[data-theme="light"] ::-webkit-scrollbar-thumb { background: var(--surface-3); }
+[data-theme="light"] nav.topbar { box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+[data-theme="light"] .card { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+[data-theme="light"] tbody tr:hover td { background: rgba(0,0,0,0.025); }
+[data-theme="light"] .cat-panel { box-shadow: -4px 0 24px rgba(0,0,0,0.12); }
+
 *, *::before, *::after { box-sizing: border-box; }
 
 html { scrollbar-color: var(--surface-3) var(--surface); scrollbar-width: thin; }
@@ -79,6 +104,22 @@ nav.topbar {
 .topbar-link:hover { color: var(--accent-hover); }
 .topbar-logout { font-size: 0.85rem; color: var(--text-muted); text-decoration: none; }
 .topbar-logout:hover { color: var(--danger); }
+.topbar-theme-btn {
+  background: none;
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  border-radius: 6px;
+  width: 30px;
+  height: 30px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s, color .15s;
+  padding: 0;
+}
+.topbar-theme-btn:hover { background: var(--surface-2); color: var(--text); }
 
 /* ── Page containers ── */
 .page { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
