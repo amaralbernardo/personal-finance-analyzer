@@ -114,10 +114,12 @@ th {
   color: var(--text-muted);
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
+  background: var(--surface-2);
+}
+.table-sticky thead th {
   position: sticky;
   top: 52px;
   z-index: 5;
-  background: var(--surface-2);
 }
 td {
   padding: 10px 14px;
