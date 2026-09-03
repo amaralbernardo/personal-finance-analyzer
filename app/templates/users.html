@@ -1,140 +1,47 @@
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Gerir Utilizadores</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f0f2f5;
-      margin: 0;
-      padding: 0;
-      color: #1a1a2e;
-    }
-    nav.topbar {
-      background: white;
-      border-bottom: 1px solid #eee;
-      padding: 0 24px;
-      height: 52px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-    .topbar-brand { font-weight: 700; font-size: 0.95rem; color: #1a1a2e; text-decoration: none; }
-    .topbar-right { display: flex; align-items: center; gap: 20px; }
-    .topbar-email { font-size: 0.85rem; color: #888; }
-    .topbar-link { font-size: 0.85rem; color: #2d6df6; text-decoration: none; }
-    .topbar-link:hover { text-decoration: underline; }
-    .topbar-logout { font-size: 0.85rem; color: #888; text-decoration: none; }
-    .topbar-logout:hover { color: #c0392b; }
-    .page { max-width: 760px; margin: 0 auto; padding: 40px 20px; }
-    .back { color: #888; text-decoration: none; font-size: 0.875rem; display: inline-block; margin-bottom: 20px; }
-    .back:hover { color: #444; }
-    h1 { font-size: 1.5rem; margin: 0 0 24px; }
-    .card {
-      background: white;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 1px 4px rgba(0,0,0,.08);
-      margin-bottom: 20px;
-    }
-    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    thead { background: #f8f9fb; }
-    th {
-      text-align: left;
-      padding: 11px 16px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-      color: #888;
-      border-bottom: 1px solid #eee;
-    }
-    td { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
-    tr:last-child td { border-bottom: none; }
-    .badge {
-      display: inline-block;
-      padding: 2px 9px;
-      border-radius: 10px;
-      font-size: 0.78rem;
-      font-weight: 600;
-    }
-    .badge-admin  { background: #e8edf8; color: #2d4a8a; }
-    .badge-viewer { background: #f4f4f4; color: #666; }
-    .badge-active { background: #f0fff4; color: #1e8449; border: 1px solid #b7e4c7; }
-    .badge-inactive { background: #fff0f0; color: #c0392b; border: 1px solid #f5c6c6; }
-    .actions-cell { display: flex; gap: 6px; }
-    .btn-sm {
-      padding: 4px 12px;
-      border-radius: 5px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      cursor: pointer;
-      border: none;
-    }
-    .btn-toggle { background: #f0f2f5; color: #444; border: 1px solid #ddd; }
-    .btn-toggle:hover { background: #e4e7eb; }
-    .btn-delete { background: #fff0f0; color: #c0392b; border: 1px solid #f5c6c6; }
-    .btn-delete:hover { background: #fde8e8; }
-    .btn-primary { background: #2d6df6; color: white; border: none; }
-    .btn-primary:hover { background: #1a56d6; }
-    .add-card {
-      background: white;
-      border-radius: 10px;
-      padding: 22px 24px;
-      box-shadow: 0 1px 4px rgba(0,0,0,.08);
-      border: 2px dashed #dce2f0;
-    }
-    .add-card h2 { font-size: 1rem; margin: 0 0 16px; color: #555; }
-    .add-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
-    .field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 140px; }
-    .field label { font-size: 0.78rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .04em; }
-    .field input, .field select {
-      padding: 7px 10px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      font-size: 0.875rem;
-      color: #222;
-    }
-    .field input:focus, .field select:focus { outline: none; border-color: #2d6df6; box-shadow: 0 0 0 3px rgba(45,109,246,.1); }
-    .self-badge { font-size: 0.75rem; color: #aaa; margin-left: 4px; }
-    .rename-form { display:flex;gap:5px;align-items:center; }
-    .rename-input { padding:4px 8px;border:1px solid #ddd;border-radius:5px;font-size:0.85rem;color:#222;width:140px; }
-    .rename-input:focus { outline:none;border-color:#2d6df6; }
-    .btn-rename { padding:4px 9px;border-radius:5px;font-size:0.8rem;background:#f0f4ff;color:#2d6df6;border:1px solid #c5d5fb;cursor:pointer; }
-    .btn-rename:hover { background:#e0eaff; }
-    @media (max-width: 640px) {
-      nav.topbar { padding: 0 14px; }
-      .topbar-email { display: none; }
-      .topbar-right { gap: 12px; }
-      .page { padding: 24px 14px; }
-      .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-      table { min-width: 480px; }
-      .col-date { display: none; }
-      .add-row { flex-direction: column; }
-      .field { min-width: 0 !important; max-width: 100% !important; }
-    }
-  </style>
-</head>
-<body>
-  <nav class="topbar">
-    <a href="/" class="topbar-brand">Finanças Pessoais</a>
-    <div class="topbar-right">
-      <a href="/change-password" class="topbar-email" style="text-decoration:none;color:#888;">{{ current_user.email }}</a>
-      <a href="/logout" class="topbar-logout">Sair</a>
-    </div>
-  </nav>
+{% extends "base.html" %}
+{% block title %}Gerir Utilizadores{% endblock %}
 
+{% block head %}
+<style>
+  .page { max-width: 760px; }
+  .card { padding: 0; overflow: hidden; }
+  .badge-admin  { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(99,102,241,0.25); }
+  .badge-viewer { background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border); }
+  .badge-active { background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
+  .badge-inactive { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
+  .badge-user {
+    display: inline-block; padding: 2px 9px; border-radius: 10px;
+    font-size: 0.78rem; font-weight: 600;
+  }
+  .actions-cell { display: flex; gap: 6px; }
+  .btn-toggle { background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border-strong); }
+  .btn-toggle:hover { background: var(--surface-3); color: var(--text); }
+  .self-badge { font-size: 0.75rem; color: var(--text-dim); margin-left: 4px; }
+  .rename-form { display:flex;gap:5px;align-items:center; }
+  .rename-input { padding:4px 8px;border:1px solid var(--border-strong);border-radius:5px;font-size:0.85rem;background:var(--surface-2);color:var(--text);width:140px;font-family:inherit;outline:none; }
+  .rename-input:focus { border-color:var(--accent); }
+  .btn-rename { padding:4px 9px;border-radius:5px;font-size:0.8rem;background:var(--accent-glow);color:var(--accent);border:1px solid rgba(99,102,241,0.25);cursor:pointer;font-family:inherit; }
+  .btn-rename:hover { background:rgba(99,102,241,0.2); }
+  .add-card { background: var(--surface); border-radius: 10px; padding: 22px 24px; border: 2px dashed var(--border-strong); margin-top: 4px; }
+  .add-card h2 { font-size: 1rem; margin: 0 0 16px; color: var(--text-muted); font-weight: 600; }
+  .add-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+  @media (max-width: 640px) {
+    .page { padding: 24px 14px; }
+    .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { min-width: 480px; }
+    .col-date { display: none; }
+    .add-row { flex-direction: column; }
+    .field { min-width: 0 !important; max-width: 100% !important; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
   <div class="page">
     <a href="/" class="back">← Voltar</a>
     <h1>Gerir Utilizadores</h1>
 
-    <div class="card">
+    <div class="card" style="margin-bottom:16px">
       <table>
         <thead>
           <tr>
@@ -165,16 +72,16 @@
               </form>
             </td>
             <td>
-              <span class="badge {{ 'badge-admin' if u.role == 'admin' else 'badge-viewer' }}">
+              <span class="badge-user {{ 'badge-admin' if u.role == 'admin' else 'badge-viewer' }}">
                 {{ 'Administrador' if u.role == 'admin' else 'Visualizador' }}
               </span>
             </td>
             <td>
-              <span class="badge {{ 'badge-active' if u.active else 'badge-inactive' }}">
+              <span class="badge-user {{ 'badge-active' if u.active else 'badge-inactive' }}">
                 {{ 'Ativo' if u.active else 'Inativo' }}
               </span>
             </td>
-            <td class="col-date" style="color:#888;font-size:.85rem">{{ u.created_at[:10] }}</td>
+            <td class="col-date" style="color:var(--text-muted);font-size:.85rem">{{ u.created_at[:10] }}</td>
             <td>
               {% if u.id != current_user.id %}
               <div class="actions-cell">
@@ -187,11 +94,11 @@
                 <form action="/users/delete" method="post" style="display:inline"
                       onsubmit="return confirm('Eliminar {{ u.email }}?')">
                   <input type="hidden" name="id" value="{{ u.id }}">
-                  <button type="submit" class="btn-sm btn-delete">Eliminar</button>
+                  <button type="submit" class="btn-sm btn-sm-danger">Eliminar</button>
                 </form>
               </div>
               {% else %}
-              <span style="color:#bbb;font-size:.82rem">—</span>
+              <span style="color:var(--text-dim);font-size:.82rem">—</span>
               {% endif %}
             </td>
           </tr>
@@ -219,12 +126,11 @@
               <option value="admin">Administrador</option>
             </select>
           </div>
-          <button type="submit" class="btn-sm btn-primary" style="padding:8px 18px;align-self:flex-end">
+          <button type="submit" class="btn-sm btn-sm-accent" style="padding:8px 18px;align-self:flex-end">
             Adicionar
           </button>
         </div>
       </form>
     </div>
   </div>
-</body>
-</html>
+{% endblock %}

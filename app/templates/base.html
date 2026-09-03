@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Finanças Pessoais{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/dark.css">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <nav class="topbar">
+    <a href="/" class="topbar-brand">Finanças Pessoais</a>
+    <div class="topbar-right">
+      <a href="/change-password" class="topbar-email">{{ current_user.email }}</a>
+      {% if current_user.role == 'admin' %}
+      <a href="/users" class="topbar-link">Utilizadores</a>
+      {% endif %}
+      <a href="/logout" class="topbar-logout">Sair</a>
+    </div>
+  </nav>
+  {% block content %}{% endblock %}
+</body>
+</html>

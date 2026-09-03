@@ -4,207 +4,64 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Verificar Transações</title>
+  <link rel="stylesheet" href="/static/css/dark.css">
   <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f0f2f5;
-      margin: 0;
-      padding: 40px 20px;
-      color: #1a1a2e;
-    }
+    body { padding: 40px 20px; }
     .container { max-width: 1000px; margin: 0 auto; }
-    .back { color: #888; text-decoration: none; font-size: 0.875rem; display: inline-block; margin-bottom: 20px; }
-    .back:hover { color: #444; }
-    h1 { font-size: 1.5rem; margin: 0 0 6px; }
-    .subtitle { color: #666; margin: 0 0 24px; font-size: 0.9rem; }
-    .card {
-      background: white;
-      border-radius: 10px;
-      padding: 0;
-      box-shadow: 0 1px 4px rgba(0,0,0,.08);
-      overflow: hidden;
-      margin-bottom: 20px;
-    }
-    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-    thead { background: #f8f9fb; }
-    th {
-      text-align: left;
-      padding: 11px 14px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-      color: #888;
-      border-bottom: 1px solid #eee;
-    }
-    td { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: #fafbfc; }
-    .date { color: #888; font-size: 0.82rem; white-space: nowrap; }
-    .desc { font-weight: 500; }
-    .amount { font-weight: 600; white-space: nowrap; }
-    .amount-neg { color: #c0392b; }
-    .amount-pos { color: #1e8449; }
-    select {
-      padding: 5px 9px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      background: white;
-      min-width: 160px;
-      color: #222;
-      cursor: pointer;
-    }
-    select:focus { outline: none; border-color: #2d6df6; box-shadow: 0 0 0 3px rgba(45,109,246,.1); }
-    select.needs-review { border-color: #e74c3c; background: #fff8f8; }
-    input[type="text"] {
-      padding: 5px 9px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      color: #222;
-      width: 100%;
-    }
-    input[type="text"]:focus { outline: none; border-color: #2d6df6; box-shadow: 0 0 0 3px rgba(45,109,246,.1); }
-    input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
-    input.del-check { accent-color: #c0392b; }
+    .card { padding: 0; overflow: hidden; }
+    select { background: var(--surface-2); min-width: 160px; width: auto; }
+    select.needs-review { border-color: var(--danger); background: rgba(239,68,68,0.08); }
+    input[type="text"].notes-input { padding: 4px 8px; font-size: 0.82rem; width: 100%; min-width: 120px; }
     .reason-badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 10px;
-      font-size: 0.78rem;
-      font-weight: 500;
-      background: #fff0f0;
-      color: #c0392b;
-      border: 1px solid #f5c6c6;
+      display: inline-block; padding: 2px 8px; border-radius: 10px;
+      font-size: 0.78rem; font-weight: 500;
+      background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border);
       white-space: nowrap;
     }
-    .raw-data { font-size: 0.8rem; color: #888; font-family: monospace; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .raw-data { font-size: 0.8rem; color: var(--text-muted); font-family: monospace; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .actions { display: flex; align-items: center; gap: 12px; padding: 20px 0 0; flex-wrap: wrap; }
-    .btn {
-      background: #27ae60;
-      color: white;
-      border: none;
-      padding: 11px 32px;
-      border-radius: 7px;
-      font-size: 0.95rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background .15s;
-    }
-    .btn:hover { background: #1e8449; }
-    .btn-secondary {
-      background: white;
-      color: #444;
-      border: 1px solid #ddd;
-      padding: 10px 24px;
-      border-radius: 7px;
-      font-size: 0.95rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background .15s;
-    }
-    .btn-secondary:hover { background: #f5f5f5; }
-    .btn-danger {
-      background: #fff0f0;
-      color: #c0392b;
-      border: 1px solid #f5c6c6;
-      padding: 10px 24px;
-      border-radius: 7px;
-      font-size: 0.95rem;
-      font-weight: 500;
-      cursor: pointer;
-    }
-    .btn-danger:hover { background: #fde8e8; }
-    .notes-input {
-      padding: 4px 8px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      font-size: 0.82rem;
-      color: #444;
-      width: 100%;
-      min-width: 120px;
-    }
-    .notes-input:focus { outline: none; border-color: #2d6df6; }
-    .count-info { color: #888; font-size: 0.875rem; }
-    .section-header {
-      padding: 14px 18px;
-      background: #f8f9fb;
-      border-bottom: 1px solid #eee;
-      font-weight: 600;
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .section-count {
-      background: #e8edf8;
-      color: #2d6df6;
-      border-radius: 10px;
-      padding: 1px 8px;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-    .section-count.warn { background: #fff0f0; color: #c0392b; }
+    .btn-save { background: var(--surface-2); color: var(--text); border: 1px solid var(--border-strong); }
+    .btn-save:hover { background: var(--surface-3); }
+    .btn-report { background: var(--success); color: white; }
+    .btn-report:hover { background: #0da878; }
+    .count-info { color: var(--text-muted); font-size: 0.875rem; }
     .bulk-toolbar {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 10px 14px;
-      background: #fafbfc;
-      border-bottom: 1px solid #eee;
-      flex-wrap: wrap;
+      display: flex; align-items: center; gap: 16px; padding: 10px 14px;
+      background: var(--surface-2); border-bottom: 1px solid var(--border); flex-wrap: wrap;
     }
     .bulk-item { display: flex; align-items: center; gap: 8px; }
-    .bulk-label { font-size: 0.82rem; font-weight: 600; color: #666; white-space: nowrap; }
-    .btn-bulk {
-      padding: 6px 14px;
-      border-radius: 6px;
-      border: 1px solid #ddd;
-      background: white;
-      font-size: 0.85rem;
-      cursor: pointer;
-      color: #444;
-      white-space: nowrap;
-    }
-    .btn-bulk:hover { background: #f0f0f0; }
+    .bulk-label { font-size: 0.82rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+    .btn-bulk { padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border-strong); background: var(--surface); font-size: 0.85rem; cursor: pointer; color: var(--text); white-space: nowrap; font-family: inherit; }
+    .btn-bulk:hover { background: var(--surface-3); }
     @media (max-width: 768px) {
       body { padding: 20px 12px; }
       .container { max-width: 100%; }
       h1 { font-size: 1.2rem; }
-      .subtitle { font-size: 0.82rem; }
       .card { overflow: visible; }
       table, thead, tbody, tr { display: block; }
       thead { display: none; }
       tr {
-        border: 1px solid #e8e8e8;
+        border: 1px solid var(--border);
         border-radius: 8px;
         margin-bottom: 10px;
         padding: 10px 14px;
-        background: white;
+        background: var(--surface);
       }
       td {
-        display: flex;
-        flex-direction: column;
-        padding: 6px 0;
-        border-bottom: 1px solid #f4f4f4;
+        display: flex; flex-direction: column;
+        padding: 6px 0; border-bottom: 1px solid var(--border);
         min-width: 0 !important;
       }
       td:last-child { border-bottom: none; }
       td::before {
         content: attr(data-label);
-        font-size: 0.7rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: .04em;
-        color: #aaa;
-        margin-bottom: 4px;
+        font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+        letter-spacing: .04em; color: var(--text-dim); margin-bottom: 4px;
       }
       select { min-width: 0 !important; width: 100%; }
       .raw-data { max-width: 100%; white-space: normal; }
       .actions { flex-direction: column; align-items: stretch; }
-      .btn, .btn-secondary, .btn-danger { width: 100%; text-align: center; }
+      .btn, .btn-save, .btn-report { width: 100%; text-align: center; }
       .bulk-toolbar { flex-direction: column; align-items: stretch; }
       .bulk-item { flex-wrap: wrap; }
     }
@@ -262,8 +119,8 @@
               <td data-label="Eliminar">
                 <input type="checkbox" class="del-check" data-id="{{ txn.id }}" onchange="updateDeleteBtn()">
               </td>
-              <td class="date" data-label="Data">{{ txn.date | datefmt }}</td>
-              <td class="desc" data-label="Descrição">{{ txn.description }}</td>
+              <td class="date-cell" data-label="Data">{{ txn.date | datefmt }}</td>
+              <td class="desc-cell" data-label="Descrição">{{ txn.description }}</td>
               <td data-label="Notas">
                 <input class="notes-input" type="text" name="notes_{{ txn.id }}"
                        value="{{ txn.notes or '' }}" placeholder="Nota opcional…">
@@ -305,7 +162,7 @@
       <div class="card">
         <div class="section-header">
           Linhas não importadas
-          <span class="section-count warn">{{ skipped_rows|length }}</span>
+          <span class="section-count section-count-warn">{{ skipped_rows|length }}</span>
         </div>
         <table>
           <thead>
@@ -356,9 +213,9 @@
       {% endif %}
 
       <div class="actions">
-        <button type="submit" name="action" value="save" class="btn-secondary">Guardar</button>
-        <button type="submit" name="action" value="report" class="btn">Guardar e gerar relatório</button>
-        <button type="submit" name="action" value="delete" id="btn-delete" class="btn-danger" style="display:none">Eliminar selecionados (<span id="delete-count">0</span>)</button>
+        <button type="submit" name="action" value="save" class="btn btn-save">Guardar</button>
+        <button type="submit" name="action" value="report" class="btn btn-report">Guardar e gerar relatório</button>
+        <button type="submit" name="action" value="delete" id="btn-delete" class="btn btn-danger" style="display:none">Eliminar selecionados (<span id="delete-count">0</span>)</button>
         <span class="count-info">
           {% if transactions %}{{ transactions|length }} transaç{{ 'ão' if transactions|length == 1 else 'ões' }}{% endif %}
           {% if transactions and skipped_rows %} · {% endif %}

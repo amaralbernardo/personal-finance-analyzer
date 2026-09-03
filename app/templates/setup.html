@@ -1,81 +1,42 @@
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Configurar Patrimônio</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f2f5; margin: 0; padding: 0; color: #1a1a2e; }
-    nav.topbar { background: white; border-bottom: 1px solid #eee; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
-    .topbar-brand { font-weight: 700; font-size: 0.95rem; color: #1a1a2e; text-decoration: none; }
-    .topbar-right { display: flex; align-items: center; gap: 20px; }
-    .topbar-email { font-size: 0.85rem; color: #888; text-decoration: none; }
-    .topbar-link { font-size: 0.85rem; color: #2d6df6; text-decoration: none; }
-    .topbar-link:hover { text-decoration: underline; }
-    .topbar-logout { font-size: 0.85rem; color: #888; text-decoration: none; }
-    .topbar-logout:hover { color: #c0392b; }
-    .page { max-width: 640px; margin: 0 auto; padding: 40px 20px; }
-    .back { color: #888; text-decoration: none; font-size: 0.875rem; display: inline-block; margin-bottom: 20px; }
-    .back:hover { color: #444; }
-    h1 { font-size: 1.5rem; margin: 0 0 8px; }
-    .page-desc { color: #666; font-size: 0.9rem; margin: 0 0 28px; }
-    .card { background: white; border-radius: 10px; padding: 22px 26px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
-    .card-title { font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: .05em; color: #888; margin: 0 0 16px; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-    th { text-align: left; padding: 8px 10px; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: #888; border-bottom: 1px solid #eee; }
-    td { padding: 10px 10px; border-bottom: 1px solid #f4f4f4; vertical-align: middle; }
-    tr:last-child td { border-bottom: none; }
-    .amount-cell { text-align: right; font-weight: 600; }
-    .cat-cell { color: #888; font-size: 0.82rem; }
-    .btn-delete { background: #fff0f0; color: #c0392b; border: 1px solid #f5c6c6; padding: 4px 10px; border-radius: 5px; font-size: 0.8rem; cursor: pointer; }
-    .btn-delete:hover { background: #fde8e8; }
-    .btn-edit { background: #f0f4ff; color: #2d6df6; border: 1px solid #c5d5fb; padding: 4px 10px; border-radius: 5px; font-size: 0.8rem; cursor: pointer; margin-right: 4px; }
-    .btn-edit:hover { background: #e0eaff; }
-    .edit-row td { background: #f8faff; padding: 12px 10px; }
-    .add-card { background: white; border-radius: 10px; padding: 22px 26px; box-shadow: 0 1px 4px rgba(0,0,0,.08); border: 2px dashed #dce2f0; }
-    .add-title { font-size: 1rem; font-weight: 600; margin: 0 0 16px; color: #333; }
-    .add-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
-    .field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 130px; }
-    .field label { font-size: 0.78rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .04em; }
-    .field input, .field select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.875rem; color: #222; }
-    .field input:focus, .field select:focus { outline: none; border-color: #2d6df6; box-shadow: 0 0 0 3px rgba(45,109,246,.1); }
-    .btn-add { padding: 9px 20px; border-radius: 6px; background: #2d6df6; color: white; border: none; font-size: 0.875rem; font-weight: 500; cursor: pointer; align-self: flex-end; }
-    .btn-add:hover { background: #1a56d6; }
-    .empty { color: #aaa; font-size: 0.875rem; padding: 8px 0; }
-    @media (max-width: 640px) {
-      nav.topbar { padding: 0 14px; }
-      .topbar-email { display: none; }
-      .topbar-right { gap: 12px; }
-      .page { padding: 24px 14px; }
-      .card, .add-card { padding: 16px; }
-      .overflow-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-      table { min-width: 480px; }
-      .add-row { flex-direction: column; }
-      .field { min-width: 0 !important; max-width: 100% !important; }
-      .btn-add { width: 100%; padding: 10px; }
-    }
-  </style>
-</head>
-<body>
-  <nav class="topbar">
-    <a href="/" class="topbar-brand">Finanças Pessoais</a>
-    <div class="topbar-right">
-      <a href="/change-password" class="topbar-email">{{ current_user.email }}</a>
-      {% if current_user.role == 'admin' %}
-      <a href="/users" class="topbar-link">Utilizadores</a>
-      {% endif %}
-      <a href="/logout" class="topbar-logout">Sair</a>
-    </div>
-  </nav>
+{% extends "base.html" %}
+{% block title %}Configurar Patrimônio{% endblock %}
 
+{% block head %}
+<style>
+  .page { max-width: 640px; }
+  .card { padding: 0; overflow: hidden; }
+  .card-inner { padding: 22px 26px; }
+  .amount-cell { text-align: right; font-weight: 600; }
+  .cat-cell { color: var(--text-muted); font-size: 0.82rem; }
+  .btn-sm-edit { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(99,102,241,0.25); }
+  .btn-sm-edit:hover { background: rgba(99,102,241,0.2); }
+  .edit-row td { background: var(--surface-2); padding: 12px 10px; }
+  .add-card { background: var(--surface); border-radius: 10px; padding: 22px 26px; border: 2px dashed var(--border-strong); }
+  .add-title { font-size: 1rem; font-weight: 600; margin: 0 0 16px; color: var(--text-muted); }
+  .add-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+  .empty { color: var(--text-muted); font-size: 0.875rem; padding: 8px 0; }
+  @media (max-width: 640px) {
+    .page { padding: 24px 14px; }
+    .card-inner { padding: 16px; }
+    .add-card { padding: 16px; }
+    .overflow-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { min-width: 480px; }
+    .add-row { flex-direction: column; }
+    .field { min-width: 0 !important; max-width: 100% !important; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
   <div class="page">
     <a href="{{ back_url }}" class="back">← Voltar</a>
     <h1>Configurar Patrimônio</h1>
     <p class="page-desc">Define os valores base das tuas contas e investimentos. Estes valores são usados como ponto de partida na análise.</p>
 
-    <div class="card">
-      <p class="card-title">Valores atuais</p>
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-inner">
+        <p class="card-title">Valores atuais</p>
+      </div>
       {% if patrimony %}
       <div class="overflow-wrap"><table>
         <thead>
@@ -97,12 +58,12 @@
             <td class="cat-cell">{{ p.category }}</td>
             <td class="cat-cell">{{ p.reference_date | datefmt }}</td>
             <td class="amount-cell">{{ "%.2f"|format(p.initial_amount) }} €</td>
-            <td class="amount-cell"{% if p.current_value < 0 %} style="color:#c0392b"{% endif %}>{{ "%.2f"|format(p.current_value) }} €</td>
+            <td class="amount-cell {% if p.current_value < 0 %}amount-neg{% endif %}">{{ "%.2f"|format(p.current_value) }} €</td>
             <td style="white-space:nowrap">
-              <button type="button" class="btn-edit" onclick="toggleEdit({{ p.id }})">Editar</button>
+              <button type="button" class="btn-sm btn-sm-edit" onclick="toggleEdit({{ p.id }})">Editar</button>
               <form action="/patrimony/delete/{{ p.id }}" method="post" style="display:inline">
                 <input type="hidden" name="back_url" value="{{ request.url }}">
-                <button type="submit" class="btn-delete"
+                <button type="submit" class="btn-sm btn-sm-danger"
                         onclick="return confirm('Eliminar este registo?')">Eliminar</button>
               </form>
             </td>
@@ -133,8 +94,8 @@
                     <input type="number" name="amount" step="0.01" value="{{ p.initial_amount }}" required>
                   </div>
                   <div style="display:flex;gap:6px;align-self:flex-end">
-                    <button type="submit" class="btn-add">Guardar</button>
-                    <button type="button" class="btn-delete" onclick="toggleEdit({{ p.id }})">Cancelar</button>
+                    <button type="submit" class="btn-sm btn-sm-accent">Guardar</button>
+                    <button type="button" class="btn-sm btn-sm-danger" onclick="toggleEdit({{ p.id }})">Cancelar</button>
                   </div>
                 </div>
               </form>
@@ -142,19 +103,21 @@
           </tr>
           {% endfor %}
           <tr>
-            <td colspan="4" style="font-weight:700;border-top:2px solid #eee;padding-top:10px">Total</td>
-            <td class="amount-cell" style="font-weight:700;border-top:2px solid #eee;padding-top:10px;{% if total.val > 0 %}color:#1e8449{% endif %}">{{ "%.2f"|format(total.val) }} €</td>
-            <td style="border-top:2px solid #eee;padding-top:10px"></td>
+            <td colspan="4" style="font-weight:700;border-top:1px solid var(--border-strong);padding-top:10px">Total</td>
+            <td class="amount-cell {% if total.val > 0 %}amount-pos{% endif %}" style="font-weight:700;border-top:1px solid var(--border-strong);padding-top:10px">{{ "%.2f"|format(total.val) }} €</td>
+            <td style="border-top:1px solid var(--border-strong);padding-top:10px"></td>
           </tr>
         </tbody>
       </table></div>
       {% else %}
-      <p class="empty">Nenhum valor definido ainda.</p>
+      <div class="card-inner" style="padding-top:0">
+        <p class="empty">Nenhum valor definido ainda.</p>
+      </div>
       {% endif %}
     </div>
 
     {% if available_categories %}
-    <div class="add-card">
+    <div class="add-card" style="margin-bottom:16px">
       <p class="add-title">Adicionar valor</p>
       <form method="post">
         <div class="add-row">
@@ -178,14 +141,16 @@
             <label>Data de referência</label>
             <input type="date" name="reference_date" required>
           </div>
-          <button type="submit" class="btn-add">Adicionar</button>
+          <button type="submit" class="btn-sm btn-sm-accent" style="padding:9px 20px;align-self:flex-end">Adicionar</button>
         </div>
       </form>
     </div>
     {% endif %}
 
     <div class="card" style="margin-top:24px">
-      <p class="card-title">Categorias de patrimônio</p>
+      <div class="card-inner">
+        <p class="card-title">Categorias de patrimônio</p>
+      </div>
       <table>
         <tbody>
           {% for cat in all_categories %}
@@ -193,11 +158,11 @@
             <td>{{ cat.name }}</td>
             <td style="text-align:right">
               {% if cat.name in used_categories %}
-              <span style="font-size:0.78rem;color:#aaa">em uso</span>
+              <span style="font-size:0.78rem;color:var(--text-dim)">em uso</span>
               {% else %}
               <form action="/patrimony/categories/delete/{{ cat.id }}" method="post" style="display:inline">
                 <input type="hidden" name="back_url" value="{{ request.url }}">
-                <button type="submit" class="btn-delete"
+                <button type="submit" class="btn-sm btn-sm-danger"
                         onclick="return confirm('Eliminar categoria \'{{ cat.name }}\'?')">Eliminar</button>
               </form>
               {% endif %}
@@ -206,33 +171,34 @@
           {% endfor %}
         </tbody>
       </table>
-      {% set unused_count = all_categories | rejectattr('name', 'in', used_categories) | list | length %}
-      {% if unused_count > 0 %}
-      <form action="/patrimony/categories/delete-unused" method="post" style="margin-top:10px">
-        <input type="hidden" name="back_url" value="{{ request.url }}">
-        <input type="hidden" name="space" value="{{ space }}">
-        <button type="submit" class="btn-delete"
-                onclick="return confirm('Eliminar todas as {{ unused_count }} categorias não utilizadas?')">
-          Eliminar todas não utilizadas ({{ unused_count }})
-        </button>
-      </form>
-      {% endif %}
-      <form action="/patrimony/categories/add" method="post" style="margin-top:14px">
-        <input type="hidden" name="back_url" value="{{ request.url }}">
-        <input type="hidden" name="space" value="{{ space }}">
-        <div style="display:flex;gap:8px;align-items:center">
-          <input type="text" name="name" placeholder="Nova categoria…"
-                 style="padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:0.875rem;flex:1">
-          <button type="submit" class="btn-add">Adicionar</button>
-        </div>
-      </form>
+      <div class="card-inner" style="padding-top:0">
+        {% set unused_count = all_categories | rejectattr('name', 'in', used_categories) | list | length %}
+        {% if unused_count > 0 %}
+        <form action="/patrimony/categories/delete-unused" method="post" style="margin-bottom:10px">
+          <input type="hidden" name="back_url" value="{{ request.url }}">
+          <input type="hidden" name="space" value="{{ space }}">
+          <button type="submit" class="btn-sm btn-sm-danger"
+                  onclick="return confirm('Eliminar todas as {{ unused_count }} categorias não utilizadas?')">
+            Eliminar todas não utilizadas ({{ unused_count }})
+          </button>
+        </form>
+        {% endif %}
+        <form action="/patrimony/categories/add" method="post" style="margin-top:14px">
+          <input type="hidden" name="back_url" value="{{ request.url }}">
+          <input type="hidden" name="space" value="{{ space }}">
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="text" name="name" placeholder="Nova categoria…" style="flex:1">
+            <button type="submit" class="btn-sm btn-sm-accent" style="padding:9px 16px">Adicionar</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
+
   <script>
     function toggleEdit(id) {
       const row = document.getElementById('edit-' + id);
       row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
     }
   </script>
-</body>
-</html>
+{% endblock %}

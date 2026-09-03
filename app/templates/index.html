@@ -1,67 +1,50 @@
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Finanças Pessoais</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f2f5; margin: 0; padding: 0; color: #1a1a2e; }
-    nav.topbar { background: white; border-bottom: 1px solid #eee; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
-    .topbar-brand { font-weight: 700; font-size: 0.95rem; color: #1a1a2e; }
-    .topbar-right { display: flex; align-items: center; gap: 20px; }
-    .topbar-email { font-size: 0.85rem; color: #888; text-decoration: none; }
-    .topbar-link { font-size: 0.85rem; color: #2d6df6; text-decoration: none; }
-    .topbar-link:hover { text-decoration: underline; }
-    .topbar-logout { font-size: 0.85rem; color: #888; text-decoration: none; }
-    .topbar-logout:hover { color: #c0392b; }
-    .page { max-width: 900px; margin: 0 auto; padding: 52px 20px; }
-    h1 { font-size: 1.75rem; margin: 0 0 6px; }
-    .subtitle { color: #666; margin: 0 0 40px; font-size: 0.95rem; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
-    .space-card { background: white; border-radius: 12px; padding: 28px; box-shadow: 0 1px 4px rgba(0,0,0,.08); display: flex; flex-direction: column; gap: 16px; }
-    .space-card-joint { border-top: 4px solid #2d6df6; }
-    .space-card-individual { border-top: 4px solid #7c3aed; }
-    .space-title { font-size: 1.1rem; font-weight: 700; margin: 0; }
-    .space-desc { font-size: 0.875rem; color: #666; margin: 0; line-height: 1.5; }
-    .space-status { display: flex; flex-direction: column; gap: 6px; }
-    .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 500; width: fit-content; }
-    .badge-warn { background: #fff0f0; color: #c0392b; border: 1px solid #f5c6c6; }
-    .badge-ok { background: #f0fff4; color: #1e8449; border: 1px solid #b7e4c7; }
-    .badge-empty { background: #f8f9fb; color: #888; border: 1px solid #eee; }
-    .badge-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
-    .report-link { font-size: 0.85rem; color: #2d6df6; text-decoration: none; }
-    .report-link:hover { text-decoration: underline; }
-    .report-link-ind { color: #7c3aed; }
-    .btn { display: inline-block; padding: 11px 24px; border-radius: 7px; font-size: 0.9rem; font-weight: 500; text-decoration: none; text-align: center; margin-top: auto; }
-    .btn-joint { background: #2d6df6; color: white; }
-    .btn-joint:hover { background: #1a56d6; }
-    .btn-individual { background: #7c3aed; color: white; }
-    .btn-individual:hover { background: #6d28d9; }
-    @media (max-width: 640px) {
-      nav.topbar { padding: 0 14px; }
-      .topbar-email { display: none; }
-      .topbar-right { gap: 10px; }
-      .page { padding: 24px 14px; }
-    }
-  </style>
-</head>
-<body>
-  <nav class="topbar">
-    <span class="topbar-brand">Finanças Pessoais</span>
-    <div class="topbar-right">
-      <a href="/change-password" class="topbar-email">{{ current_user.email }}</a>
-      {% if current_user.role == 'admin' %}
-      <a href="/users" class="topbar-link">Utilizadores</a>
-      {% endif %}
-      <a href="/logout" class="topbar-logout">Sair</a>
-    </div>
-  </nav>
+{% extends "base.html" %}
+{% block title %}Finanças Pessoais{% endblock %}
 
-  <div class="page">
-    <h1>Finanças Pessoais</h1>
-    <p class="subtitle">Escolhe o espaço de análise que pretendes aceder.</p>
+{% block head %}
+<style>
+  .page-index { max-width: 880px; margin: 0 auto; padding: 48px 20px; }
+  .page-title { font-size: 1.75rem; margin: 0 0 4px; letter-spacing: -0.02em; }
+  .page-subtitle { color: var(--text-muted); margin: 0 0 40px; font-size: 0.95rem; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+  .space-card {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 26px;
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: border-color .15s;
+  }
+  .space-card:hover { border-color: var(--border-strong); }
+  .space-card-joint { border-top: 3px solid var(--accent); }
+  .space-card-individual { border-top: 3px solid var(--purple); }
+  .space-title { font-size: 1.05rem; font-weight: 700; margin: 0; }
+  .space-desc { font-size: 0.875rem; color: var(--text-muted); margin: 0; line-height: 1.6; }
+  .space-status { display: flex; flex-direction: column; gap: 8px; }
+  .report-link { font-size: 0.82rem; color: var(--accent); text-decoration: none; }
+  .report-link:hover { text-decoration: underline; }
+  .report-link-ind { color: var(--purple); }
+  .btn-joint { background: var(--accent); color: white; }
+  .btn-joint:hover { background: var(--accent-hover); }
+  .btn-individual { background: var(--purple); color: white; }
+  .btn-individual:hover { background: var(--purple-hover); }
+  .btn-enter { display: inline-block; padding: 10px 22px; border-radius: 7px; font-size: 0.9rem; font-weight: 500; text-decoration: none; text-align: center; margin-top: auto; }
+  @media (max-width: 640px) {
+    nav.topbar { padding: 0 14px; }
+    .topbar-email { display: none; }
+    .topbar-right { gap: 10px; }
+    .page-index { padding: 24px 14px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+  <div class="page-index">
+    <h1 class="page-title">Finanças Pessoais</h1>
+    <p class="page-subtitle">Escolhe o espaço de análise que pretendes aceder.</p>
 
     <div class="grid">
       <!-- Joint -->
@@ -82,7 +65,7 @@
           <a href="/joint/report/{{ joint_last_report.name }}" class="report-link" target="_blank">Ver último relatório →</a>
           {% endif %}
         </div>
-        <a href="/joint" class="btn btn-joint">Entrar →</a>
+        <a href="/joint" class="btn-enter btn-joint">Entrar →</a>
       </div>
 
       <!-- Individual -->
@@ -103,9 +86,8 @@
           <a href="/individual/report/{{ ind_last_report.name }}" class="report-link report-link-ind" target="_blank">Ver último relatório →</a>
           {% endif %}
         </div>
-        <a href="/individual" class="btn btn-individual">Entrar →</a>
+        <a href="/individual" class="btn-enter btn-individual">Entrar →</a>
       </div>
     </div>
   </div>
-</body>
-</html>
+{% endblock %}

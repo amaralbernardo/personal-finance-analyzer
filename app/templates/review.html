@@ -1,120 +1,66 @@
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Rever Transação</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f2f5; margin: 0; padding: 0; color: #1a1a2e; }
-    nav.topbar { background: white; border-bottom: 1px solid #eee; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
-    .topbar-brand { font-weight: 700; font-size: 0.95rem; color: #1a1a2e; text-decoration: none; }
-    .topbar-right { display: flex; align-items: center; gap: 20px; }
-    .topbar-email { font-size: 0.85rem; color: #888; text-decoration: none; }
-    .topbar-logout { font-size: 0.85rem; color: #888; text-decoration: none; }
-    .topbar-logout:hover { color: #c0392b; }
-    .page { max-width: 560px; margin: 0 auto; padding: 40px 20px; }
-    .back { color: #888; text-decoration: none; font-size: 0.875rem; display: inline-block; margin-bottom: 10px; }
-    .progress { color: #aaa; font-size: 0.82rem; margin-bottom: 20px; }
-    .txn-card { background: white; border-radius: 10px; padding: 22px 26px; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 16px; }
-    .txn-date { font-size: 0.82rem; color: #888; margin-bottom: 4px; }
-    .txn-desc { font-size: 1.05rem; font-weight: 600; margin-bottom: 10px; }
-    .txn-meta { display: flex; align-items: center; justify-content: space-between; }
-    .txn-account { font-size: 0.82rem; color: #888; }
-    .txn-amount { font-size: 1.4rem; font-weight: 700; }
-    .amount-neg { color: #c0392b; }
-    .amount-pos { color: #1e8449; }
-    .actions { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-    .btn-action { flex: 1; min-width: 120px; padding: 12px 16px; border-radius: 8px; font-size: 0.9rem; font-weight: 500; border: none; cursor: pointer; transition: background .15s; text-align: center; }
-    .btn-add   { background: #27ae60; color: white; }
-    .btn-add:hover { background: #1e8449; }
-    .btn-skip  { background: #fff0f0; color: #c0392b; border: 1px solid #f5c6c6; }
-    .btn-skip:hover { background: #fde8e8; }
-    .btn-split { background: #f0f4ff; color: #2d6df6; border: 1px solid #c5d5fb; }
-    .btn-split:hover { background: #e0eaff; }
-    .btn-defer { background: #fffbf0; color: #b7770d; border: 1px solid #f5e0a0; }
-    .btn-defer:hover { background: #fef3d0; }
-    .btn-payslip { background: #f0fff4; color: #1e8449; border: 1px solid #b7e4c7; width: 100%; margin-top: 4px; }
-    .btn-payslip:hover { background: #e0f8ec; }
-    .payslip-hint { font-size: 0.78rem; color: #888; margin-top: 4px; text-align: center; }
-    .section { background: white; border-radius: 10px; padding: 22px 26px; box-shadow: 0 1px 4px rgba(0,0,0,.08); display: none; }
-    .section.active { display: block; }
-    .section-title { font-weight: 600; margin-bottom: 16px; font-size: 0.95rem; }
-    .form-group { margin-bottom: 16px; position: relative; }
-    label { display: block; font-size: 0.82rem; font-weight: 600; color: #666; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
-    input[type=text], input[type=number] {
-      width: 100%; padding: 9px 12px; border: 1px solid #dde1ea; border-radius: 7px;
-      font-size: 0.9rem; color: #1a1a2e; background: white; outline: none;
-    }
-    input[type=text]:focus, input[type=number]:focus { border-color: #2d6df6; }
-    .btn-submit { background: #2d6df6; color: white; border: none; padding: 11px 28px; border-radius: 7px; font-size: 0.95rem; font-weight: 500; cursor: pointer; width: 100%; margin-top: 4px; }
-    .btn-submit:hover { background: #1a56d6; }
-    .btn-cancel { background: none; border: none; color: #888; font-size: 0.875rem; cursor: pointer; width: 100%; margin-top: 8px; }
-    .btn-cancel:hover { color: #444; }
-    .split-rows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
-    .split-row { display: flex; align-items: center; gap: 8px; }
-    .split-row input { flex: 1; }
-    .split-row .btn-remove { background: none; border: none; color: #ccc; font-size: 1.1rem; cursor: pointer; padding: 0 4px; line-height: 1; }
-    .split-row .btn-remove:hover { color: #c0392b; }
-    .split-sum { font-size: 0.85rem; margin-bottom: 12px; }
-    .sum-ok  { color: #1e8449; font-weight: 600; }
-    .sum-err { color: #c0392b; font-weight: 600; }
-    .btn-add-split { background: #f8f9fb; border: 1px dashed #ccc; color: #666; padding: 8px; border-radius: 7px; width: 100%; cursor: pointer; font-size: 0.85rem; margin-bottom: 12px; }
-    .btn-add-split:hover { background: #f0f0f0; }
-    @media (max-width: 640px) {
-      nav.topbar { padding: 0 14px; }
-      .topbar-email { display: none; }
-      .page { padding: 24px 14px; }
-      .actions { flex-direction: column; }
-      .btn-action { min-width: unset; }
-      .cat-panel { width: 85vw; }
-    }
-    /* ── category panel ── */
-    .cat-panel {
-      position: fixed; top: 52px; right: 0; width: 260px; height: calc(100vh - 52px);
-      background: white; border-left: 1px solid #e0e4ee; box-shadow: -2px 0 16px rgba(0,0,0,.1);
-      transform: translateX(100%); transition: transform .22s ease; z-index: 20;
-      display: flex; flex-direction: column;
-    }
-    .cat-panel.open { transform: translateX(0); }
-    .cat-panel-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 16px; border-bottom: 1px solid #f0f0f0; background: white; flex-shrink: 0;
-    }
-    .cat-panel-title { font-weight: 600; font-size: 0.88rem; color: #1a1a2e; }
-    .cat-panel-close { background: none; border: none; color: #999; cursor: pointer; font-size: 1rem; padding: 2px 6px; border-radius: 4px; line-height: 1; }
-    .cat-panel-close:hover { background: #f0f0f0; color: #333; }
-    .cat-panel-body { padding: 14px 16px; overflow-y: auto; flex: 1; }
-    .cat-group { margin-bottom: 16px; }
-    .cat-name { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #1a1a2e; margin-bottom: 5px; cursor: pointer; }
-    .cat-name:hover { color: #2d6df6; }
-    .cat-subs { display: flex; flex-direction: column; gap: 3px; }
-    .cat-sub { font-size: 0.82rem; color: #555; padding: 2px 0 2px 10px; border-left: 2px solid #e8ecf4; cursor: pointer; }
-    .cat-sub:hover { color: #2d6df6; border-left-color: #2d6df6; background: #f0f4ff; }
-    .cat-panel-empty { font-size: 0.85rem; color: #bbb; text-align: center; padding: 20px 0; }
-    .btn-cat-toggle { background: none; border: 1px solid #dde1ea; color: #777; border-radius: 6px; padding: 4px 10px; font-size: 0.78rem; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
-    .btn-cat-toggle:hover { background: #f5f7fa; border-color: #bbb; }
-    .cat-row { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
-    .cat-row .cat-name, .cat-row .cat-sub { flex: 1; }
-    .btn-del-mapping { background: none; border: none; color: #ddd; cursor: pointer; font-size: 0.75rem; padding: 0 2px; line-height: 1; flex-shrink: 0; }
-    .btn-del-mapping:hover { color: #c0392b; }
-  </style>
-</head>
-<body>
-  <nav class="topbar">
-    <a href="/" class="topbar-brand">Finanças Pessoais</a>
-    <div class="topbar-right">
-      <a href="/change-password" class="topbar-email">{{ current_user.email }}</a>
-      <a href="/logout" class="topbar-logout">Sair</a>
-    </div>
-  </nav>
+{% extends "base.html" %}
+{% block title %}Rever Transação{% endblock %}
 
+{% block head %}
+<style>
+  .page { max-width: 560px; }
+  .progress { color: var(--text-muted); font-size: 0.82rem; margin-bottom: 20px; }
+  .txn-card { background: var(--surface); border-radius: 10px; padding: 22px 26px; border: 1px solid var(--border); margin-bottom: 16px; }
+  .txn-date { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 4px; }
+  .txn-desc { font-size: 1.05rem; font-weight: 600; margin-bottom: 10px; }
+  .txn-meta { display: flex; align-items: center; justify-content: space-between; }
+  .txn-account { font-size: 0.82rem; color: var(--text-muted); }
+  .txn-amount { font-size: 1.4rem; font-weight: 700; }
+  .actions { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .btn-action { flex: 1; min-width: 120px; padding: 12px 16px; border-radius: 8px; font-size: 0.9rem; font-weight: 500; border: none; cursor: pointer; transition: background .15s; text-align: center; font-family: inherit; }
+  .btn-add   { background: var(--success); color: white; }
+  .btn-add:hover { background: #0da878; }
+  .btn-skip  { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
+  .btn-skip:hover { background: rgba(239,68,68,0.2); }
+  .btn-split { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(99,102,241,0.25); }
+  .btn-split:hover { background: rgba(99,102,241,0.2); }
+  .btn-defer { background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border); }
+  .btn-defer:hover { background: rgba(245,158,11,0.2); }
+  .btn-payslip { background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); width: 100%; margin-top: 4px; padding: 12px 16px; border-radius: 8px; font-size: 0.9rem; font-weight: 500; cursor: pointer; font-family: inherit; }
+  .btn-payslip:hover { background: rgba(16,185,129,0.2); }
+  .payslip-hint { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; text-align: center; }
+  .section { background: var(--surface); border-radius: 10px; padding: 22px 26px; border: 1px solid var(--border); display: none; }
+  .section.active { display: block; }
+  .section-title { font-weight: 600; margin-bottom: 16px; font-size: 0.95rem; }
+  .btn-submit { background: var(--accent); color: white; border: none; padding: 11px 28px; border-radius: 7px; font-size: 0.95rem; font-weight: 500; cursor: pointer; width: 100%; margin-top: 4px; font-family: inherit; }
+  .btn-submit:hover { background: var(--accent-hover); }
+  .btn-cancel-action { background: none; border: none; color: var(--text-muted); font-size: 0.875rem; cursor: pointer; width: 100%; margin-top: 8px; font-family: inherit; }
+  .btn-cancel-action:hover { color: var(--text); }
+  .split-rows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+  .split-row { display: flex; align-items: center; gap: 8px; }
+  .split-row input { flex: 1; }
+  .split-row .btn-remove { background: none; border: none; color: var(--text-dim); font-size: 1.1rem; cursor: pointer; padding: 0 4px; line-height: 1; }
+  .split-row .btn-remove:hover { color: var(--danger); }
+  .split-sum { font-size: 0.85rem; margin-bottom: 12px; }
+  .sum-ok  { color: var(--success); font-weight: 600; }
+  .sum-err { color: var(--danger); font-weight: 600; }
+  .btn-add-split { background: var(--surface-2); border: 1px dashed var(--border-strong); color: var(--text-muted); padding: 8px; border-radius: 7px; width: 100%; cursor: pointer; font-size: 0.85rem; margin-bottom: 12px; font-family: inherit; }
+  .btn-add-split:hover { background: var(--surface-3); color: var(--text); }
+  .cat-row { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+  .cat-row .cat-name, .cat-row .cat-sub { flex: 1; }
+  .btn-del-mapping { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.75rem; padding: 0 2px; line-height: 1; flex-shrink: 0; }
+  .btn-del-mapping:hover { color: var(--danger); }
+  @media (max-width: 640px) {
+    .page { padding: 24px 14px; }
+    .actions { flex-direction: column; }
+    .btn-action { min-width: unset; }
+    .cat-panel { width: 85vw; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
   <div class="page">
     <a href="{{ back_url }}" class="back">← Voltar</a>
     <p class="progress">
       {{ total_pending }} transaç{{ 'ão' if total_pending == 1 else 'ões' }} por rever
       &nbsp;·&nbsp;
-      <a href="{{ pending_list_url }}" style="color:#2d6df6;text-decoration:none;font-size:0.82rem">Ver todas</a>
+      <a href="{{ pending_list_url }}" style="color:var(--accent);text-decoration:none;font-size:0.82rem">Ver todas</a>
     </p>
 
     <div class="txn-card">
@@ -138,7 +84,7 @@
     {% if payslip_file_exists %}
     <form action="{{ payslip_reprocess_url }}" method="post" id="payslip-form">
       <input type="hidden" name="source_file" value="{{ txn.source_file }}">
-      <button type="button" class="btn-action btn-payslip" onclick="confirmPayslip()">
+      <button type="button" class="btn-payslip" onclick="confirmPayslip()">
         Tratar como folha de ordenado
       </button>
       <p class="payslip-hint">{{ txn.source_file }}</p>
@@ -157,12 +103,12 @@
 
         {% if desc_mappings %}
         <div style="margin-bottom:14px">
-          <span style="font-size:0.78rem;color:#666;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Anteriores:</span>
+          <span style="font-size:0.78rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Anteriores:</span>
           <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">
             {% for m in desc_mappings %}
             <button type="button"
               onclick="document.getElementById('category-input').value='{{ m.category }}';document.getElementById('subcat-input').value='{{ m.subcategory or '' }}'"
-              style="padding:4px 12px;background:#e8f0fe;color:#2d6df6;border:1px solid #c5d5fb;border-radius:20px;font-size:0.82rem;cursor:pointer;font-weight:500">
+              style="padding:4px 12px;background:var(--accent-glow);color:var(--accent);border:1px solid rgba(99,102,241,0.25);border-radius:20px;font-size:0.82rem;cursor:pointer;font-weight:500;font-family:inherit">
               {{ m.category }}{% if m.subcategory %} - {{ m.subcategory }}{% endif %}
             </button>
             {% endfor %}
@@ -176,14 +122,14 @@
         </div>
 
         <div class="form-group">
-          <label>Subcategoria <span style="font-weight:400;color:#aaa;text-transform:none;letter-spacing:0">(opcional)</span></label>
+          <label>Subcategoria <span style="font-weight:400;color:var(--text-dim);text-transform:none;letter-spacing:0">(opcional)</span></label>
           <input type="text" id="subcat-input" name="subcategory" placeholder="Ex: Supermercado">
         </div>
 
         {% if patrimony %}
         <div class="form-group">
-          <label>Conta associada <span style="font-weight:400;color:#aaa;text-transform:none;letter-spacing:0">(opcional)</span></label>
-          <select name="patrimony_label" style="width:100%;padding:9px 12px;border:1px solid #dde1ea;border-radius:7px;font-size:0.9rem;color:#1a1a2e;background:white;outline:none">
+          <label>Conta associada <span style="font-weight:400;color:var(--text-dim);text-transform:none;letter-spacing:0">(opcional)</span></label>
+          <select name="patrimony_label">
             <option value="">— Nenhuma —</option>
             {% for p in patrimony %}
             <option value="{{ p.label }}" {% if p.label == txn.patrimony_label %}selected{% endif %}>{{ p.label }}</option>
@@ -193,13 +139,12 @@
         {% endif %}
 
         <div class="form-group">
-          <label>Notas <span style="font-weight:400;color:#aaa;text-transform:none;letter-spacing:0">(opcional)</span></label>
-          <textarea name="notes" placeholder="Observações sobre esta transação..."
-            style="width:100%;padding:9px 12px;border:1px solid #dde1ea;border-radius:7px;font-size:0.875rem;color:#1a1a2e;resize:vertical;min-height:64px;font-family:inherit;outline:none"></textarea>
+          <label>Notas <span style="font-weight:400;color:var(--text-dim);text-transform:none;letter-spacing:0">(opcional)</span></label>
+          <textarea name="notes" placeholder="Observações sobre esta transação..." style="min-height:64px"></textarea>
         </div>
 
         <button type="submit" class="btn-submit">Guardar</button>
-        <button type="button" class="btn-cancel" onclick="hide('add-section')">Cancelar</button>
+        <button type="button" class="btn-cancel-action" onclick="hide('add-section')">Cancelar</button>
       </form>
     </div>
 
@@ -231,7 +176,7 @@
         </div>
 
         <button type="submit" class="btn-submit">Confirmar divisão</button>
-        <button type="button" class="btn-cancel" onclick="hide('split-section')">Cancelar</button>
+        <button type="button" class="btn-cancel-action" onclick="hide('split-section')">Cancelar</button>
       </form>
     </div>
 
@@ -275,19 +220,16 @@
       </div>
     </div>
 
-    <!-- Skip form -->
     <form method="post" id="skip-form" style="display:none">
       <input type="hidden" name="txn_id" value="{{ txn.id }}">
       <input type="hidden" name="action" value="skip">
     </form>
 
-    <!-- Defer form -->
     <form method="post" id="defer-form" style="display:none">
       <input type="hidden" name="txn_id" value="{{ txn.id }}">
       <input type="hidden" name="action" value="defer">
     </form>
 
-    <!-- Delete mapping form -->
     <form method="post" id="delete-mapping-form" action="{{ delete_mapping_url }}" style="display:none">
       <input type="hidden" id="del-cat" name="category">
       <input type="hidden" id="del-sub" name="subcategory">
@@ -298,7 +240,6 @@
     const ORIGINAL = {{ txn.amount }};
     let splitCount = 2;
 
-    /* ── section show/hide ── */
     function show(id) {
       document.getElementById('main-actions').style.display = 'none';
       document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -307,11 +248,8 @@
     function hide(id) {
       document.getElementById(id).classList.remove('active');
       document.getElementById('main-actions').style.display = 'flex';
-      closeAllCombos();
     }
-    function toggleCatPanel() {
-      document.getElementById('cat-panel').classList.toggle('open');
-    }
+    function toggleCatPanel() { document.getElementById('cat-panel').classList.toggle('open'); }
     function fillFromPanel(cat, sub) {
       document.getElementById('category-input').value = cat;
       document.getElementById('subcat-input').value = sub;
@@ -323,12 +261,8 @@
       document.getElementById('del-sub').value = sub;
       document.getElementById('delete-mapping-form').submit();
     }
-    function confirmSkip() {
-      if (confirm('Eliminar esta transação sem guardar?')) document.getElementById('skip-form').submit();
-    }
-    function confirmDefer() {
-      document.getElementById('defer-form').submit();
-    }
+    function confirmSkip() { if (confirm('Eliminar esta transação sem guardar?')) document.getElementById('skip-form').submit(); }
+    function confirmDefer() { document.getElementById('defer-form').submit(); }
     function confirmPayslip() {
       const name = {{ txn.source_file | tojson }};
       if (confirm('Reprocessar "' + name + '" como folha de ordenado?\n\nAs transações não validadas deste ficheiro serão substituídas pelos dados do recibo.')) {
@@ -336,7 +270,6 @@
       }
     }
 
-    /* ── split ── */
     function addRow() {
       splitCount++;
       const rows = document.getElementById('split-rows');
@@ -373,5 +306,4 @@
     }
     updateSum();
   </script>
-</body>
-</html>
+{% endblock %}
