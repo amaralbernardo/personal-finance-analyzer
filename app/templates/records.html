@@ -16,9 +16,8 @@
     .btn-export:hover { border-color: var(--accent); color: var(--accent); }
     .cat-cell { color: var(--text-muted); font-size: 0.82rem; white-space: nowrap; }
     .conta-cell { color: var(--text-muted); font-size: 0.82rem; max-width: 130px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .notes-cell { color: var(--text-muted); font-size: 0.82rem; max-width: 130px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .action-cell { white-space: nowrap; width: 1px; }
-    .desc-cell { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .notes-cell { color: var(--text-muted); font-size: 0.82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .desc-cell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .btn-revalidate { background: none; border: 1px solid var(--border-strong); color: var(--text-muted); padding: 4px 10px; border-radius: 6px; font-size: 0.78rem; cursor: pointer; white-space: nowrap; font-family: inherit; }
     .btn-revalidate:hover { border-color: var(--danger-border); color: var(--danger); background: var(--danger-bg); }
     .empty { color: var(--text-muted); font-size: 0.875rem; padding: 18px; }
@@ -100,7 +99,17 @@
 
       {% if transactions %}
       <div>
-      <table id="records-table">
+      <table id="records-table" style="table-layout:fixed">
+        <colgroup>
+          <col style="width:36px">
+          <col style="width:9%">
+          <col style="width:22%">
+          <col style="width:8%">
+          <col style="width:13%">
+          <col style="width:12%">
+          <col style="width:13%">
+          <col>
+        </colgroup>
         <thead>
           <tr>
             <th class="cb-cell"><input type="checkbox" id="select-all-cb" class="row-cb" title="Selecionar todos" onchange="toggleAll(this)"></th>
@@ -144,7 +153,6 @@
               </div>
             </th>
             <th>Notas</th>
-            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -159,14 +167,7 @@
             <td class="cat-cell" data-col="category">{{ txn.category or '' }}</td>
             <td class="cat-cell" data-col="subcategory">{{ txn.subcategory or '' }}</td>
             <td class="conta-cell" data-col="conta" title="{{ txn.patrimony_label or '' }}">{{ txn.patrimony_label or '' }}</td>
-            <td class="notes-cell">{{ txn.notes or '' }}</td>
-            <td class="action-cell">
-              <form method="post" style="margin:0">
-                <input type="hidden" name="action" value="unverify">
-                <input type="hidden" name="txn_id" value="{{ txn.id }}">
-                <button type="submit" class="btn-revalidate">Revalidar</button>
-              </form>
-            </td>
+            <td class="notes-cell" title="{{ txn.notes or '' }}">{{ txn.notes or '' }}</td>
           </tr>
           {% endfor %}
         </tbody>
