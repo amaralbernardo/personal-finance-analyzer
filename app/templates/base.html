@@ -39,6 +39,14 @@
   </div>
 
   <script>
+    /* ── Button press feedback ── */
+    document.addEventListener('mousedown', function (e) {
+      var btn = e.target.closest('button, .btn, [type=submit]');
+      if (!btn) return;
+      btn.classList.add('btn-pressed');
+      setTimeout(function () { btn.classList.remove('btn-pressed'); }, 180);
+    });
+
     /* ── Theme toggle ── */
     (function () {
       var ICONS = { dark: '☀', light: '☾' };

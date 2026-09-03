@@ -246,7 +246,7 @@ input[type="checkbox"] {
   user-select: none;
 }
 .btn:hover { background: var(--accent-hover); box-shadow: 0 4px 12px rgba(99,102,241,0.25); }
-.btn:active { transform: scale(0.93); box-shadow: none; filter: brightness(0.85); }
+.btn.btn-pressed { transform: scale(0.93); box-shadow: none !important; filter: brightness(0.82); }
 .btn-purple { background: var(--purple); }
 .btn-purple:hover { background: var(--purple-hover); box-shadow: 0 4px 12px rgba(139,92,246,0.25); }
 
@@ -265,7 +265,7 @@ input[type="checkbox"] {
   user-select: none;
 }
 .btn-secondary:hover { background: var(--surface-3); }
-.btn-secondary:active { transform: scale(0.93); filter: brightness(0.88); }
+.btn-secondary.btn-pressed { transform: scale(0.93); filter: brightness(0.88); }
 
 .btn-danger {
   background: var(--danger-bg);
@@ -281,7 +281,7 @@ input[type="checkbox"] {
   user-select: none;
 }
 .btn-danger:hover { background: rgba(239,68,68,0.2); }
-.btn-danger:active { transform: scale(0.93); filter: brightness(0.88); }
+.btn-danger.btn-pressed { transform: scale(0.93); filter: brightness(0.88); }
 
 .btn-ghost {
   background: transparent;
@@ -298,7 +298,7 @@ input[type="checkbox"] {
   user-select: none;
 }
 .btn-ghost:hover { background: var(--surface-2); color: var(--text); }
-.btn-ghost:active { transform: scale(0.93); filter: brightness(0.88); }
+.btn-ghost.btn-pressed { transform: scale(0.93); filter: brightness(0.88); }
 
 /* Small buttons */
 .btn-sm {
@@ -312,7 +312,7 @@ input[type="checkbox"] {
   transition: background .15s, transform .1s;
   user-select: none;
 }
-.btn-sm:active { transform: scale(0.91); filter: brightness(0.85); }
+.btn-sm.btn-pressed { transform: scale(0.91); filter: brightness(0.85); }
 .btn-sm-accent { background: var(--accent); color: white; }
 .btn-sm-accent:hover { background: var(--accent-hover); }
 .btn-sm-ghost { background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border); }
