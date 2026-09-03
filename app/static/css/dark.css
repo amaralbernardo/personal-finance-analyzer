@@ -474,7 +474,7 @@ details summary:hover { color: var(--text); }
 }
 .reveal.visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .reveal { opacity: 1; transform: none; transition: none; }
