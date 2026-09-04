@@ -25,6 +25,18 @@
   .year-nav { display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:5px;border:1px solid var(--border-strong);color:var(--text-muted);text-decoration:none;font-size:1rem;line-height:1; }
   .year-nav:hover { border-color:var(--purple);color:var(--purple); }
   .year-nav-disabled { color:var(--text-dim);border-color:var(--border);pointer-events:none; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .kpi-tile { background: var(--surface-2); border-radius: 10px; padding: 14px 16px; border: 1px solid var(--border); }
+  .kpi-tile.kpi-pos { border-left: 3px solid var(--success); }
+  .kpi-tile.kpi-neg { border-left: 3px solid var(--danger); }
+  .kpi-tile-label { font-size: 0.82rem; font-weight: 600; color: var(--text); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi-tile-value { font-size: 1.45rem; font-weight: 700; line-height: 1.1; margin-bottom: 5px; }
+  .kpi-tile.kpi-pos .kpi-tile-value { color: var(--success); }
+  .kpi-tile.kpi-neg .kpi-tile-value { color: var(--danger); }
+  .kpi-tile-meta { font-size: 0.72rem; color: var(--text-dim); }
+  .kpi-total-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 2px 0; border-top: 1px solid var(--border); }
+  .kpi-total-label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+  .kpi-total-value { font-size: 1.2rem; font-weight: 700; }
   @media (max-width: 640px) {
     .page { padding: 24px 14px; }
     .card { padding: 16px 18px; }
@@ -67,21 +79,22 @@
     <div class="card">
       <p class="card-title">Patrimônio Base</p>
       {% if patrimony %}
-      <table class="patrimony-table">
-        {% set total = namespace(val=0) %}
+      {% set total = namespace(val=0) %}
+      <div class="kpi-grid">
         {% for p in patrimony %}
         {% set total.val = total.val + p.current_value %}
-        <tr>
-          <td>{{ p.label }}<br><span class="patrimony-cat">{{ p.category }} · ref. {{ p.reference_date | datefmt }}{% if p.last_tx_date %} · último registo {{ p.last_tx_date | datefmt }}{% endif %}</span></td>
-          <td class="patrimony-amount {% if p.current_value < 0 %}amount-neg{% else %}amount-pos{% endif %}">{{ "%.2f"|format(p.current_value) }} €</td>
-        </tr>
+        <div class="kpi-tile {% if p.current_value < 0 %}kpi-neg{% else %}kpi-pos{% endif %}" title="{{ p.label }} · ref. {{ p.reference_date | datefmt }}{% if p.last_tx_date %} · último registo {{ p.last_tx_date | datefmt }}{% endif %}">
+          <div class="kpi-tile-label">{{ p.label }}</div>
+          <div class="kpi-tile-value">{{ "%.2f"|format(p.current_value) }} €</div>
+          <div class="kpi-tile-meta">{{ p.category }}</div>
+        </div>
         {% endfor %}
-        <tr>
-          <td class="patrimony-total">Total</td>
-          <td class="patrimony-amount patrimony-total {% if total.val > 0 %}amount-pos{% endif %}">{{ "%.2f"|format(total.val) }} €</td>
-        </tr>
-      </table>
-      <a href="/patrimony/individual" class="setup-cta" style="display:inline-block;margin-top:12px;">Editar →</a>
+      </div>
+      <div class="kpi-total-row">
+        <span class="kpi-total-label">Total</span>
+        <span class="kpi-total-value {% if total.val >= 0 %}amount-pos{% else %}amount-neg{% endif %}">{{ "%.2f"|format(total.val) }} €</span>
+      </div>
+      <a href="/patrimony/individual" class="setup-cta" style="display:inline-block;margin-top:14px;">Editar →</a>
       {% else %}
       <p style="color:var(--text-muted);font-size:.875rem;margin:0 0 10px">Nenhum valor base definido.</p>
       <a href="/patrimony/individual" class="setup-cta">Configurar patrimônio →</a>
