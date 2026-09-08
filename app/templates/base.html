@@ -23,6 +23,7 @@
       {% endif %}
       <a href="/logout" class="topbar-logout">Sair</a>
       <button id="theme-toggle" class="topbar-theme-btn" title="Alternar tema" aria-label="Alternar tema claro/escuro"></button>
+      <button id="settings-btn" class="topbar-theme-btn" title="{{ t('settings') }}" aria-label="{{ t('settings') }}">⚙</button>
     </div>
   </nav>
   {% block content %}{% endblock %}
@@ -177,5 +178,6 @@
       targets.forEach(function (el) { io.observe(el); });
     });
   </script>
+  {% include '_settings_modal.html' %}
 </body>
 </html>

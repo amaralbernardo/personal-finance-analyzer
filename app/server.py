@@ -26,6 +26,8 @@ from app.categorize.engine import (
 from app.reports.generator import generate
 from app.mailer import send_welcome_email
 
+import json as _json
+
 BASE_DIR             = Path(__file__).parents[1]
 INPUT_DIR            = BASE_DIR / "data" / "input"
 PROCESSED_DIR        = BASE_DIR / "data" / "processed"
@@ -48,15 +50,89 @@ app.secret_key = _SECRET_KEY
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
 
+_SETTINGS_DEFAULTS = {
+    "lang": "pt",
+    "date_format": "DD/MM/YYYY",
+    "currency": "€",
+    "number_format": "european",
+}
+
+
+def _get_user_settings(user_id=None):
+    if user_id is None:
+        return dict(_SETTINGS_DEFAULTS)
+    conn = get_connection()
+    row = conn.execute("SELECT settings FROM users WHERE id = ?", (user_id,)).fetchone()
+    conn.close()
+    try:
+        saved = _json.loads(row["settings"]) if row and row["settings"] else {}
+    except Exception:
+        saved = {}
+    return {**_SETTINGS_DEFAULTS, **saved}
+
+
+def _load_translations(lang: str) -> dict:
+    path = Path(__file__).parent / "i18n" / f"{lang}.json"
+    try:
+        return _json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+@app.context_processor
+def inject_user_prefs():
+    from flask import g
+    prefs = getattr(g, "user_prefs", _SETTINGS_DEFAULTS)
+    tr = _load_translations(prefs.get("lang", "pt"))
+    def t(key):
+        return tr.get(key, key)
+    return {"prefs": prefs, "t": t}
+
 
 @app.template_filter('datefmt')
 def datefmt(value):
+    from flask import g
+    fmt = getattr(g, "user_prefs", {}).get("date_format", "DD/MM/YYYY")
     if not value:
         return ''
     try:
-        return _dt.strptime(str(value), '%Y-%m-%d').strftime('%d/%m/%Y')
+        d = _dt.strptime(str(value)[:10], '%Y-%m-%d')
+        if fmt == "YYYY-MM-DD":
+            return d.strftime('%Y-%m-%d')
+        elif fmt == "MM/DD/YYYY":
+            return d.strftime('%m/%d/%Y')
+        else:
+            return d.strftime('%d/%m/%Y')
     except (ValueError, TypeError):
         return str(value)
+
+
+@app.template_filter('amountfmt')
+def amountfmt(value):
+    from flask import g
+    prefs = getattr(g, "user_prefs", _SETTINGS_DEFAULTS)
+    currency = prefs.get("currency", "€")
+    number_fmt = prefs.get("number_format", "european")
+    try:
+        val = float(value)
+        if number_fmt == "anglo":
+            formatted = "{:,.2f}".format(val)
+        else:
+            formatted = "{:,.2f}".format(abs(val)).replace(",", "X").replace(".", ",").replace("X", ".")
+            if val < 0:
+                formatted = "-" + formatted
+        return f"{formatted} {currency}"
+    except Exception:
+        return str(value)
+
+
+@app.before_request
+def load_user_prefs():
+    from flask import g
+    if current_user.is_authenticated:
+        g.user_prefs = _get_user_settings(current_user.id)
+    else:
+        g.user_prefs = dict(_SETTINGS_DEFAULTS)
 
 
 @app.before_request
@@ -1614,6 +1690,19 @@ def individual_add_transaction():
 
 
 # ── patrimony ─────────────────────────────────────────────────────────────────
+
+@app.route("/user/settings", methods=["POST"])
+@login_required
+def save_user_settings():
+    allowed = {"lang", "date_format", "currency", "number_format"}
+    data = {k: v for k, v in request.json.items() if k in allowed}
+    conn = get_connection()
+    conn.execute("UPDATE users SET settings = ? WHERE id = ?",
+                 (_json.dumps(data), current_user.id))
+    conn.commit()
+    conn.close()
+    return {"ok": True}
+
 
 @app.route("/patrimony/reorder", methods=["POST"])
 @login_required

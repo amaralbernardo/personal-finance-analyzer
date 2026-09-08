@@ -151,6 +151,10 @@ def create_tables(conn):
     except Exception:
         pass
     try:
+        conn.execute("ALTER TABLE users ADD COLUMN settings TEXT NOT NULL DEFAULT '{}'")
+    except Exception:
+        pass
+    try:
         cols = [r[1] for r in conn.execute("PRAGMA table_info(patrimony_categories)").fetchall()]
         if "space" not in cols:
             conn.execute("""

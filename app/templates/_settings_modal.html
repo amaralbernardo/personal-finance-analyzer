@@ -1,0 +1,68 @@
+<div id="settings-backdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:900;backdrop-filter:blur(2px)" onclick="closeSettings()"></div>
+<div id="settings-modal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:901;background:var(--surface);border:1px solid var(--border-strong);border-radius:14px;padding:28px 32px;min-width:320px;max-width:420px;width:90vw;box-shadow:0 8px 48px rgba(0,0,0,.5)">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <h2 style="margin:0;font-size:1.05rem;font-weight:700">{{ t('settings') }}</h2>
+    <button onclick="closeSettings()" style="background:none;border:none;color:var(--text-muted);font-size:1.3rem;cursor:pointer;padding:0;line-height:1">✕</button>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div>
+      <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">{{ t('language') }}</label>
+      <select id="pref-lang" style="width:100%;padding:7px 10px;border-radius:7px;border:1px solid var(--border-strong);background:var(--surface-2);color:var(--text);font-size:0.875rem;font-family:inherit;outline:none">
+        <option value="pt" {% if prefs.lang == 'pt' %}selected{% endif %}>Português</option>
+        <option value="en" {% if prefs.lang == 'en' %}selected{% endif %}>English</option>
+      </select>
+    </div>
+    <div>
+      <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">{{ t('date_format') }}</label>
+      <select id="pref-date" style="width:100%;padding:7px 10px;border-radius:7px;border:1px solid var(--border-strong);background:var(--surface-2);color:var(--text);font-size:0.875rem;font-family:inherit;outline:none">
+        <option value="DD/MM/YYYY" {% if prefs.date_format == 'DD/MM/YYYY' %}selected{% endif %}>31/12/2024</option>
+        <option value="YYYY-MM-DD" {% if prefs.date_format == 'YYYY-MM-DD' %}selected{% endif %}>2024-12-31</option>
+        <option value="MM/DD/YYYY" {% if prefs.date_format == 'MM/DD/YYYY' %}selected{% endif %}>12/31/2024</option>
+      </select>
+    </div>
+    <div>
+      <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">{{ t('currency') }}</label>
+      <select id="pref-currency" style="width:100%;padding:7px 10px;border-radius:7px;border:1px solid var(--border-strong);background:var(--surface-2);color:var(--text);font-size:0.875rem;font-family:inherit;outline:none">
+        <option value="€" {% if prefs.currency == '€' %}selected{% endif %}>€ Euro</option>
+        <option value="$" {% if prefs.currency == '$' %}selected{% endif %}>$ Dollar</option>
+        <option value="£" {% if prefs.currency == '£' %}selected{% endif %}>£ Pound</option>
+        <option value="CHF" {% if prefs.currency == 'CHF' %}selected{% endif %}>CHF Swiss Franc</option>
+      </select>
+    </div>
+    <div>
+      <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">{{ t('number_format') }}</label>
+      <select id="pref-number" style="width:100%;padding:7px 10px;border-radius:7px;border:1px solid var(--border-strong);background:var(--surface-2);color:var(--text);font-size:0.875rem;font-family:inherit;outline:none">
+        <option value="european" {% if prefs.number_format == 'european' %}selected{% endif %}>1.234,56</option>
+        <option value="anglo" {% if prefs.number_format == 'anglo' %}selected{% endif %}>1,234.56</option>
+      </select>
+    </div>
+  </div>
+  <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px;padding-top:16px;border-top:1px solid var(--border)">
+    <button onclick="closeSettings()" style="padding:8px 16px;border-radius:7px;border:1px solid var(--border-strong);background:var(--surface-2);color:var(--text-muted);font-size:0.875rem;cursor:pointer;font-family:inherit">{{ t('cancel') }}</button>
+    <button onclick="saveSettings()" style="padding:8px 20px;border-radius:7px;border:none;background:var(--accent);color:white;font-size:0.875rem;font-weight:600;cursor:pointer;font-family:inherit">{{ t('save') }}</button>
+  </div>
+</div>
+<script>
+  document.getElementById('settings-btn').addEventListener('click', function() {
+    document.getElementById('settings-backdrop').style.display = 'block';
+    document.getElementById('settings-modal').style.display = 'block';
+  });
+  function closeSettings() {
+    document.getElementById('settings-backdrop').style.display = 'none';
+    document.getElementById('settings-modal').style.display = 'none';
+  }
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeSettings(); });
+  function saveSettings() {
+    var data = {
+      lang:          document.getElementById('pref-lang').value,
+      date_format:   document.getElementById('pref-date').value,
+      currency:      document.getElementById('pref-currency').value,
+      number_format: document.getElementById('pref-number').value
+    };
+    fetch('/user/settings', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    }).then(function() { window.location.reload(); });
+  }
+</script>

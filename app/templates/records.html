@@ -70,6 +70,7 @@
       {% endif %}
       <a href="/logout" class="topbar-logout">Sair</a>
       <button id="theme-toggle" class="topbar-theme-btn" title="Alternar tema" aria-label="Alternar tema claro/escuro"></button>
+      <button id="settings-btn" class="topbar-theme-btn" title="{{ t('settings') }}" aria-label="{{ t('settings') }}">⚙</button>
     </div>
   </nav>
 
@@ -343,6 +344,7 @@
 
     buildDropdowns();
   </script>
+  {% include '_settings_modal.html' %}
   <script>
     document.addEventListener('mousedown', function(e) {
       var btn = e.target.closest('button, .btn, [type=submit]');
