@@ -35,7 +35,7 @@
   .kpi-tile.kpi-pos .kpi-tile-value { color: var(--success); }
   .kpi-tile.kpi-neg .kpi-tile-value { color: var(--danger); }
   .kpi-tile-meta { font-size: 0.72rem; color: var(--text-dim); margin-bottom: 2px; }
-  .kpi-tile-date { font-size: 0.70rem; color: var(--text-dim); opacity: 0.7; }
+  .kpi-tile-date { font-size: 0.70rem; color: var(--text-dim); }
   .kpi-total-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 2px 0; border-top: 1px solid var(--border); }
   .kpi-total-label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
   .kpi-total-value { font-size: 1.2rem; font-weight: 700; }
@@ -105,7 +105,7 @@
           <div class="kpi-tile-label">{{ p.label }}</div>
           <div class="kpi-tile-value">{{ "%.2f"|format(p.current_value) }} €</div>
           <div class="kpi-tile-meta">{{ p.category }}</div>
-          <div class="kpi-tile-date">{% if p.last_tx_date %}último: {{ p.last_tx_date | datefmt }}{% else %}sem registos{% endif %}</div>
+          <div class="kpi-tile-date">{% if p.last_tx_date %}{{ p.last_tx_date | datefmt }}{% else %}sem registos{% endif %}</div>
         </div>
         {% endfor %}
       </div>
