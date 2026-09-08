@@ -26,15 +26,16 @@
   .year-nav:hover { border-color:var(--purple);color:var(--purple); }
   .year-nav-disabled { color:var(--text-dim);border-color:var(--border);pointer-events:none; }
   .kpi-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
-  .kpi-tile { flex: 1 1 160px; max-width: 220px; height: 112px; box-sizing: border-box; overflow: hidden; }
+  .kpi-tile { flex: 1 1 160px; max-width: 220px; height: 130px; box-sizing: border-box; overflow: hidden; }
   .kpi-tile { background: var(--surface-2); border-radius: 10px; padding: 14px 16px; border: 1px solid var(--border); }
   .kpi-tile.kpi-pos { border-left: 3px solid var(--success); }
   .kpi-tile.kpi-neg { border-left: 3px solid var(--danger); }
-  .kpi-tile-label { font-size: 0.82rem; font-weight: 600; color: var(--text); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .kpi-tile-value { font-size: 1.45rem; font-weight: 700; line-height: 1.1; margin-bottom: 5px; }
+  .kpi-tile-label { font-size: 0.82rem; font-weight: 600; color: var(--text); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi-tile-value { font-size: 1.35rem; font-weight: 700; line-height: 1.1; margin-bottom: 5px; }
   .kpi-tile.kpi-pos .kpi-tile-value { color: var(--success); }
   .kpi-tile.kpi-neg .kpi-tile-value { color: var(--danger); }
-  .kpi-tile-meta { font-size: 0.72rem; color: var(--text-dim); }
+  .kpi-tile-meta { font-size: 0.72rem; color: var(--text-dim); margin-bottom: 2px; }
+  .kpi-tile-date { font-size: 0.70rem; color: var(--text-dim); opacity: 0.7; }
   .kpi-total-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 2px 0; border-top: 1px solid var(--border); }
   .kpi-total-label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
   .kpi-total-value { font-size: 1.2rem; font-weight: 700; }
@@ -92,6 +93,7 @@
           <div class="kpi-tile-label">{{ p.label }}</div>
           <div class="kpi-tile-value">{{ "%.2f"|format(p.current_value) }} €</div>
           <div class="kpi-tile-meta">{{ p.category }}</div>
+          <div class="kpi-tile-date">{% if p.last_tx_date %}último: {{ p.last_tx_date | datefmt }}{% else %}sem registos{% endif %}</div>
         </div>
         {% endfor %}
       </div>
