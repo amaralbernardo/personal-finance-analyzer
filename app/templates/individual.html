@@ -25,7 +25,8 @@
   .year-nav { display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:5px;border:1px solid var(--border-strong);color:var(--text-muted);text-decoration:none;font-size:1rem;line-height:1; }
   .year-nav:hover { border-color:var(--purple);color:var(--purple); }
   .year-nav-disabled { color:var(--text-dim);border-color:var(--border);pointer-events:none; }
-  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .kpi-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+  .kpi-tile { flex: 1 1 160px; max-width: 220px; }
   .kpi-tile { background: var(--surface-2); border-radius: 10px; padding: 14px 16px; border: 1px solid var(--border); }
   .kpi-tile.kpi-pos { border-left: 3px solid var(--success); }
   .kpi-tile.kpi-neg { border-left: 3px solid var(--danger); }
@@ -159,6 +160,8 @@
       if (!grid) return;
       Sortable.create(grid, {
         animation: 150,
+        forceFallback: true,
+        fallbackTolerance: 3,
         ghostClass: 'sortable-ghost',
         chosenClass: 'sortable-chosen',
         onEnd: function() {
