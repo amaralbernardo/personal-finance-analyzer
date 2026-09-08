@@ -37,6 +37,10 @@
   .kpi-total-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 2px 0; border-top: 1px solid var(--border); }
   .kpi-total-label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
   .kpi-total-value { font-size: 1.2rem; font-weight: 700; }
+  .kpi-tile { cursor: grab; }
+  .kpi-tile:active { cursor: grabbing; }
+  .kpi-tile.sortable-ghost { opacity: 0.35; }
+  .kpi-tile.sortable-chosen { box-shadow: 0 4px 20px rgba(0,0,0,.35); }
   @media (max-width: 640px) {
     .page { padding: 24px 14px; }
     .card { padding: 16px 18px; }
@@ -80,10 +84,10 @@
       <p class="card-title">Patrimônio Base</p>
       {% if patrimony %}
       {% set total = namespace(val=0) %}
-      <div class="kpi-grid">
+      <div class="kpi-grid" id="kpi-grid-individual">
         {% for p in patrimony %}
         {% set total.val = total.val + p.current_value %}
-        <div class="kpi-tile {% if p.current_value < 0 %}kpi-neg{% else %}kpi-pos{% endif %}" title="{{ p.label }} · ref. {{ p.reference_date | datefmt }}{% if p.last_tx_date %} · último registo {{ p.last_tx_date | datefmt }}{% endif %}">
+        <div class="kpi-tile {% if p.current_value < 0 %}kpi-neg{% else %}kpi-pos{% endif %}" data-id="{{ p.id }}" title="{{ p.label }} · ref. {{ p.reference_date | datefmt }}{% if p.last_tx_date %} · último registo {{ p.last_tx_date | datefmt }}{% endif %}">
           <div class="kpi-tile-label">{{ p.label }}</div>
           <div class="kpi-tile-value">{{ "%.2f"|format(p.current_value) }} €</div>
           <div class="kpi-tile-meta">{{ p.category }}</div>
@@ -148,6 +152,26 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <script>
+    (function() {
+      var grid = document.getElementById('kpi-grid-individual');
+      if (!grid) return;
+      Sortable.create(grid, {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        onEnd: function() {
+          var ids = [...grid.querySelectorAll('.kpi-tile')].map(function(el) { return +el.dataset.id; });
+          fetch('/patrimony/reorder', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ids: ids})
+          });
+        }
+      });
+    })();
+  </script>
   <script>
     const input = document.getElementById('file-input');
     const list  = document.getElementById('file-list');

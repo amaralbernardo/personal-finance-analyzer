@@ -147,6 +147,10 @@ def create_tables(conn):
     except Exception:
         pass
     try:
+        conn.execute("ALTER TABLE patrimony ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0")
+    except Exception:
+        pass
+    try:
         cols = [r[1] for r in conn.execute("PRAGMA table_info(patrimony_categories)").fetchall()]
         if "space" not in cols:
             conn.execute("""

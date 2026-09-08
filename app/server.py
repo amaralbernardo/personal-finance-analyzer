@@ -360,7 +360,7 @@ def _get_patrimony(conn, space: str) -> list:
         LEFT JOIN transactions t ON t.patrimony_label = p.label AND t.space = p.space AND t.verified = 1
         WHERE p.space = ?
         GROUP BY p.id
-        ORDER BY p.category, p.label
+        ORDER BY p.sort_order, p.category, p.label
         """, (space,)
     ).fetchall()
 
@@ -1614,6 +1614,18 @@ def individual_add_transaction():
 
 
 # ── patrimony ─────────────────────────────────────────────────────────────────
+
+@app.route("/patrimony/reorder", methods=["POST"])
+@login_required
+def patrimony_reorder():
+    ids = request.json.get("ids", [])
+    conn = get_connection()
+    for i, pid in enumerate(ids):
+        conn.execute("UPDATE patrimony SET sort_order = ? WHERE id = ?", (i, int(pid)))
+    conn.commit()
+    conn.close()
+    return {"ok": True}
+
 
 @app.route("/patrimony/joint", methods=["GET", "POST"])
 @admin_required
