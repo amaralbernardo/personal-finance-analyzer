@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Atribuir Recibos de Vencimento{% endblock %}
+{% block title %}{{ t('assign_payslips') }}{% endblock %}
 
 {% block head %}
 <style>
@@ -31,12 +31,9 @@
 
 {% block content %}
   <div class="page">
-    <a href="{{ back_url }}" class="back">← Voltar</a>
-    <h1>Atribuir recibos de vencimento</h1>
-    <p class="subtitle">
-      Associa cada recibo ao utilizador a quem pertence e revê os valores extraídos.
-      Desmarca os que não pretendes guardar.
-    </p>
+    <a href="{{ back_url }}" class="back">{{ t('back') }}</a>
+    <h1>{{ t('assign_payslips') }}</h1>
+    <p class="subtitle">{{ t('assign_payslips_desc') }}</p>
 
     {% if payslips %}
     <form method="post">
@@ -45,7 +42,7 @@
         <div class="payslip-header">
           <span class="payslip-file">{{ p.source_file }}</span>
           <select name="person_{{ p.source_file }}" class="person-select">
-            <option value="joint">— Manter no espaço conjunto —</option>
+            <option value="joint">{{ t('keep_in_joint') }}</option>
             {% for u in users %}
             <option value="{{ u.id }}">{{ u.display_name or u.email.split('@')[0] }}</option>
             {% endfor %}
@@ -59,7 +56,7 @@
                      onchange="toggleRow({{ tx.id }}, this.checked)">
             </td>
             <td class="val-desc">{{ tx.description }}</td>
-            <td class="val-amount">{{ '%.2f' | format(tx.amount) }} €</td>
+            <td class="val-amount">{{ tx.amount | amountfmt }}</td>
             <td class="val-date">{{ tx.date | datefmt }}</td>
           </tr>
           {% endfor %}
@@ -68,12 +65,12 @@
       {% endfor %}
 
       <div class="actions">
-        <button type="submit" class="btn">Guardar</button>
-        <a href="{{ back_url }}" class="btn-skip">Ignorar</a>
+        <button type="submit" class="btn">{{ t('save') }}</button>
+        <a href="{{ back_url }}" class="btn-skip">{{ t('ignore') }}</a>
       </div>
     </form>
     {% else %}
-    <div class="empty">Não há recibos de vencimento no espaço conjunto.</div>
+    <div class="empty">{{ t('no_payslips') }}</div>
     {% endif %}
   </div>
 

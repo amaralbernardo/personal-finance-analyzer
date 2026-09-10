@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Categorias na Análise{% endblock %}
+{% block title %}{{ t('category_analysis_title') }}{% endblock %}
 
 {% block head %}
 <style>
@@ -33,18 +33,18 @@
 
 {% block content %}
   <div class="page">
-    <a href="{{ back_url }}" class="back">← Voltar</a>
+    <a href="{{ back_url }}" class="back">{{ t('back') }}</a>
     <div class="page-header">
-      <h1>Categorias na Análise</h1>
+      <h1>{{ t('category_analysis_title') }}</h1>
     </div>
-    <p class="page-sub">Seleciona as categorias a incluir nos relatórios e totais. As categorias desmarcadas são ignoradas em toda a análise.</p>
+    <p class="page-sub">{{ t('category_settings_desc') }}</p>
 
     <form method="post" action="{{ settings_url }}">
       <div class="card">
-        <p class="card-title">Categorias</p>
+        <p class="card-title">{{ t('categories') }}</p>
         <div class="select-all-row">
-          <button type="button" class="link-sm" onclick="setAll(true)">Selecionar todas</button>
-          <button type="button" class="link-sm" onclick="setAll(false)">Desmarcar todas</button>
+          <button type="button" class="link-sm" onclick="setAll(true)">{{ t('select_all') }}</button>
+          <button type="button" class="link-sm" onclick="setAll(false)">{{ t('deselect_all') }}</button>
         </div>
         <ul class="cat-list">
           {% for cat in all_cats %}
@@ -78,8 +78,8 @@
       </div>
 
       <div class="actions">
-        <button type="submit" class="btn" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>Guardar</button>
-        <a href="{{ back_url }}" class="btn-ghost">Cancelar</a>
+        <button type="submit" class="btn" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>{{ t('save') }}</button>
+        <a href="{{ back_url }}" class="btn-ghost">{{ t('cancel') }}</a>
       </div>
     </form>
   </div>

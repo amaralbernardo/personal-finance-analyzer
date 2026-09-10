@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Rever Transação{% endblock %}
+{% block title %}{{ t('review_title') }}{% endblock %}
 
 {% block head %}
 <style>
@@ -56,11 +56,11 @@
 
 {% block content %}
   <div class="page">
-    <a href="{{ back_url }}" class="back">← Voltar</a>
+    <a href="{{ back_url }}" class="back">{{ t('back') }}</a>
     <p class="progress">
-      {{ total_pending }} transaç{{ 'ão' if total_pending == 1 else 'ões' }} por rever
+      {{ total_pending }} {{ t('transactions') }}
       &nbsp;·&nbsp;
-      <a href="{{ pending_list_url }}" style="color:var(--accent);text-decoration:none;font-size:0.82rem">Ver todas</a>
+      <a href="{{ pending_list_url }}" style="color:var(--accent);text-decoration:none;font-size:0.82rem">{{ t('view_all') }}</a>
     </p>
 
     <div class="txn-card">
@@ -69,23 +69,23 @@
       <div class="txn-meta">
         <span class="txn-account">{{ txn.patrimony_label or '—' }}</span>
         <span class="txn-amount {{ 'amount-neg' if txn.amount < 0 else 'amount-pos' }}">
-          {{ '%+.2f' | format(txn.amount) }} €
+          {{ txn.amount | amountfmt }}
         </span>
       </div>
     </div>
 
     <div class="actions" id="main-actions">
-      <button class="btn-action btn-add"   onclick="show('add-section')">Adicionar às contas</button>
-      <button class="btn-action btn-split" onclick="show('split-section')">Dividir</button>
-      <button class="btn-action btn-defer" onclick="confirmDefer()">Deixar para o fim</button>
-      <button class="btn-action btn-skip"  onclick="confirmSkip()">Não adicionar</button>
+      <button class="btn-action btn-add"   onclick="show('add-section')">{{ t('add_to_accounts') }}</button>
+      <button class="btn-action btn-split" onclick="show('split-section')">{{ t('split') }}</button>
+      <button class="btn-action btn-defer" onclick="confirmDefer()">{{ t('defer') }}</button>
+      <button class="btn-action btn-skip"  onclick="confirmSkip()">{{ t('skip_txn') }}</button>
     </div>
 
     {% if payslip_file_exists %}
     <form action="{{ payslip_reprocess_url }}" method="post" id="payslip-form">
       <input type="hidden" name="source_file" value="{{ txn.source_file }}">
       <button type="button" class="btn-payslip" onclick="confirmPayslip()">
-        Tratar como folha de ordenado
+        {{ t('treat_as_payslip') }}
       </button>
       <p class="payslip-hint">{{ txn.source_file }}</p>
     </form>
@@ -94,8 +94,8 @@
     <!-- Add section -->
     <div class="section" id="add-section">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-        <div class="section-title" style="margin-bottom:0">Categorizar transação</div>
-        <button type="button" class="btn-cat-toggle" onclick="toggleCatPanel()">☰ Ver categorias</button>
+        <div class="section-title" style="margin-bottom:0">{{ t('categorize_transaction') }}</div>
+        <button type="button" class="btn-cat-toggle" onclick="toggleCatPanel()">☰ {{ t('view_categories') }}</button>
       </div>
       <form method="post">
         <input type="hidden" name="txn_id" value="{{ txn.id }}">
@@ -103,7 +103,7 @@
 
         {% if desc_mappings %}
         <div style="margin-bottom:14px">
-          <span style="font-size:0.78rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Anteriores:</span>
+          <span style="font-size:0.78rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em">{{ t('previous') }}</span>
           <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">
             {% for m in desc_mappings %}
             <button type="button"
@@ -117,20 +117,20 @@
         {% endif %}
 
         <div class="form-group">
-          <label>Categoria</label>
+          <label>{{ t('category') }}</label>
           <input type="text" id="category-input" name="category" placeholder="Ex: Alimentação" required>
         </div>
 
         <div class="form-group">
-          <label>Subcategoria <span style="font-weight:400;color:var(--text-dim);text-transform:none;letter-spacing:0">(opcional)</span></label>
+          <label>{{ t('subcategory') }} <span style="font-weight:400;color:var(--text-dim);text-transform:none;letter-spacing:0">({{ t('optional') if t('optional') != 'optional' else 'opcional' }})</span></label>
           <input type="text" id="subcat-input" name="subcategory" placeholder="Ex: Supermercado">
         </div>
 
         {% if patrimony %}
         <div class="form-group">
-          <label>Conta associada <span style="font-weight:400;color:var(--text-dim);text-transform:none;letter-spacing:0">(opcional)</span></label>
+          <label>{{ t('linked_account') }} <span style="font-weight:400;color:var(--text-dim);text-transform:none;letter-spacing:0">(opcional)</span></label>
           <select name="patrimony_label">
-            <option value="">— Nenhuma —</option>
+            <option value="">{{ t('no_account') }}</option>
             {% for p in patrimony %}
             <option value="{{ p.label }}" {% if p.label == txn.patrimony_label %}selected{% endif %}>{{ p.label }}</option>
             {% endfor %}
@@ -139,51 +139,51 @@
         {% endif %}
 
         <div class="form-group">
-          <label>Notas <span style="font-weight:400;color:var(--text-dim);text-transform:none;letter-spacing:0">(opcional)</span></label>
-          <textarea name="notes" placeholder="Observações sobre esta transação..." style="min-height:64px"></textarea>
+          <label>{{ t('notes') }} <span style="font-weight:400;color:var(--text-dim);text-transform:none;letter-spacing:0">(opcional)</span></label>
+          <textarea name="notes" placeholder="" style="min-height:64px"></textarea>
         </div>
 
-        <button type="submit" class="btn-submit">Guardar</button>
-        <button type="button" class="btn-cancel-action" onclick="hide('add-section')">Cancelar</button>
+        <button type="submit" class="btn-submit">{{ t('save_record') }}</button>
+        <button type="button" class="btn-cancel-action" onclick="hide('add-section')">{{ t('cancel') }}</button>
       </form>
     </div>
 
     <!-- Split section -->
     <div class="section" id="split-section">
-      <div class="section-title">Dividir transação</div>
+      <div class="section-title">{{ t('split_transaction') }}</div>
       <form method="post" id="split-form" onsubmit="return validateSplit()">
         <input type="hidden" name="txn_id" value="{{ txn.id }}">
         <input type="hidden" name="action" value="split">
 
         <div class="split-rows" id="split-rows">
           <div class="split-row">
-            <input type="number" name="amount_1" step="0.01" placeholder="Valor"
+            <input type="number" name="amount_1" step="0.01" placeholder="{{ t('amount_label') }}"
                    value="{{ '%.2f' | format(txn.amount / 2) }}" oninput="updateSum()" required>
             <button type="button" class="btn-remove" onclick="removeRow(this)">✕</button>
           </div>
           <div class="split-row">
-            <input type="number" name="amount_2" step="0.01" placeholder="Valor"
+            <input type="number" name="amount_2" step="0.01" placeholder="{{ t('amount_label') }}"
                    value="{{ '%.2f' | format(txn.amount / 2) }}" oninput="updateSum()" required>
             <button type="button" class="btn-remove" onclick="removeRow(this)">✕</button>
           </div>
         </div>
 
-        <button type="button" class="btn-add-split" onclick="addRow()">+ Adicionar divisão</button>
+        <button type="button" class="btn-add-split" onclick="addRow()">{{ t('add_split') }}</button>
 
         <div class="split-sum">
-          Total: <span id="sum-val">0.00</span> € / Original: <strong>{{ '%.2f' | format(txn.amount) }} €</strong>
+          {{ t('total') }}: <span id="sum-val">0.00</span> / {{ t('total') }}: <strong>{{ '%.2f' | format(txn.amount) }}</strong>
           <span id="sum-status"></span>
         </div>
 
-        <button type="submit" class="btn-submit">Confirmar divisão</button>
-        <button type="button" class="btn-cancel-action" onclick="hide('split-section')">Cancelar</button>
+        <button type="submit" class="btn-submit">{{ t('confirm_split') }}</button>
+        <button type="button" class="btn-cancel-action" onclick="hide('split-section')">{{ t('cancel') }}</button>
       </form>
     </div>
 
     <!-- Category panel -->
     <div class="cat-panel" id="cat-panel">
       <div class="cat-panel-header">
-        <span class="cat-panel-title">Categorias usadas</span>
+        <span class="cat-panel-title">{{ t('used_categories') }}</span>
         <button type="button" class="cat-panel-close" onclick="toggleCatPanel()">✕</button>
       </div>
       <div class="cat-panel-body">
@@ -193,7 +193,7 @@
             <div class="cat-row">
               <div class="cat-name" data-cat="{{ cat }}" onclick="fillFromPanel(this.dataset.cat, '')">{{ cat }}</div>
               {% if (cat ~ '||') not in used_combos %}
-              <button type="button" class="btn-del-mapping" title="Eliminar mapeamento"
+              <button type="button" class="btn-del-mapping" title="{{ t('delete') }}"
                 data-cat="{{ cat }}" data-sub=""
                 onclick="deleteMapping(this.dataset.cat, this.dataset.sub)">✕</button>
               {% endif %}
@@ -204,7 +204,7 @@
               <div class="cat-row">
                 <span class="cat-sub" data-cat="{{ cat }}" data-sub="{{ sub }}" onclick="fillFromPanel(this.dataset.cat, this.dataset.sub)">{{ sub }}</span>
                 {% if (cat ~ '||' ~ sub) not in used_combos %}
-                <button type="button" class="btn-del-mapping" title="Eliminar mapeamento"
+                <button type="button" class="btn-del-mapping" title="{{ t('delete') }}"
                   data-cat="{{ cat }}" data-sub="{{ sub }}"
                   onclick="deleteMapping(this.dataset.cat, this.dataset.sub)">✕</button>
                 {% endif %}
@@ -215,7 +215,7 @@
           </div>
           {% endfor %}
         {% else %}
-          <p class="cat-panel-empty">Nenhuma categoria usada ainda.</p>
+          <p class="cat-panel-empty">{{ t('no_categories_yet') }}</p>
         {% endif %}
       </div>
     </div>
@@ -256,16 +256,16 @@
     }
     function deleteMapping(cat, sub) {
       const label = sub ? `${cat} - ${sub}` : cat;
-      if (!confirm(`Eliminar mapeamento "${label}"?`)) return;
+      if (!confirm(`{{ t('are_you_sure') }} "${label}"?`)) return;
       document.getElementById('del-cat').value = cat;
       document.getElementById('del-sub').value = sub;
       document.getElementById('delete-mapping-form').submit();
     }
-    function confirmSkip() { if (confirm('Eliminar esta transação sem guardar?')) document.getElementById('skip-form').submit(); }
+    function confirmSkip() { if (confirm('{{ t('are_you_sure') }}')) document.getElementById('skip-form').submit(); }
     function confirmDefer() { document.getElementById('defer-form').submit(); }
     function confirmPayslip() {
       const name = {{ txn.source_file | tojson }};
-      if (confirm('Reprocessar "' + name + '" como folha de ordenado?\n\nAs transações não validadas deste ficheiro serão substituídas pelos dados do recibo.')) {
+      if (confirm('{{ t('are_you_sure') }} "' + name + '"?')) {
         document.getElementById('payslip-form').submit();
       }
     }
@@ -275,7 +275,7 @@
       const rows = document.getElementById('split-rows');
       const div = document.createElement('div');
       div.className = 'split-row';
-      div.innerHTML = `<input type="number" name="amount_${splitCount}" step="0.01" placeholder="Valor" oninput="updateSum()" required>
+      div.innerHTML = `<input type="number" name="amount_${splitCount}" step="0.01" placeholder="{{ t('amount_label') }}" oninput="updateSum()" required>
                        <button type="button" class="btn-remove" onclick="removeRow(this)">✕</button>`;
       rows.appendChild(div);
       updateSum();
@@ -292,14 +292,14 @@
       document.getElementById('sum-val').textContent = total.toFixed(2);
       const ok = Math.abs(total - ORIGINAL) < 0.005;
       const st = document.getElementById('sum-status');
-      st.textContent = ok ? ' ✓' : ` ✗ (deve ser ${ORIGINAL.toFixed(2)} €)`;
+      st.textContent = ok ? ' ✓' : ` ✗ (${ORIGINAL.toFixed(2)})`;
       st.className = ok ? 'sum-ok' : 'sum-err';
     }
     function validateSplit() {
       let total = 0;
       document.querySelectorAll('#split-rows input[type=number]').forEach(i => { total += parseFloat(i.value) || 0; });
       if (Math.abs(total - ORIGINAL) >= 0.005) {
-        alert(`A soma das divisões deve ser igual ao valor original (${ORIGINAL.toFixed(2)} €).`);
+        alert(`${ORIGINAL.toFixed(2)}`);
         return false;
       }
       return true;

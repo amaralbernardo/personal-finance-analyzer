@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Adicionar Registo{% endblock %}
+{% block title %}{{ t('add_record') }}{% endblock %}
 
 {% block head %}
 <style>
@@ -40,11 +40,11 @@
 
 {% block content %}
   <div class="page">
-    <a href="{{ back_url }}" class="back">← Voltar</a>
+    <a href="{{ back_url }}" class="back">{{ t('back') }}</a>
     <div class="page-header">
-      <h1>Adicionar Registo</h1>
+      <h1>{{ t('add_record') }}</h1>
       <span class="{% if space == 'joint' %}space-pill-joint{% else %}space-pill-individual{% endif %}">
-        {{ "Partilhado" if space == "joint" else "Privado" }}
+        {{ t('shared') if space == "joint" else t('private') }}
       </span>
     </div>
 
@@ -56,21 +56,21 @@
       <form method="post" novalidate>
         <div class="form-row">
           <div class="form-group">
-            <label for="date">Data</label>
+            <label for="date">{{ t('date') }}</label>
             <input type="date" id="date" name="date" required
                    value="{{ form.date if form else today or '' }}">
           </div>
           <div class="form-group">
-            <label for="amount">Valor (€)</label>
+            <label for="amount">{{ t('amount_label') }}</label>
             <input type="number" id="amount" name="amount" step="0.01" required
                    placeholder="-50.00"
                    value="{{ form.amount if form else '' }}">
-            <p class="hint">Negativo = débito &nbsp;·&nbsp; Positivo = crédito</p>
+            <p class="hint">{{ t('debit_credit_hint') }}</p>
           </div>
         </div>
 
         <div class="form-group">
-          <label for="description">Descrição</label>
+          <label for="description">{{ t('description') }}</label>
           <input type="text" id="description" name="description" required
                  placeholder="ex: Compra no Continente"
                  value="{{ form.description if form else '' }}"
@@ -78,22 +78,22 @@
         </div>
 
         <div id="suggestions-area" style="display:none; margin-bottom:14px">
-          <div class="suggestions-label">Anteriores:</div>
+          <div class="suggestions-label">{{ t('previous') }}</div>
           <div class="suggestions-chips" id="suggestions-chips"></div>
         </div>
 
         <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
-          <button type="button" class="btn-cat-toggle" onclick="toggleCatPanel()">☰ Ver categorias</button>
+          <button type="button" class="btn-cat-toggle" onclick="toggleCatPanel()">☰ {{ t('view_categories') }}</button>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label for="category">Categoria</label>
+            <label for="category">{{ t('category') }}</label>
             <input type="text" id="category" name="category"
                    value="{{ form.category if form else '' }}"
                    placeholder="Ex: Alimentação">
           </div>
           <div class="form-group">
-            <label for="subcategory">Subcategoria <span style="font-weight:400;color:var(--text-dim)">(opcional)</span></label>
+            <label for="subcategory">{{ t('subcategory') }} <span style="font-weight:400;color:var(--text-dim)">(opcional)</span></label>
             <input type="text" id="subcategory" name="subcategory"
                    value="{{ form.subcategory if form else '' }}"
                    placeholder="Ex: Supermercado">
@@ -101,9 +101,9 @@
         </div>
 
         <div class="form-group">
-          <label for="patrimony_label">Conta</label>
+          <label for="patrimony_label">{{ t('account') }}</label>
           <select id="patrimony_label" name="patrimony_label">
-            <option value="">— sem conta —</option>
+            <option value="">{{ t('no_account') }}</option>
             {% for p in patrimony %}
             <option value="{{ p.label }}"
               {% if form and form.patrimony_label == p.label %}selected{% endif %}>
@@ -114,13 +114,13 @@
         </div>
 
         <div class="form-group">
-          <label for="notes">Notas <span style="font-weight:400;color:var(--text-dim)">(opcional)</span></label>
-          <textarea id="notes" name="notes" placeholder="Observações sobre este registo...">{{ form.notes if form else '' }}</textarea>
+          <label for="notes">{{ t('notes') }} <span style="font-weight:400;color:var(--text-dim)">(opcional)</span></label>
+          <textarea id="notes" name="notes" placeholder="">{{ form.notes if form else '' }}</textarea>
         </div>
 
         <div class="btn-row">
-          <button type="submit" class="btn" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>Guardar registo</button>
-          <a href="{{ back_url }}" class="cancel-link">Cancelar</a>
+          <button type="submit" class="btn" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>{{ t('save_record') }}</button>
+          <a href="{{ back_url }}" class="cancel-link">{{ t('cancel') }}</a>
         </div>
       </form>
     </div>
@@ -128,7 +128,7 @@
 
   <div class="cat-panel" id="cat-panel">
     <div class="cat-panel-header">
-      <span class="cat-panel-title">Categorias usadas</span>
+      <span class="cat-panel-title">{{ t('used_categories') }}</span>
       <button type="button" class="cat-panel-close" onclick="toggleCatPanel()">✕</button>
     </div>
     <div class="cat-panel-body">
@@ -144,7 +144,7 @@
         </div>
         {% endfor %}
       {% else %}
-        <p class="cat-panel-empty">Nenhuma categoria usada ainda.</p>
+        <p class="cat-panel-empty">{{ t('no_categories_yet') }}</p>
       {% endif %}
     </div>
   </div>

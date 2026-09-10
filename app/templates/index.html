@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Finanças Pessoais{% endblock %}
+{% block title %}{{ t('home_title') }}{% endblock %}
 
 {% block head %}
 <style>
@@ -43,50 +43,50 @@
 
 {% block content %}
   <div class="page-index">
-    <h1 class="page-title">Finanças Pessoais</h1>
-    <p class="page-subtitle">Escolhe o espaço de análise que pretendes aceder.</p>
+    <h1 class="page-title">{{ t('home_title') }}</h1>
+    <p class="page-subtitle">{{ t('home_subtitle') }}</p>
 
     <div class="grid">
       <!-- Joint -->
       <div class="space-card space-card-joint">
         <div>
-          <p class="space-title">Análise Conjunta</p>
-          <p class="space-desc">Dados partilhados entre todos os utilizadores. Ideal para finanças de agregado familiar.</p>
+          <p class="space-title">{{ t('joint_title') }}</p>
+          <p class="space-desc">{{ t('joint_desc') }}</p>
         </div>
         <div class="space-status">
           {% if joint_unverified > 0 %}
-            <span class="badge badge-warn"><span class="badge-dot"></span>{{ joint_unverified }} item(s) por rever</span>
+            <span class="badge badge-warn"><span class="badge-dot"></span>{{ joint_unverified }} {{ t('items_to_review') }}</span>
           {% elif joint_has_data or joint_has_patrimony %}
-            <span class="badge badge-ok"><span class="badge-dot"></span>Tudo verificado</span>
+            <span class="badge badge-ok"><span class="badge-dot"></span>{{ t('all_verified') }}</span>
           {% else %}
-            <span class="badge badge-empty"><span class="badge-dot"></span>Sem dados</span>
+            <span class="badge badge-empty"><span class="badge-dot"></span>{{ t('no_data') }}</span>
           {% endif %}
           {% if joint_last_report %}
-          <a href="/joint/report/{{ joint_last_report.name }}" class="report-link" target="_blank">Ver último relatório →</a>
+          <a href="/joint/report/{{ joint_last_report.name }}" class="report-link" target="_blank">{{ t('view_last_report') }}</a>
           {% endif %}
         </div>
-        <a href="/joint" class="btn-enter btn-joint">Entrar →</a>
+        <a href="/joint" class="btn-enter btn-joint">{{ t('enter') }}</a>
       </div>
 
       <!-- Individual -->
       <div class="space-card space-card-individual">
         <div>
-          <p class="space-title">Análise Individual</p>
-          <p class="space-desc">Os teus dados pessoais. Apenas tu tens acesso a esta análise.</p>
+          <p class="space-title">{{ t('individual_title') }}</p>
+          <p class="space-desc">{{ t('individual_desc') }}</p>
         </div>
         <div class="space-status">
           {% if ind_unverified > 0 %}
-            <span class="badge badge-warn"><span class="badge-dot"></span>{{ ind_unverified }} item(s) por rever</span>
+            <span class="badge badge-warn"><span class="badge-dot"></span>{{ ind_unverified }} {{ t('items_to_review') }}</span>
           {% elif ind_has_data or ind_has_patrimony %}
-            <span class="badge badge-ok"><span class="badge-dot"></span>Tudo verificado</span>
+            <span class="badge badge-ok"><span class="badge-dot"></span>{{ t('all_verified') }}</span>
           {% else %}
-            <span class="badge badge-empty"><span class="badge-dot"></span>Sem dados</span>
+            <span class="badge badge-empty"><span class="badge-dot"></span>{{ t('no_data') }}</span>
           {% endif %}
           {% if ind_last_report %}
-          <a href="/individual/report/{{ ind_last_report.name }}" class="report-link report-link-ind" target="_blank">Ver último relatório →</a>
+          <a href="/individual/report/{{ ind_last_report.name }}" class="report-link report-link-ind" target="_blank">{{ t('view_last_report') }}</a>
           {% endif %}
         </div>
-        <a href="/individual" class="btn-enter btn-individual">Entrar →</a>
+        <a href="/individual" class="btn-enter btn-individual">{{ t('enter') }}</a>
       </div>
     </div>
   </div>

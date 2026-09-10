@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Registos Pendentes{% endblock %}
+{% block title %}{{ t('pending_records') }}{% endblock %}
 
 {% block head %}
 <style>
@@ -30,24 +30,24 @@
 
 {% block content %}
   <div class="page">
-    <a href="{{ review_url }}" class="back">← Voltar à revisão</a>
+    <a href="{{ review_url }}" class="back">{{ t('back_to_review') }}</a>
     <div class="page-header">
-      <h1>Registos Pendentes</h1>
-      <span class="count-badge">{{ rows | length }} registo{{ 's' if rows | length != 1 else '' }}</span>
+      <h1>{{ t('pending_records') }}</h1>
+      <span class="count-badge">{{ rows | length }} {{ t('records') }}</span>
     </div>
 
     {% if rows %}
     <form method="post" id="main-form">
       <div class="toolbar">
         <label style="display:flex;align-items:center;gap:6px;font-size:0.875rem;cursor:pointer;font-weight:500">
-          <input type="checkbox" id="select-all" onchange="toggleAll(this)"> Selecionar todos
+          <input type="checkbox" id="select-all" onchange="toggleAll(this)"> {{ t('select_all') }}
         </label>
         <button type="submit" name="action" value="delete_selected" class="btn btn-danger" id="btn-del-sel"
                 disabled data-confirm>
-          Eliminar selecionados
+          {{ t('delete_selected') }}
         </button>
         <button type="submit" name="action" value="delete_all" class="btn btn-delete-all" data-confirm>
-          Eliminar todos
+          {{ t('delete_all') }}
         </button>
       </div>
 
@@ -57,11 +57,11 @@
             <thead>
               <tr>
                 <th class="check-col"><input type="checkbox" id="select-all-th" onchange="toggleAll(this)"></th>
-                <th>Data</th>
-                <th>Descrição</th>
-                <th>Categoria</th>
-                <th>Conta</th>
-                <th style="text-align:right">Valor</th>
+                <th>{{ t('date') }}</th>
+                <th>{{ t('description') }}</th>
+                <th>{{ t('category') }}</th>
+                <th>{{ t('account') }}</th>
+                <th style="text-align:right">{{ t('amount') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -75,7 +75,7 @@
                 <td class="col-cat">{{ row.category or '—' }}</td>
                 <td class="col-acct">{{ row.patrimony_label or '—' }}</td>
                 <td class="{{ 'amount-neg' if row.amount < 0 else 'amount-pos' }}" style="text-align:right;font-weight:600">
-                  {{ '%+.2f' | format(row.amount) }} €
+                  {{ row.amount | amountfmt }}
                 </td>
               </tr>
               {% endfor %}
@@ -85,7 +85,7 @@
       </div>
     </form>
     {% else %}
-    <div class="card"><p class="empty">Sem registos pendentes.</p></div>
+    <div class="card"><p class="empty">{{ t('no_pending_records') }}</p></div>
     {% endif %}
   </div>
 

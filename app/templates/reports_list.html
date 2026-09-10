@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Relatórios{% endblock %}
+{% block title %}{{ t('reports') }}{% endblock %}
 
 {% block head %}
 <style>
@@ -17,9 +17,9 @@
 
 {% block content %}
   <div class="page">
-    <a href="{{ back_url }}" class="back">← Voltar</a>
-    <h1>Relatórios</h1>
-    <p class="page-desc">Todos os relatórios gerados para este espaço.</p>
+    <a href="{{ back_url }}" class="back">{{ t('back') }}</a>
+    <h1>{{ t('reports') }}</h1>
+    <p class="page-desc">{{ t('reports_desc') }}</p>
 
     <div class="card">
       {% if reports %}
@@ -27,10 +27,10 @@
         <table>
           <thead>
             <tr>
-              <th style="width:36px"><input type="checkbox" id="select-all" title="Selecionar todos"></th>
-              <th>Data / Hora</th>
-              <th>Ficheiro</th>
-              <th style="text-align:right">Tamanho</th>
+              <th style="width:36px"><input type="checkbox" id="select-all" title="{{ t('select_all_alt') }}"></th>
+              <th>{{ t('datetime') }}</th>
+              <th>{{ t('file') }}</th>
+              <th style="text-align:right">{{ t('size') }}</th>
               <th></th>
             </tr>
           </thead>
@@ -42,7 +42,7 @@
               <td style="color:var(--text-muted);font-size:0.8rem">{{ r.name }}</td>
               <td style="text-align:right;color:var(--text-muted);font-size:0.8rem;white-space:nowrap">{{ r.size_kb }} KB</td>
               <td style="text-align:right;white-space:nowrap">
-                <a href="{{ report_base_url }}{{ r.name }}" target="_blank" class="report-link">Abrir →</a>
+                <a href="{{ report_base_url }}{{ r.name }}" target="_blank" class="report-link">{{ t('open') }}</a>
               </td>
             </tr>
             {% endfor %}
@@ -51,11 +51,11 @@
 
         <div class="actions">
           <button type="submit" name="action" value="selected" class="btn-danger" id="btn-delete-selected" disabled data-confirm style="display:inline-flex;align-items:center;gap:6px">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>Eliminar selecionados
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>{{ t('delete_selected') }}
           </button>
           {% if reports | length > 1 %}
           <button type="submit" name="action" value="keep_latest" class="btn-ghost" data-confirm style="display:inline-flex;align-items:center;gap:6px">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>Eliminar todos exceto o último
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>{{ t('delete_all_except_latest') }}
           </button>
           {% endif %}
         </div>
@@ -63,8 +63,8 @@
       {% else %}
       <div style="text-align:center;padding:48px 24px">
         <div style="font-size:2rem;margin-bottom:12px;opacity:0.3">📄</div>
-        <p style="color:var(--text-muted);margin:0 0 16px;font-size:0.95rem">Nenhum relatório gerado ainda.</p>
-        <a href="{{ back_url }}" class="btn" style="display:inline-block;padding:8px 20px;font-size:0.875rem">Gerar relatório →</a>
+        <p style="color:var(--text-muted);margin:0 0 16px;font-size:0.95rem">{{ t('no_reports_yet') }}</p>
+        <a href="{{ back_url }}" class="btn" style="display:inline-block;padding:8px 20px;font-size:0.875rem">{{ t('generate_report') }} →</a>
       </div>
       {% endif %}
     </div>

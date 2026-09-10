@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Configurar Patrimônio{% endblock %}
+{% block title %}{{ t('setup_patrimony') }}{% endblock %}
 
 {% block head %}
 <style>
@@ -29,23 +29,23 @@
 
 {% block content %}
   <div class="page">
-    <a href="{{ back_url }}" class="back">← Voltar</a>
-    <h1>Configurar Patrimônio</h1>
-    <p class="page-desc">Define os valores base das tuas contas e investimentos. Estes valores são usados como ponto de partida na análise.</p>
+    <a href="{{ back_url }}" class="back">{{ t('back') }}</a>
+    <h1>{{ t('setup_patrimony') }}</h1>
+    <p class="page-desc">{{ t('setup_patrimony_desc') }}</p>
 
     <div class="card" style="margin-bottom:16px">
       <div class="card-inner">
-        <p class="card-title">Valores atuais</p>
+        <p class="card-title">{{ t('current_values') }}</p>
       </div>
       {% if patrimony %}
       <div class="overflow-wrap"><table>
         <thead>
           <tr>
-            <th>Descrição</th>
-            <th>Categoria</th>
-            <th>Data ref.</th>
-            <th style="text-align:right">Saldo inicial</th>
-            <th style="text-align:right">Valor atual</th>
+            <th>{{ t('description') }}</th>
+            <th>{{ t('category') }}</th>
+            <th>{{ t('ref_date') }}</th>
+            <th style="text-align:right">{{ t('initial_balance_col') }}</th>
+            <th style="text-align:right">{{ t('current_value_col') }}</th>
             <th></th>
           </tr>
         </thead>
@@ -60,11 +60,11 @@
             <td class="amount-cell">{{ p.initial_amount | amountfmt }}</td>
             <td class="amount-cell {% if p.current_value < 0 %}amount-neg{% endif %}">{{ p.current_value | amountfmt }}</td>
             <td style="white-space:nowrap">
-              <button type="button" class="btn-sm btn-sm-edit" onclick="toggleEdit({{ p.id }})">Editar</button>
+              <button type="button" class="btn-sm btn-sm-edit" onclick="toggleEdit({{ p.id }})">{{ t('edit') }}</button>
               <form action="/patrimony/delete/{{ p.id }}" method="post" style="display:inline">
                 <input type="hidden" name="back_url" value="{{ request.url }}">
                 <button type="submit" class="btn-sm btn-sm-danger"
-                        onclick="return confirm('Eliminar este registo?')">Eliminar</button>
+                        onclick="return confirm('{{ t('are_you_sure') }}')">{{ t('delete') }}</button>
               </form>
             </td>
           </tr>
@@ -74,11 +74,11 @@
                 <input type="hidden" name="back_url" value="{{ request.url }}">
                 <div class="add-row" style="margin:0">
                   <div class="field">
-                    <label>Descrição</label>
+                    <label>{{ t('description') }}</label>
                     <input type="text" name="label" value="{{ p.label }}" required>
                   </div>
                   <div class="field">
-                    <label>Categoria</label>
+                    <label>{{ t('category') }}</label>
                     <select name="category">
                       {% for cat in all_categories %}
                       <option value="{{ cat.name }}" {% if cat.name == p.category %}selected{% endif %}>{{ cat.name }}</option>
@@ -86,16 +86,16 @@
                     </select>
                   </div>
                   <div class="field">
-                    <label>Data de referência</label>
+                    <label>{{ t('ref_date_label') }}</label>
                     <input type="date" name="reference_date" value="{{ p.reference_date }}" required>
                   </div>
                   <div class="field">
-                    <label>Saldo inicial (€)</label>
+                    <label>{{ t('initial_balance_label') }}</label>
                     <input type="number" name="amount" step="0.01" value="{{ p.initial_amount }}" required>
                   </div>
                   <div style="display:flex;gap:6px;align-self:flex-end">
-                    <button type="submit" class="btn-sm btn-sm-accent">Guardar</button>
-                    <button type="button" class="btn-sm btn-sm-danger" onclick="toggleEdit({{ p.id }})">Cancelar</button>
+                    <button type="submit" class="btn-sm btn-sm-accent">{{ t('save') }}</button>
+                    <button type="button" class="btn-sm btn-sm-danger" onclick="toggleEdit({{ p.id }})">{{ t('cancel') }}</button>
                   </div>
                 </div>
               </form>
@@ -103,7 +103,7 @@
           </tr>
           {% endfor %}
           <tr>
-            <td colspan="4" style="font-weight:700;border-top:1px solid var(--border-strong);padding-top:10px">Total</td>
+            <td colspan="4" style="font-weight:700;border-top:1px solid var(--border-strong);padding-top:10px">{{ t('total') }}</td>
             <td class="amount-cell {% if total.val > 0 %}amount-pos{% endif %}" style="font-weight:700;border-top:1px solid var(--border-strong);padding-top:10px">{{ total.val | amountfmt }}</td>
             <td style="border-top:1px solid var(--border-strong);padding-top:10px"></td>
           </tr>
@@ -111,22 +111,22 @@
       </table></div>
       {% else %}
       <div class="card-inner" style="padding-top:0">
-        <p class="empty">Nenhum valor definido ainda.</p>
+        <p class="empty">{{ t('no_values_defined') }}</p>
       </div>
       {% endif %}
     </div>
 
     {% if available_categories %}
     <div class="add-card" style="margin-bottom:16px">
-      <p class="add-title">Adicionar valor</p>
+      <p class="add-title">{{ t('add_value') }}</p>
       <form method="post">
         <div class="add-row">
           <div class="field">
-            <label>Descrição</label>
+            <label>{{ t('description') }}</label>
             <input type="text" name="label" placeholder="ex: Conta CGD" required>
           </div>
           <div class="field">
-            <label>Categoria</label>
+            <label>{{ t('category') }}</label>
             <select name="category">
               {% for cat in available_categories %}
               <option value="{{ cat }}">{{ cat }}</option>
@@ -134,14 +134,14 @@
             </select>
           </div>
           <div class="field">
-            <label>Saldo inicial (€)</label>
+            <label>{{ t('initial_balance_label') }}</label>
             <input type="number" name="amount" step="0.01" placeholder="0.00" required>
           </div>
           <div class="field">
-            <label>Data de referência</label>
+            <label>{{ t('ref_date_label') }}</label>
             <input type="date" name="reference_date" required>
           </div>
-          <button type="submit" class="btn-sm btn-sm-accent" style="padding:9px 20px;align-self:flex-end">Adicionar</button>
+          <button type="submit" class="btn-sm btn-sm-accent" style="padding:9px 20px;align-self:flex-end">{{ t('add') }}</button>
         </div>
       </form>
     </div>
@@ -149,7 +149,7 @@
 
     <div class="card" style="margin-top:24px">
       <div class="card-inner">
-        <p class="card-title">Categorias de patrimônio</p>
+        <p class="card-title">{{ t('patrimony_categories') }}</p>
       </div>
       <table>
         <tbody>
@@ -158,12 +158,12 @@
             <td>{{ cat.name }}</td>
             <td style="text-align:right">
               {% if cat.name in used_categories %}
-              <span style="font-size:0.78rem;color:var(--text-dim)">em uso</span>
+              <span style="font-size:0.78rem;color:var(--text-dim)">{{ t('in_use') }}</span>
               {% else %}
               <form action="/patrimony/categories/delete/{{ cat.id }}" method="post" style="display:inline">
                 <input type="hidden" name="back_url" value="{{ request.url }}">
                 <button type="submit" class="btn-sm btn-sm-danger"
-                        onclick="return confirm('Eliminar categoria \'{{ cat.name }}\'?')">Eliminar</button>
+                        onclick="return confirm('{{ t('are_you_sure') }}')">{{ t('delete') }}</button>
               </form>
               {% endif %}
             </td>
@@ -178,8 +178,8 @@
           <input type="hidden" name="back_url" value="{{ request.url }}">
           <input type="hidden" name="space" value="{{ space }}">
           <button type="submit" class="btn-sm btn-sm-danger"
-                  onclick="return confirm('Eliminar todas as {{ unused_count }} categorias não utilizadas?')">
-            Eliminar todas não utilizadas ({{ unused_count }})
+                  onclick="return confirm('{{ t('are_you_sure') }}')">
+            {{ t('delete_unused') }} ({{ unused_count }})
           </button>
         </form>
         {% endif %}
@@ -187,8 +187,8 @@
           <input type="hidden" name="back_url" value="{{ request.url }}">
           <input type="hidden" name="space" value="{{ space }}">
           <div style="display:flex;gap:8px;align-items:center">
-            <input type="text" name="name" placeholder="Nova categoria…" style="flex:1">
-            <button type="submit" class="btn-sm btn-sm-accent" style="padding:9px 16px">Adicionar</button>
+            <input type="text" name="name" placeholder="{{ t('add') }}…" style="flex:1">
+            <button type="submit" class="btn-sm btn-sm-accent" style="padding:9px 16px">{{ t('add') }}</button>
           </div>
         </form>
       </div>

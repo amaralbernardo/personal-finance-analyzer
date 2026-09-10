@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% if is_setup %}Configurar administrador{% else %}Entrar{% endif %} — Finanças Pessoais</title>
+  <title>{% if is_setup %}{{ t('setup_title') }}{% else %}{{ t('login_title') }}{% endif %} — {{ t('home_title') }}</title>
   <link rel="stylesheet" href="/static/css/dark.css">
   <style>
     body { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
@@ -34,15 +34,12 @@
 </head>
 <body>
   <div class="login-card">
-    <p class="logo">Finanças Pessoais</p>
+    <p class="logo">{{ t('home_title') }}</p>
     {% if is_setup %}
-    <p class="logo-sub">Primeiro acesso — cria a conta de administrador.</p>
-    <div class="setup-notice">
-      Este é o primeiro acesso à aplicação. O email e password que introduzires
-      serão usados para a conta de administrador.
-    </div>
+    <p class="logo-sub">{{ t('setup_subtitle') }}</p>
+    <div class="setup-notice">{{ t('setup_notice') }}</div>
     {% else %}
-    <p class="logo-sub">Introduz as tuas credenciais para continuar.</p>
+    <p class="logo-sub">{{ t('login_subtitle') }}</p>
     {% endif %}
 
     {% if error %}
@@ -51,16 +48,16 @@
 
     <form method="post">
       <div class="field">
-        <label for="email">Email</label>
+        <label for="email">{{ t('login_email') }}</label>
         <input type="email" id="email" name="email" required
                placeholder="exemplo@email.com" autocomplete="email">
       </div>
       <div class="field">
-        <label for="password">Password</label>
+        <label for="password">{{ t('login_password') }}</label>
         <input type="password" id="password" name="password" required
                placeholder="••••••••" autocomplete="current-password">
       </div>
-      <button type="submit" class="btn btn-full" style="display:inline-flex;align-items:center;justify-content:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>{% if is_setup %}Criar conta e entrar{% else %}Entrar{% endif %}</button>
+      <button type="submit" class="btn btn-full" style="display:inline-flex;align-items:center;justify-content:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>{% if is_setup %}{{ t('create_account') }}{% else %}{{ t('login_submit') }}{% endif %}</button>
     </form>
   </div>
 </body>

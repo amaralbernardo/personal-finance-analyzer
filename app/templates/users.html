@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Gerir Utilizadores{% endblock %}
+{% block title %}{{ t('manage_users') }}{% endblock %}
 
 {% block head %}
 <style>
@@ -38,19 +38,19 @@
 
 {% block content %}
   <div class="page">
-    <a href="/" class="back">← Voltar</a>
-    <h1>Gerir Utilizadores</h1>
+    <a href="/" class="back">{{ t('back') }}</a>
+    <h1>{{ t('manage_users') }}</h1>
 
     <div class="card" style="margin-bottom:16px">
       <table>
         <thead>
           <tr>
-            <th>Email</th>
-            <th>Nome de exibição</th>
-            <th>Papel</th>
-            <th>Estado</th>
-            <th class="col-date">Criado em</th>
-            <th>Ações</th>
+            <th>{{ t('email') }}</th>
+            <th>{{ t('display_name') }}</th>
+            <th>{{ t('role') }}</th>
+            <th>{{ t('status') }}</th>
+            <th class="col-date">{{ t('created_at') }}</th>
+            <th>{{ t('actions') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -59,7 +59,7 @@
             <td>
               {{ u.email }}
               {% if u.id == current_user.id %}
-              <span class="self-badge">(tu)</span>
+              <span class="self-badge">{{ t('you') }}</span>
               {% endif %}
             </td>
             <td>
@@ -73,12 +73,12 @@
             </td>
             <td>
               <span class="badge-user {{ 'badge-admin' if u.role == 'admin' else 'badge-viewer' }}">
-                {{ 'Administrador' if u.role == 'admin' else 'Visualizador' }}
+                {{ t('admin_role') if u.role == 'admin' else t('viewer_role') }}
               </span>
             </td>
             <td>
               <span class="badge-user {{ 'badge-active' if u.active else 'badge-inactive' }}">
-                {{ 'Ativo' if u.active else 'Inativo' }}
+                {{ t('active') if u.active else t('inactive') }}
               </span>
             </td>
             <td class="col-date" style="color:var(--text-muted);font-size:.85rem">{{ u.created_at[:10] }}</td>
@@ -87,11 +87,11 @@
               <div class="actions-cell">
                 <form action="/users/toggle" method="post" style="display:inline">
                   <input type="hidden" name="id" value="{{ u.id }}">
-                  <button type="submit" class="btn-sm btn-toggle" style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>{{ 'Desativar' if u.active else 'Ativar' }}</button>
+                  <button type="submit" class="btn-sm btn-toggle" style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>{{ t('deactivate') if u.active else t('activate') }}</button>
                 </form>
                 <form action="/users/delete" method="post" style="display:inline">
                   <input type="hidden" name="id" value="{{ u.id }}">
-                  <button type="submit" class="btn-sm btn-sm-danger" data-confirm style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>Eliminar</button>
+                  <button type="submit" class="btn-sm btn-sm-danger" data-confirm style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>{{ t('delete') }}</button>
                 </form>
               </div>
               {% else %}
@@ -105,25 +105,25 @@
     </div>
 
     <div class="add-card">
-      <h2>Adicionar utilizador</h2>
+      <h2>{{ t('add_user') }}</h2>
       <form action="/users/add" method="post">
         <div class="add-row">
           <div class="field">
-            <label>Email</label>
+            <label>{{ t('email') }}</label>
             <input type="email" name="email" placeholder="exemplo@email.com" required>
           </div>
           <div class="field">
-            <label>Password temporária</label>
-            <input type="text" name="password" placeholder="Password inicial" required>
+            <label>{{ t('temp_password') }}</label>
+            <input type="text" name="password" placeholder="" required>
           </div>
           <div class="field">
-            <label>Papel</label>
+            <label>{{ t('role') }}</label>
             <select name="role">
-              <option value="viewer" selected>Visualizador</option>
-              <option value="admin">Administrador</option>
+              <option value="viewer" selected>{{ t('viewer_role') }}</option>
+              <option value="admin">{{ t('admin_role') }}</option>
             </select>
           </div>
-          <button type="submit" class="btn-sm btn-sm-accent" style="padding:8px 18px;align-self:flex-end;display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>Adicionar
+          <button type="submit" class="btn-sm btn-sm-accent" style="padding:8px 18px;align-self:flex-end;display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>{{ t('add') }}
           </button>
         </div>
       </form>
