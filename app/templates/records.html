@@ -165,7 +165,7 @@
             <td class="date-cell">{{ txn.date | datefmt }}</td>
             <td class="desc-cell">{{ txn.description }}</td>
             <td class="amount {% if txn.amount < 0 %}amount-neg{% else %}amount-pos{% endif %}">
-              {{ "%.2f"|format(txn.amount|abs) }} €
+              {{ txn.amount | amountfmt }}
             </td>
             <td class="cat-cell" data-col="category">{{ txn.category or '' }}</td>
             <td class="cat-cell" data-col="subcategory">{{ txn.subcategory or '' }}</td>

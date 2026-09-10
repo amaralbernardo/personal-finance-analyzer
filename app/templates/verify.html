@@ -139,7 +139,7 @@
                        value="{{ txn.notes or '' }}" placeholder="Nota opcional…">
               </td>
               <td class="amount {{ 'amount-neg' if txn.amount < 0 else 'amount-pos' }}" data-label="Valor">
-                {% if txn.amount < 0 %}−{% endif %}{{ "%.2f"|format(txn.amount|abs) }} €
+                {{ txn.amount | amountfmt }}
               </td>
               <td data-label="Categoria">
                 <select name="cat_{{ txn.id }}"

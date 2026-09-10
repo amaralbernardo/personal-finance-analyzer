@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Análise Individual{% endblock %}
+{% block title %}{{ t('individual_title') }}{% endblock %}
 
 {% block head %}
 <style>
@@ -54,52 +54,52 @@
 
 {% block content %}
   <div class="page">
-    <a href="/" class="back">← Voltar</a>
+    <a href="/" class="back">{{ t('back') }}</a>
     <div class="page-header">
-      <h1>Análise Individual</h1>
-      <span class="space-pill-individual">Privado</span>
+      <h1>{{ t('individual_title') }}</h1>
+      <span class="space-pill-individual">{{ t('private') }}</span>
     </div>
 
     <!-- Status -->
     <div class="card">
-      <p class="card-title">Registos</p>
+      <p class="card-title">{{ t('records') }}</p>
       {% if unverified > 0 %}
-        <span class="badge badge-warn"><span class="badge-dot"></span>{{ unverified }} item(s) por rever</span>
+        <span class="badge badge-warn"><span class="badge-dot"></span>{{ unverified }} {{ t('items_to_review') }}</span>
       {% else %}
-        <span class="badge badge-ok"><span class="badge-dot"></span>Tudo verificado</span>
+        <span class="badge badge-ok"><span class="badge-dot"></span>{{ t('all_verified') }}</span>
       {% endif %}
       <div class="action-group">
         {% if unverified > 0 %}
-        <a href="/individual/review" class="action-btn action-btn-primary" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>Rever novos</a>
+        <a href="/individual/review" class="action-btn action-btn-primary" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>{{ t('review_new') }}</a>
         {% endif %}
-        <a href="/individual/add-transaction" class="action-btn action-btn-secondary" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>Adicionar registo</a>
+        <a href="/individual/add-transaction" class="action-btn action-btn-secondary" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>{{ t('add_record') }}</a>
       </div>
       {% if total_transactions > 0 %}
       <div class="action-group action-group-sep">
-        <a href="/individual/records" class="action-btn action-btn-ghost" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>Ver registos validados</a>
+        <a href="/individual/records" class="action-btn action-btn-ghost" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>{{ t('view_records') }}</a>
       </div>
       {% endif %}
     </div>
 
     <!-- Patrimony -->
     <div class="card">
-      <p class="card-title">Patrimônio Base</p>
+      <p class="card-title">{{ t('patrimony_base') }}</p>
       {% if patrimony %}
       {% set total = namespace(val=0) %}
       <div class="kpi-grid" id="kpi-grid-individual">
         {% for p in patrimony %}
         {% set total.val = total.val + p.current_value %}
-        <div class="kpi-tile {% if p.current_value < 0 %}kpi-neg{% else %}kpi-pos{% endif %}" data-id="{{ p.id }}" title="{{ p.label }} · ref. {{ p.reference_date | datefmt }}{% if p.last_tx_date %} · último registo {{ p.last_tx_date | datefmt }}{% endif %}">
+        <div class="kpi-tile {% if p.current_value < 0 %}kpi-neg{% else %}kpi-pos{% endif %}" data-id="{{ p.id }}" title="{{ p.label }} · ref. {{ p.reference_date | datefmt }}{% if p.last_tx_date %} · {{ p.last_tx_date | datefmt }}{% endif %}">
           <div class="kpi-tile-label">{{ p.label }}</div>
-          <div class="kpi-tile-value">{{ "%.2f"|format(p.current_value) }} €</div>
+          <div class="kpi-tile-value">{{ p.current_value | amountfmt }}</div>
           <div class="kpi-tile-meta">{{ p.category }}</div>
-          <div class="kpi-tile-date">{% if p.last_tx_date %}{{ p.last_tx_date | datefmt }}{% else %}sem registos{% endif %}</div>
+          <div class="kpi-tile-date">{% if p.last_tx_date %}{{ p.last_tx_date | datefmt }}{% else %}{{ t('no_records') }}{% endif %}</div>
         </div>
         {% endfor %}
       </div>
       <div class="kpi-total-row">
-        <span class="kpi-total-label">Total</span>
-        <span class="kpi-total-value {% if total.val >= 0 %}amount-pos{% else %}amount-neg{% endif %}">{{ "%.2f"|format(total.val) }} €</span>
+        <span class="kpi-total-label">{{ t('total') }}</span>
+        <span class="kpi-total-value {% if total.val >= 0 %}amount-pos{% else %}amount-neg{% endif %}">{{ total.val | amountfmt }}</span>
       </div>
       <a href="/patrimony/individual" class="setup-cta" style="display:inline-block;margin-top:14px;">Editar →</a>
       {% else %}
@@ -110,7 +110,7 @@
 
     <!-- Report -->
     <div class="card">
-      <p class="card-title">Relatório</p>
+      <p class="card-title">{{ t('report') }}</p>
       {% if last_report %}
       <a href="/individual/report/{{ last_report.name }}" class="report-link" target="_blank">Ver último relatório →</a>
       <p class="report-name" style="margin-bottom:14px">{{ last_report.name }}</p>
@@ -118,13 +118,13 @@
       <a href="/individual/reports" class="report-link" style="font-size:0.85rem;display:block;margin-bottom:14px">Ver todos os relatórios →</a>
       <a href="/individual/settings/categories" class="report-link" style="font-size:0.85rem;display:block;margin-bottom:14px">Categorias na análise →</a>
       <form action="/individual/generate-report" method="post">
-        <button type="submit" class="btn" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>Gerar novo relatório</button>
+        <button type="submit" class="btn" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>{{ t('generate_report') }}</button>
       </form>
     </div>
 
     <!-- Upload -->
     <div class="card">
-      <p class="card-title">Importar Extratos</p>
+      <p class="card-title">{{ t('import_statements') }}</p>
       <form action="/individual/upload" method="post" enctype="multipart/form-data" id="upload-form">
         <div class="upload-area" id="drop-zone" onclick="document.getElementById('file-input').click()">
           <input type="file" id="file-input" name="files" multiple accept=".csv,.ofx,.qfx,.xlsx,.xls,.pdf,.html,.mhtml">
@@ -133,7 +133,7 @@
           <div class="upload-sub">CSV, OFX, XLSX, PDF, HTML — vários ficheiros em simultâneo</div>
         </div>
         <ul class="file-list" id="file-list"></ul>
-        <button type="submit" class="btn" id="upload-btn" style="display:none;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>Carregar e processar</button>
+        <button type="submit" class="btn" id="upload-btn" style="display:none;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>{{ t('upload') }}</button>
       </form>
       {% if imported_files %}
       <details style="margin-top:16px">
