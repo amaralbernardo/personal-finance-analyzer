@@ -9,8 +9,8 @@ _DATE_COLS = {"data", "date", "data mov.", "data valor", "data movimento", "data
               "data de conclusão", "data de conclusao", "data de início", "data de inicio"}
 _DESC_COLS = {"descricao", "descrição", "description", "movimento", "designação", "designacao"}
 _AMT_COLS  = {"valor", "amount", "montante", "importância", "importancia"}
-_DEB_COLS  = {"débito", "debito", "debit"}
-_CRE_COLS  = {"crédito", "credito", "credit"}
+_DEB_COLS  = {"débito", "debito", "debit", "saída de dinheiro", "saida de dinheiro"}
+_CRE_COLS  = {"crédito", "credito", "credit", "entrada de dinheiro"}
 
 
 _ALL_KNOWN = _DATE_COLS | _DESC_COLS | _AMT_COLS | _DEB_COLS | _CRE_COLS
